@@ -1,5 +1,3 @@
-// import { TextExtractorTool } from "./ui/text-extractor-tool";
-// import Tesseract from "tesseract.js";
 import {
   addIcon,
   Notice,
@@ -50,7 +48,7 @@ import ContentManagerCls from "./scope/content-manager";
 import ContextManager from "./scope/context-manager";
 import TGBlock from "./services/tgBlock";
 import { SetModel } from "./ui/settings/components/set-model";
-
+import * as manifest from "../manifest.json";
 //    @ts-ignore
 let safeStorage: Electron.SafeStorage;
 
@@ -365,7 +363,7 @@ export default class TextGeneratorPlugin extends Plugin {
         }
         // @ts-ignore
         // await this.app.setting
-        //   .openTabById("obsidian-textgenerator-plugin")
+        //   .openTabById(manifest.id)
         //   .display();
       });
       const span1 = document.createElement("span");
@@ -385,15 +383,13 @@ export default class TextGeneratorPlugin extends Plugin {
       } else {
         const icon = getIcon("bot");
         if (icon) this.textGeneratorIconItem.append(icon);
-        this.textGeneratorIconItem.title = "Text Generator";
+        this.textGeneratorIconItem.title = "AI Generator";
         this.textGeneratorIconItem.addClass("mod-clickable");
         this.textGeneratorIconItem.addEventListener("click", async () => {
           // @ts-ignore
           await this.app.setting.open();
           // @ts-ignore
-          await this.app.setting
-            .openTabById("obsidian-textgenerator-plugin")
-            .display();
+          await this.app.setting.openTabById(manifest.id).display();
         });
 
         if (this.notice) {
@@ -683,11 +679,11 @@ export default class TextGeneratorPlugin extends Plugin {
   /** Reloads the plugin */
   async reload() {
     // @ts-ignore
-    await this.app.plugins.disablePlugin("obsidian-textgenerator-plugin");
+    await this.app.plugins.disablePlugin(manifest.id);
     // @ts-ignore
-    await this.app.plugins.enablePlugin("obsidian-textgenerator-plugin");
+    await this.app.plugins.enablePlugin(manifest.id);
     // @ts-ignore
-    this.app.setting.openTabById("obsidian-textgenerator-plugin").display();
+    this.app.setting.openTabById(manifest.id).display();
   }
 
   actions: Record<string, any> = {};

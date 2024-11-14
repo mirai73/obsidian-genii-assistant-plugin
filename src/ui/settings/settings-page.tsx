@@ -7,6 +7,7 @@ import { GlobalProvider } from "../context/global";
 
 import SectionsMain from "./sections";
 import ReloadPluginPopup from "./components/reloadPlugin";
+import * as manifest from "../../../manifest.json";
 
 export default class TextGeneratorSettingTab extends PluginSettingTab {
   plugin: TextGeneratorPlugin;
@@ -18,12 +19,12 @@ export default class TextGeneratorSettingTab extends PluginSettingTab {
   }
 
   async reloadPlugin() {
-    // @ts-ignore
-    await this.app.plugins.disablePlugin("obsidian-textgenerator-plugin");
-    // @ts-ignore
-    await this.app.plugins.enablePlugin("obsidian-textgenerator-plugin");
-    // @ts-ignore
-    this.app.setting.openTabById("obsidian-textgenerator-plugin").display();
+    // @ts-expect-error ts2339
+    await this.app.plugins.disablePlugin(manifest.id);
+    // @ts-expect-error ts2339
+    await this.app.plugins.enablePlugin(manifest.id);
+    // @ts-expect-error ts2339
+    this.app.setting.openTabById(manifest.id).display();
   }
 
   display(): void {

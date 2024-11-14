@@ -64,12 +64,10 @@ export default function asyncHelpers(handlebars: any): typeof Handlebars {
     return _template(spec, handlebars);
   };
 
-  handlebars.compile = () =>  {
+  handlebars.compile = (template: string, options: Record<string, unknown>) =>  {
     const compiled = _compile.apply(handlebars, [
-      // @ts-ignore
-      // eslint-disable-next-line prefer-rest-params
-      ...arguments,
-      { noEscape: true },
+      template,
+      { ...options, noEscape: true },
     ]);
 
     return  (context: any, execOptions: any) => {

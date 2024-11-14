@@ -1,6 +1,7 @@
 import useGlobal from "#/ui/context/global";
 import React from "react";
 import { useLocalStorage } from "usehooks-ts";
+import * as manifest from "../../../../manifest.json";
 
 const requiresReloadLSName = "tg-requires-reload";
 
@@ -23,19 +24,13 @@ export default function ReloadPluginPopup() {
     setDidChangeAnything(false);
 
     // @ts-ignore
-    await global.plugin.app.plugins.disablePlugin(
-      "obsidian-textgenerator-plugin"
-    );
+    await global.plugin.app.plugins.disablePlugin(manifest.id);
 
     // @ts-ignore
-    await global.plugin.app.plugins.enablePlugin(
-      "obsidian-textgenerator-plugin"
-    );
+    await global.plugin.app.plugins.enablePlugin(manifest.id);
 
     // @ts-ignore
-    global.plugin.app.setting
-      .openTabById("obsidian-textgenerator-plugin")
-      .display();
+    global.plugin.app.setting.openTabById(manifest.id).display();
   };
 
   return (
