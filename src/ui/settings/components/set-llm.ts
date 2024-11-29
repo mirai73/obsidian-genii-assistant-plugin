@@ -33,12 +33,12 @@ export class SetLLM extends FuzzySuggestModal<LLM> {
 
   getItems() {
     logger("getItems");
-    const llmList = this.plugin.textGenerator.LLMRegestry.getList().map(
+    const llmList = this.plugin.textGenerator.LLMRegistry.getList().map(
       (l) => ({
         id: l,
         name:
-          this.plugin.textGenerator.LLMRegestry.UnProviderNames[
-            l as keyof typeof this.plugin.textGenerator.LLMRegestry.ProviderSlugs
+          this.plugin.textGenerator.LLMRegistry.UnProviderNames[
+            l as keyof typeof this.plugin.textGenerator.LLMRegistry.ProviderSlugs
           ] || "",
       })
     );

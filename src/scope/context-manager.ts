@@ -116,7 +116,7 @@ export default class ContextManager {
     insertMetadata?: boolean;
     templatePath?: string;
     templateContent?: string;
-    addtionalOpts?: any;
+    additionalOpts?: any;
   }): Promise<InputContext> {
     const templatePath = props.templatePath || "";
     const templateContent = props.templateContent || "";
@@ -125,7 +125,7 @@ export default class ContextManager {
       "getContext",
       props.insertMetadata,
       props.templatePath,
-      props.addtionalOpts
+      props.additionalOpts
     );
 
     /* Template */
@@ -138,7 +138,7 @@ export default class ContextManager {
           templateContent,
           filePath: props.filePath,
         }),
-        props.addtionalOpts
+        props.additionalOpts
       );
 
       if (!templatePath.length)

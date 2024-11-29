@@ -88,7 +88,7 @@ export default class TextGenerator extends RequestHandler {
         editor: props.editor,
         insertMetadata,
         templatePath: props.templatePath,
-        addtionalOpts: props.additionalProps,
+        additionalOpts: props.additionalProps,
       })
     );
 
@@ -217,7 +217,7 @@ export default class TextGenerator extends RequestHandler {
             //   console.log({ content, first });
 
             if (first) {
-              const alreadyDidnewLine = prefix?.contains(`
+              const alreadyDidNewLine = prefix?.contains(`
 			`);
 
               // here you can do some addition magic
@@ -226,7 +226,7 @@ export default class TextGenerator extends RequestHandler {
                 content = " " + content;
               }
 
-              if (!alreadyDidnewLine && txt === ":" && cntnt !== "\n") {
+              if (!alreadyDidNewLine && txt === ":" && cntnt !== "\n") {
                 content = "\n" + content;
               }
 
@@ -270,7 +270,7 @@ export default class TextGenerator extends RequestHandler {
     insertMetadata = false,
     editor: ContentManager,
     customContext?: InputContext,
-    additionnalParams = {
+    additionalParams = {
       showSpinner: true,
       insertMode: false,
     }
@@ -302,7 +302,7 @@ export default class TextGenerator extends RequestHandler {
         insertMetadata,
         params,
         context.templatePath,
-        additionnalParams
+        additionalParams
       )
     );
 
@@ -819,7 +819,7 @@ ${removeYAML(content)}
         filePath: options.filePath,
         insertMetadata: options.insertMetadata,
         templatePath,
-        addtionalOpts: options.additionalProps,
+        additionalOpts: options.additionalProps,
       })
     );
 

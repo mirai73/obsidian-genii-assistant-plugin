@@ -396,7 +396,7 @@ export default class Commands {
               if (!selectedLLMName) return;
 
               const llm =
-                self.plugin.textGenerator.LLMRegestry?.get(selectedLLMName);
+                self.plugin.textGenerator.LLMRegistry?.get(selectedLLMName);
               if (llm) {
                 self.plugin.settings.selectedProvider = selectedLLMName as any;
               }
@@ -593,7 +593,7 @@ export default class Commands {
             editor: CM,
             filePath: (await CM.getActiveFile())?.path,
             insertMetadata: true,
-            addtionalOpts: {
+            additionalOpts: {
               estimatingMode: true,
             },
           });
@@ -627,7 +627,7 @@ export default class Commands {
                   filePath: (await CM.getActiveFile())?.path,
                   insertMetadata: true,
                   templatePath: result.path,
-                  addtionalOpts: {
+                  additionalOpts: {
                     estimatingMode: true,
                   },
                 });
@@ -789,7 +789,7 @@ export default class Commands {
                         filePath,
                         insertMetadata: true,
                         templatePath: template.path,
-                        addtionalOpts: {
+                        additionalOpts: {
                           estimatingMode: true,
                         },
                       }

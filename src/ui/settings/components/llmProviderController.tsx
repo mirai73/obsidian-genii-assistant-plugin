@@ -29,7 +29,7 @@ export default function LLMProviderController(props: {
   mini?: boolean;
 }) {
   const global = useGlobal();
-  let llmList = global.plugin.textGenerator.LLMRegestry.getList();
+  let llmList = global.plugin.textGenerator.LLMRegistry.getList();
   const sectionId = useId();
   const [selectedLLM, setSelectedLLM] = useState<
     LLMProviderInterface | undefined
@@ -44,7 +44,7 @@ export default function LLMProviderController(props: {
 
     global.plugin.textGenerator.load();
 
-    const llm = global.plugin.textGenerator.LLMRegestry.get(selectedLLMId);
+    const llm = global.plugin.textGenerator.LLMRegistry.get(selectedLLMId);
 
     if (llm) {
       props.setSelectedProvider(selectedLLMId as any);
@@ -79,7 +79,7 @@ export default function LLMProviderController(props: {
       extendsDataFrom: selectedLLMId,
     });
 
-    llmList = global.plugin.textGenerator.LLMRegestry.getList();
+    llmList = global.plugin.textGenerator.LLMRegistry.getList();
 
     setSelectedLLMId(newId);
     updateLLm(newId);
@@ -98,7 +98,7 @@ export default function LLMProviderController(props: {
     // delete the llm clone
     await global.plugin.textGenerator.deleteLLMCloneFromRegistry(selectedLLMId);
 
-    llmList = global.plugin.textGenerator.LLMRegestry.getList();
+    llmList = global.plugin.textGenerator.LLMRegistry.getList();
 
     setSelectedLLMId(parentId);
     updateLLm(parentId);
@@ -143,7 +143,7 @@ export default function LLMProviderController(props: {
         <Dropdown
           value={selectedLLMId}
           setValue={selectLLM}
-          aliases={global.plugin.textGenerator.LLMRegestry.UnProviderNames}
+          aliases={global.plugin.textGenerator.LLMRegistry.UnProviderNames}
           values={llmList}
         />
         {/* } */}
@@ -187,17 +187,17 @@ export default function LLMProviderController(props: {
               <Input
                 className="plug-tg-input-sm"
                 placeholder={
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
+                  global.plugin.textGenerator.LLMRegistry.UnProviderNames[
                     selectedLLMId
                   ]
                 }
                 value={
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
+                  global.plugin.textGenerator.LLMRegistry.UnProviderNames[
                     selectedLLMId
                   ]
                 }
                 setValue={async (val) => {
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
+                  global.plugin.textGenerator.LLMRegistry.UnProviderNames[
                     selectedLLMId
                   ] = val as any;
                   global.plugin.settings.LLMProviderProfiles[

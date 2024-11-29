@@ -97,7 +97,7 @@ ${context.query}`;
         autoSuggestOptions.customProvider &&
         autoSuggestOptions.selectedProvider
       )
-        await this.plugin.textGenerator.loadllm(
+        await this.plugin.textGenerator.loadLLM(
           autoSuggestOptions.selectedProvider
         );
       const re = await this.plugin.textGenerator.LLMProvider?.generateMultiple(

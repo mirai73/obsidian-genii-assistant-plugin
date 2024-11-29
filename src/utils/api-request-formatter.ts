@@ -50,7 +50,7 @@ export default class ReqFormatter {
     logger("getRequestParameters start", _params, insertMetadata, templatePath);
 
     const frontmatter: any = this.getFrontmatter(templatePath, insertMetadata);
-    const providerId = this.plugin.textGenerator.LLMRegestry?.get(
+    const providerId = this.plugin.textGenerator.LLMRegistry?.get(
       frontmatter?.config?.provider
     )?.id as string;
     logger("frontmatter", frontmatter);
@@ -78,7 +78,7 @@ export default class ReqFormatter {
       const _provider = AI_MODELS[frontmatter.config?.model].llm[0];
       params.model = frontmatter.config?.model.toLowerCase();
 
-      await this.plugin.textGenerator.loadllm(_provider);
+      await this.plugin.textGenerator.loadLLM(_provider);
     }
 
     if (!this.plugin.textGenerator.LLMProvider)

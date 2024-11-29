@@ -165,7 +165,7 @@ export default function Tool(props: {
         insertMetadata: false,
         templatePath: selectedTemplatePath,
         editor: config.editor as any,
-        addtionalOpts: data,
+        additionalOpts: data,
       });
 
       const strm = await props.plugin.textGenerator.streamGenerate(

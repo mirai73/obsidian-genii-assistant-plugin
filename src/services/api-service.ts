@@ -20,7 +20,7 @@ export default class RequestHandler {
   signalController?: AbortController;
 
   LLMProvider?: LLMProviderInterface;
-  LLMRegestry?: LLMProviderRegistry<LLMProviderInterface>;
+  LLMRegistry?: LLMProviderRegistry<LLMProviderInterface>;
 
   proxyService: ProxyService;
 
@@ -44,7 +44,7 @@ export default class RequestHandler {
   async load() {
     try {
       await this.loadLLMRegistry();
-      await this.loadllm();
+      await this.loadLLM();
     } catch (err: any) {
       this.plugin.handelError(err);
     }
@@ -80,8 +80,8 @@ export default class RequestHandler {
       }
     }
 
-    this.LLMRegestry = new LLMProviderRegistry(llmProviders);
-    await this.LLMRegestry.load();
+    this.LLMRegistry = new LLMProviderRegistry(llmProviders);
+    await this.LLMRegistry.load();
   }
 
   async addLLMCloneInRegistry(props: {
@@ -117,14 +117,14 @@ export default class RequestHandler {
     await this.loadLLMRegistry();
   }
 
-  async loadllm(name: string = this.plugin.settings.selectedProvider ?? "") {
-    const llmList = this.LLMRegestry?.getList();
+  async loadLLM(name: string = this.plugin.settings.selectedProvider ?? "") {
+    const llmList = this.LLMRegistry?.getList();
 
     if (!llmList?.length) {
       throw new Error("No LLM providers found");
     }
     const llm =
-      this.LLMRegestry?.get(name) || this.LLMRegestry?.get(llmList[0]);
+      this.LLMRegistry?.get(name) || this.LLMRegistry?.get(llmList[0]);
 
     if (llm && llm.id !== this.LLMProvider?.id) {
       if (Platform.isMobile && !llm.mobileSupport)
@@ -153,7 +153,7 @@ export default class RequestHandler {
       settings,
     });
 
-    const promp: Message["content"] = await Handlebars.compile(
+    const newPrompt: Message["content"] = await Handlebars.compile(
       this.plugin.contextManager.overProcessTemplate(prompt)
     )({
       ...settings,
@@ -167,7 +167,7 @@ export default class RequestHandler {
             ...this.LLMProvider?.getSettings(),
             ...settings,
             // @ts-ignore
-            prompt: promp,
+            prompt: newPrompt,
           },
           false
         );
@@ -223,9 +223,9 @@ export default class RequestHandler {
     insertMetadata = false,
     params: Partial<TextGeneratorSettings> = {},
     templatePath = "",
-    additionnalParams: {
+    additionalParams: {
       showSpinner?: boolean;
-      /** when using custom signal, it will not use textgenerator processing, loading or throw an error when 2 generations */
+      /** when using custom signal, it will not use text generator processing, loading or throw an error when 2 generations */
       signal?: AbortSignal;
       reqParams?: RequestInit | undefined;
       bodyParams?: any;
@@ -241,10 +241,10 @@ export default class RequestHandler {
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams,
       });
 
-      if (this.plugin.processing && !additionnalParams.signal) {
+      if (this.plugin.processing && !additionalParams.signal) {
         logger("streamGenerate error", "There is another generation process");
         throw new Error("There is another generation process");
       }
@@ -266,7 +266,7 @@ export default class RequestHandler {
           },
           insertMetadata,
           templatePath,
-          additionnalParams
+          additionalParams
         );
 
       if (!this.LLMProvider?.provider) {
@@ -277,8 +277,8 @@ export default class RequestHandler {
         provider.providerOptions
       );
 
-      if (!additionnalParams.signal)
-        this.startLoading(additionnalParams.showSpinner);
+      if (!additionalParams.signal)
+        this.startLoading(additionalParams.showSpinner);
 
       if (!this.LLMProvider?.streamable) {
         logger("streamGenerate error", "LLM not streamable");
@@ -297,7 +297,7 @@ export default class RequestHandler {
             requestParams: {
               // body: JSON.stringify(bodyParams),
               ...reqParams,
-              signal: additionnalParams.signal || this.signalController?.signal,
+              signal: additionalParams.signal || this.signalController?.signal,
             },
             otherOptions: this.LLMProvider?.getSettings(),
             streaming: true,
@@ -363,11 +363,11 @@ export default class RequestHandler {
     insertMetadata = false,
     params: Partial<typeof this.plugin.settings> = this.plugin.settings,
     templatePath = "",
-    additionnalParams = {
+    additionalParams = {
       showSpinner: true,
       insertMode: false,
     },
-    onOneFinishs?: (content: string, index: number) => void
+    onOneFinishes?: (content: string, index: number) => void
   ) {
     try {
       logger("chain", {
@@ -375,7 +375,7 @@ export default class RequestHandler {
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams,
       });
 
       if (this.plugin.processing) {
@@ -418,7 +418,7 @@ export default class RequestHandler {
             delete conf.inputContext.LLMProviderOptionsKeysHashed;
             delete conf.inputContext.LLMProviderProfiles;
 
-            onOneFinishs?.(
+            onOneFinishes?.(
               (await context[0].template?.outputTemplate?.(conf)) || "",
               i
             );
@@ -450,7 +450,7 @@ export default class RequestHandler {
           };
         }),
 
-        onOneFinishs
+        onOneFinishes
       );
     } catch (err: any) {
       this.endLoading();
@@ -468,10 +468,10 @@ export default class RequestHandler {
     > = this.plugin.settings,
     templatePath = "",
     // @TODO: fix this types
-    additionnalParams: any = {
+    additionalParams: any = {
       showSpinner: true,
       insertMode: false,
-      dontCheckProcess: false,
+      doNotCheckProcess: false,
     }
   ) {
     try {
@@ -481,12 +481,12 @@ export default class RequestHandler {
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams: additionalParams,
       });
 
       const { options, template } = context;
 
-      if (!additionnalParams.dontCheckProcess && this.plugin.processing) {
+      if (!additionalParams.doNotCheckProcess && this.plugin.processing) {
         logger("generate error", "There is another generation process");
         return Promise.reject(new Error("There is another generation process"));
       }
@@ -517,7 +517,7 @@ export default class RequestHandler {
         provider.providerOptions
       );
 
-      this.startLoading(additionnalParams?.showSpinner);
+      this.startLoading(additionalParams?.showSpinner);
 
       const innerContext = {
         ...allParams,
@@ -585,10 +585,10 @@ export default class RequestHandler {
       return result;
     } catch (error) {
       logger("generate error", error);
-      this.endLoading(additionnalParams?.showSpinner);
+      this.endLoading(additionalParams?.showSpinner);
       return Promise.reject(error);
     } finally {
-      this.endLoading(additionnalParams?.showSpinner);
+      this.endLoading(additionalParams?.showSpinner);
     }
   }
 

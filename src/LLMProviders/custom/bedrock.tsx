@@ -106,7 +106,7 @@ export default class BedrockProvider
 
   async generate(
     messages: Message[],
-    reqParams: Partial<Omit<LLMConfig, "n">>,
+    reqParams: Partial<Omit<LLMConfig, "n"> & { prompt: string }>,
     onToken?: (token: string, first: boolean) => void,
     customConfig?: CustomConfig
   ): Promise<string> {
@@ -161,7 +161,12 @@ export default class BedrockProvider
       });
 
       const stream = reqParams.stream && this.streamable && config.streamable;
-      const converse_messages = messages.map((m) => this.convertMessage(m));
+      let converse_messages: ChatMessage[] = [
+        { role: "human", message: reqParams.prompt ?? "" },
+      ];
+      if (messages?.length > 0) {
+        converse_messages = messages.map((m) => this.convertMessage(m));
+      }
       logger("messages conv", converse_messages);
       if (!stream) {
         const resp = await fm.chat(converse_messages);
@@ -191,12 +196,16 @@ export default class BedrockProvider
     model: string,
     client: BedrockRuntimeClient,
     messages: Message[],
-    reqParams: Partial<Omit<LLMConfig, "n">>,
+    reqParams: Partial<Omit<LLMConfig, "n"> & { prompt: string }>,
     customConfig: CustomConfig | undefined
   ): Promise<string> {
-    const prompt =
-      (messages[0].content[0] as MessageContentText).text ??
-      messages[0].content;
+    logger("reqParams", reqParams);
+    let prompt = reqParams.prompt;
+    if (messages?.length > 0) {
+      prompt =
+        (messages[0].content[0] as MessageContentText).text ??
+        messages[0].content;
+    }
     logger("image prompt", prompt);
     if (!prompt) throw new Error("No prompt provided");
     const imageModel = fromImageModelId(model, { client });

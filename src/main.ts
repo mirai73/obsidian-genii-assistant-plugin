@@ -662,8 +662,8 @@ export default class TextGeneratorPlugin extends Plugin {
     const keys: Record<string, string | undefined> = {};
     for (const k in this.settings.LLMProviderOptions) {
       if (k && this.settings.LLMProviderOptions.hasOwnProperty(k)) {
-        if (this.textGenerator.LLMRegestry) {
-          keys[this.textGenerator.LLMRegestry.UnProviderSlugs[k]] =
+        if (this.textGenerator.LLMRegistry) {
+          keys[this.textGenerator.LLMRegistry.UnProviderSlugs[k]] =
             this.settings.LLMProviderOptions[k]?.api_key;
         }
       }

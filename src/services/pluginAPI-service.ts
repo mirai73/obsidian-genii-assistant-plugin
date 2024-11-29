@@ -51,16 +51,16 @@ export default class PluginAPIService {
    * @returns list of providers
    */
   async getListOfProviders(): Promise<
-    keyof typeof this.plugin.textGenerator.LLMRegestry.ProviderSlugs
+    keyof typeof this.plugin.textGenerator.LLMRegistry.ProviderSlugs
   > {
     return Object.keys(
-      this.plugin.textGenerator.LLMRegestry.ProviderSlugs
+      this.plugin.textGenerator.LLMRegistry.ProviderSlugs
     ) as any;
   }
 
   /** get provider's options */
   async getProvidersOptions(slug: string) {
-    const reg = this.plugin.textGenerator.LLMRegestry;
+    const reg = this.plugin.textGenerator.LLMRegistry;
     return this.plugin.settings.LLMProviderOptions[
       reg.ProviderSlugs[slug as keyof typeof reg.ProviderSlugs] || slug
     ];
@@ -68,13 +68,13 @@ export default class PluginAPIService {
 
   /** selects and loads a provider */
   async selectProvider(slug: string): Promise<void> {
-    const slugs = this.plugin.textGenerator.LLMRegestry.ProviderSlugs;
+    const slugs = this.plugin.textGenerator.LLMRegistry.ProviderSlugs;
     const id = slugs[slug as keyof typeof slugs] || slug;
     if (!id) throw new Error(`provider ${slug} doesn't exist`);
 
     this.plugin.settings.selectedProvider = id as any;
 
     await this.plugin.saveSettings();
-    return this.plugin.textGenerator.loadllm(id);
+    return this.plugin.textGenerator.loadLLM(id);
   }
 }

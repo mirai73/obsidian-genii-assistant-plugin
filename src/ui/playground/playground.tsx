@@ -100,7 +100,7 @@ export default function ChatComp(props: {
         insertMetadata: false,
         editor: editor,
         templateContent,
-        addtionalOpts: {
+        additionalOpts: {
           content: editor?.getValue(),
           selections: selections.length < 1 ? [selection] : selections,
           selection,
