@@ -141,6 +141,7 @@ export default class RequestHandler {
 
       this.LLMProvider = instance;
     }
+    return this.LLMProvider;
   }
 
   async gen(
@@ -386,15 +387,15 @@ export default class RequestHandler {
       this.startLoading();
 
       const batches = await Promise.all(
-        context.map(async (ctxt) => {
+        context.map(async (ctx) => {
           return this.reqFormatter.getRequestParameters(
             {
-              ...ctxt.options,
+              ...ctx.options,
               ...params,
               prompt:
-                typeof ctxt.template !== "undefined" && !ctxt.context
-                  ? await ctxt.template.inputTemplate(ctxt.options)
-                  : ctxt.context,
+                typeof ctx.template !== "undefined" && !ctx.context
+                  ? await ctx.template.inputTemplate(ctx.options)
+                  : ctx.context,
             },
             insertMetadata,
             templatePath

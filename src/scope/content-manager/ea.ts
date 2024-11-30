@@ -1,14 +1,26 @@
 import { TFile, View } from "obsidian";
-import { ContentManager, Mode } from "./types";
+import { ContentManager, Mode, Options } from "./types";
 
 type Item = any;
 export default class ExcalidrawManager implements ContentManager {
   ea: any;
   view: View;
 
-  constructor(ea: any, view: View) {
+  constructor(ea: any, view: View, options: Options) {
     this.ea = ea;
     this.view = view;
+    this.options = options;
+  }
+
+  options: Options = {
+    wrapInBlockQuote: false,
+  };
+
+  getRange(from?: any, to?: any) {
+    throw new Error("Method not implemented.");
+  }
+  getCurrentLine(): string {
+    throw new Error("Method not implemented.");
   }
 
   protected async getSelectedItems(): Promise<Item[]> {
@@ -243,8 +255,6 @@ export default class ExcalidrawManager implements ContentManager {
             .filter(Boolean)
     )[items.length - 1];
 
-    // if (!selectedItem) throw "no selected items";
-
     // create a new item
     const startingCursor = pos;
 
@@ -252,53 +262,6 @@ export default class ExcalidrawManager implements ContentManager {
 
     let postingContent = "";
     let stillPlaying = true;
-
-    // const testData = [
-    //     `Excalidraw is known for its hand-drawn feel and ease of use when creating diagrams or sketches that can be shared digitally or included in various documents.`,
-    //     `If you need assistance with something specific regarding an Excalidraw file, such as understanding how to open it, share it, or if you have questions about using the tool itself, feel free to ask!`,
-    //     `And then you ended with "hello world," which is often used as a test phrase in computing—one of the simplest programs one can write when learning programming outputs this message to ensure everything's set up correctly.d`,
-    //     `test`,
-    //     `If this was not what you intended to inquire about though and I've misunderstood your query somehow, please provide some more details so I can assist appropriately!`
-    // ]
-
-    // let lastPos = selectedItem;
-    // let arr = [];
-    // for (const section of testData) {
-    //     const item = await this.insertText(section, lastPos, mode)
-    //     await new Promise((s) => setTimeout(s, 500));
-    //     lastPos = item;
-    //     arr.push(item)
-    // }
-
-    // await new Promise((s) => setTimeout(s, 500));
-
-    // this.ea.deleteViewElements(arr)
-
-    // this.ea.addElementsToView(false, false);
-
-    // await this.ea.targetView?.forceSave(true);
-
-    // throw "testing";
-
-    // const writerTimer: any = setInterval(() => {
-    //     if (!stillPlaying) return clearInterval(writerTimer);
-    //     const posting = postingContent;
-    //     if (!posting) return;
-
-    //     console.log({
-    //         firstTime, mode, pos, posting, cursor
-    //     })
-    //     if (firstTime) cursor = await this.insertText(posting, pos, mode) || cursor;
-    //     else cursor = await this.insertText(posting, cursor, "stream");
-
-    //     postingContent = postingContent.substring(posting.length);
-    //     firstTime = false;
-
-    //     cursor.ch += posting.length;
-
-    //     // if (!this.plugin.settings.freeCursorOnStreaming)
-    //     //     this.setCursor(cursor);
-    // }, 1000);
 
     return {
       insert(newInsertData: string) {
@@ -330,11 +293,5 @@ export default class ExcalidrawManager implements ContentManager {
 
   getActiveFile(): TFile {
     return this.ea.targetView.file;
-  }
-
-  getRange(from?: any, to?: any) {}
-
-  getCurrentLine(): string {
-    return "";
   }
 }

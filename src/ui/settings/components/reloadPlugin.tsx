@@ -5,7 +5,7 @@ import * as manifest from "../../../../manifest.json";
 
 const requiresReloadLSName = "tg-requires-reload";
 
-export function useReloder() {
+export function useReloader() {
   const [_, setDidChangeAnything] = useLocalStorage(
     requiresReloadLSName,
     false

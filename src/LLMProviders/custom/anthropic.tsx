@@ -20,7 +20,7 @@ const globalVars: Record<string, boolean> = {
 const untangableVars = [
   "custom_header",
   "custom_body",
-  "sanatization_response",
+  "sanitization_response",
   "streamable",
   "CORSBypass",
 ];
@@ -40,7 +40,7 @@ export const default_values = {
     messages: {{stringify messages}}
 }`,
 
-  sanatization_response: `async (data, res)=>{
+  sanitization_response: `async (data, res)=>{
     // catch error
     if (res.status >= 300) {
       const err = data?.error?.message || JSON.stringify(data);
@@ -156,7 +156,7 @@ export default class AnthropicLegacyProvider
               <IconExternalLink />
             </SettingItem>
           </a>
-          <a href="https://docs.anthropic.com/claude/reference/selecting-a-model">
+          <a href="https://docs.anthropic.com/en/docs/about-claude/models">
             <SettingItem
               name="Available models"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"

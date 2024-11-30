@@ -38,7 +38,7 @@ const globalVars: Record<string, boolean> = {
 const untangableVars = [
   "custom_header",
   "custom_body",
-  "sanatization_response",
+  "sanitization_response",
   "streamable",
   "CORSBypass",
 ];
@@ -49,8 +49,8 @@ export const default_values = {
   model: "anthropic.claude-3-sonnet-20240229-v1:0",
   custom_header: "",
   custom_body: "",
-  sanatization_response: "",
-  sanatization_streaming: "",
+  sanitization_response: "",
+  sanitization_streaming: "",
   streamable: true,
 };
 

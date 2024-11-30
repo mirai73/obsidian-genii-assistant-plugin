@@ -20,5 +20,6 @@
       "#/*": ["./src/*"]
     }
   },
+  "include": ["src/**/*", "d/**/*"],
   "exclude": ["node_modules"]
 }

@@ -1,7 +1,7 @@
 import { Command, Editor } from "obsidian";
 import TextGeneratorPlugin from "../../main";
 import React, { useEffect, useMemo, useState } from "react";
-import { contextVariablesObj } from "../../scope/context-manager";
+import { ContextVariables } from "../../scope/context-manager";
 import { PlaygroundView } from ".";
 import CopyButton from "../components/copyButton";
 import useStateView from "../context/useStateView";
@@ -87,14 +87,19 @@ export default function ChatComp(props: {
     event.preventDefault();
     setLoading(true);
     try {
+      const templateContent = input;
+
       const editor = ContentManagerCls.compile(
         props.plugin.app.workspace.getLeaf().view,
-        props.plugin
+        props.plugin,
+        {
+          templateContent,
+        }
       );
+
       const selection = await props.plugin.contextManager.getSelection(editor);
       const selections =
         await props.plugin.contextManager.getSelections(editor);
-      const templateContent = input;
 
       const context = await props.plugin.contextManager.getContext({
         insertMetadata: false,
@@ -198,7 +203,7 @@ export default function ChatComp(props: {
           value={input}
         /> */}
       <div>
-        <AvailableVars vars={contextVariablesObj} />
+        <AvailableVars vars={ContextVariables} />
       </div>
       <div className="plug-tg-flex plug-tg-justify-end plug-tg-gap-3 plug-tg-pr-3">
         <span className="plug-tg-text-xs plug-tg-opacity-50">{warn}</span>

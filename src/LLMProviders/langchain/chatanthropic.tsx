@@ -9,13 +9,13 @@ import { BaseLanguageModelParams } from "@langchain/core/language_models/base";
 import { Input, Message, SettingItem, useGlobal } from "../refs";
 
 import type { AnthropicInput } from "@langchain/anthropic";
-import { ModelsHandler } from "../utils";
+import { HeaderEditor, ModelsHandler } from "../utils";
 
 const logger = debug("textgenerator:llmProvider:chatanthropic");
 
 const default_values = {
   basePath: "https://api.anthropic.com/",
-  model: "claude-3-5-sonnet-20240620",
+  model: "claude-3-5-sonnet-latest",
 };
 
 export default class LangchainChatAnthropicProvider
@@ -35,13 +35,17 @@ export default class LangchainChatAnthropicProvider
 
   default_values = default_values;
 
+  defaultHeaders?: Record<string, string | null> | undefined = {
+    "anthropic-dangerous-direct-browser-access": "true"
+  }
+
   getConfig(
     options: LLMConfig
   ): Partial<AnthropicInput & BaseLanguageModelParams> {
     return this.cleanConfig({
       anthropicApiKey: options.api_key,
       anthropicApiUrl: options.basePath,
-      stopSequences: options.stop,
+      // stopSequences: options.stop,
 
       // ------------Necessary stuff--------------
       modelKwargs: options.modelKwargs,
@@ -54,6 +58,7 @@ export default class LangchainChatAnthropicProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
+      headers: options.headers || undefined,
     });
   }
 
@@ -119,6 +124,23 @@ export default class LangchainChatAnthropicProvider
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
         />
+
+        <HeaderEditor
+          enabled={!!config.headers}
+          setEnabled={async (value) => {
+            if (!value) config.headers = undefined;
+            else config.headers = "{}";
+            global.triggerReload();
+            await global.plugin.saveSettings();
+          }}
+          headers={config.headers}
+          setHeaders={async (value) => {
+            config.headers = value;
+            global.triggerReload();
+            await global.plugin.saveSettings();
+          }}
+        />
+
         <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-2">
           <div className="plug-tg-text-lg plug-tg-opacity-70">Useful links</div>
           <a href="https://docs.anthropic.com/claude/reference/getting-started-with-the-api">
@@ -131,7 +153,7 @@ export default class LangchainChatAnthropicProvider
               <IconExternalLink />
             </SettingItem>
           </a>
-          <a href="https://docs.anthropic.com/claude/reference/selecting-a-model">
+          <a href="https://docs.anthropic.com/en/docs/about-claude/models">
             <SettingItem
               name="Available models"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"

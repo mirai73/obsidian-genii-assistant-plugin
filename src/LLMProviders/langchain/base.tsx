@@ -2,9 +2,9 @@
 import debug from "debug";
 import React from "react";
 
-import { ChatOpenAI, OpenAIChatInput } from "@langchain/openai";
+import { ChatOpenAI, ClientOptions, OpenAIChatInput } from "@langchain/openai";
 
-import { HuggingFaceInference } from "@langchain/community/llms/hf";
+// import { HuggingFaceInference } from "@langchain/community/llms/hf";
 
 import BaseProvider from "../base";
 import {
@@ -18,6 +18,9 @@ import type { BaseMessageChunk } from "@langchain/core/messages";
 
 import { chains, splitters, Message, AI_MODELS } from "../refs";
 import { Callbacks } from "@langchain/core/callbacks/manager";
+import handlebars from "react-syntax-highlighter/dist/esm/languages/hljs/handlebars";
+import JSON5 from "json5";
+import { Handlebars } from "#/helpers/handlebars-helpers";
 
 const logger = debug("textgenerator:LangchainProvider");
 
@@ -62,6 +65,7 @@ export default class LangchainProvider
       stop: options.stop || undefined,
       streaming: options.stream || false,
       maxRetries: 3,
+      headers: options.headers || undefined,
     } as Partial<OpenAIChatInput>);
   }
 
@@ -72,11 +76,21 @@ export default class LangchainProvider
   async getLLM(_options: LLMConfig): Promise<any> {
     const options = { ..._options };
 
+    let nh = {};
+
+    try {
+      if (options.headers)
+        nh = JSON5.parse(await Handlebars.compile(options.headers)(options));
+    } catch (e) {
+      console.error(e);
+    }
+
     const headers = {
       "User-Agent": undefined,
       "HTTP-Referer": location.origin,
       "X-Title": "obsidian-text-generator",
       ...this.defaultHeaders,
+      ...nh,
     };
 
     const Fetch = this.plugin.textGenerator.proxyService.getFetch(
@@ -85,25 +99,30 @@ export default class LangchainProvider
         options.otherOptions.corsBypass
     );
 
+    const baseURL = options.basePath?.length
+      ? options.basePath.endsWith("/")
+        ? options.basePath.substring(0, options.basePath.length - 1)
+        : options.basePath
+      : undefined;
+
+    const clientOptions: ClientOptions & OpenAIChatInput = {
+      baseURL,
+      // @ts-ignore
+      basePath: baseURL,
+      dangerouslyAllowBrowser: true,
+      defaultQuery: options.bodyParams,
+      fetch: Fetch,
+      defaultHeaders: headers,
+    };
+
+    console.log({ clientOptions });
     const llm = new (this.llmClass as typeof ChatOpenAI)(
-      this.getConfig(options),
       {
-        basePath: options.basePath?.length
-          ? options.basePath.endsWith("/")
-            ? options.basePath.substring(0, options.basePath.length - 1)
-            : options.basePath
-          : undefined,
-
+        ...this.getConfig(options),
         // @ts-ignore
-        clientOptions: {
-          dangerouslyAllowBrowser: true,
-        },
-
-        dangerouslyAllowBrowser: true,
-        defaultQuery: options.bodyParams,
-        fetch: Fetch,
-        defaultHeaders: headers,
-      }
+        clientOptions,
+      },
+      clientOptions
     );
 
     // @ts-ignore
@@ -146,7 +165,7 @@ export default class LangchainProvider
     customConfig?: any
   ): Promise<string> {
     return new Promise(async (s, r) => {
-      let alreadyBegainGenerating = false;
+      let alreadyGenerating = false;
       let result = "";
       try {
         logger("generate", reqParams);
@@ -156,7 +175,7 @@ export default class LangchainProvider
         // if the model is streamable
         params.stream = params.stream && this.streamable;
 
-        const llm = (await this.getLLM(params)) as HuggingFaceInference;
+        const llm = await this.getLLM(params);
 
         let first = true;
         let allText = "";
@@ -168,7 +187,7 @@ export default class LangchainProvider
                 async handleLLMNewToken(token: string) {
                   const d = first;
                   first = false;
-                  alreadyBegainGenerating = true;
+                  alreadyGenerating = true;
                   const tk = (await onToken(token, d)) || token;
                   allText += tk;
                   result += tk;
@@ -274,7 +293,7 @@ export default class LangchainProvider
       } catch (errorRequest: any) {
         logger("generate error", errorRequest);
 
-        if (alreadyBegainGenerating) {
+        if (alreadyGenerating) {
           return s(result);
         }
 
@@ -299,7 +318,7 @@ export default class LangchainProvider
             Array.from({ length: reqParams.n || 1 }).map(async () => {
               requestResults.push(
                 ...(
-                  await (llm as HuggingFaceInference).generate(
+                  await llm.generate(
                     reqParams.llmPredict || this.llmPredict
                       ? [chatToString(messages)]
                       : [
@@ -319,7 +338,7 @@ export default class LangchainProvider
           );
         } else
           requestResults = (
-            await (llm as HuggingFaceInference).generate(
+            await llm.generate(
               reqParams.llmPredict || this.llmPredict
                 ? [chatToString(messages)]
                 : [mapMessagesToLangchainMessages(messages) as any as string],
@@ -426,6 +445,7 @@ function chatToString(messages: Message[] = []) {
 function getChain(chainName: string, llm: any, config: any) {
   const loader = chains[
     (chainName as keyof typeof chains) || "loadSummarizationChain"
+    // @ts-ignore
   ] as typeof chains.loadSummarizationChain;
 
   const chain = loader(llm, {

@@ -41,7 +41,7 @@ export default function TemplateDetails(inProps: {
 
   useEffect(() => {
     (async () => {
-      const pkg = packageManager.getPackageById(packageId);
+      const pkg = packageManager.getPackageTemplateById(packageId);
       console.log({
         package: pkg,
         installed: await packageManager.getInstalledPackageById(packageId),
@@ -207,7 +207,7 @@ export default function TemplateDetails(inProps: {
 
   async function updateLocalView() {
     setProps({
-      package: packageManager.getPackageById(packageId),
+      package: packageManager.getPackageTemplateById(packageId),
       installed: await packageManager.getInstalledPackageById(packageId),
     });
   }

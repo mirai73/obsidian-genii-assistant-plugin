@@ -93,8 +93,8 @@ export function localStorageCacher(
   const ls = options?.localStorage || window.localStorage;
   return {
     initialCache: JSON.parse(ls.getItem(tmpPath) || "{}"),
-    onDataUpdate: (ndata: any) => {
-      ls.setItem(tmpPath, JSON.stringify(ndata));
+    onDataUpdate: (data: any) => {
+      ls.setItem(tmpPath, JSON.stringify(data));
     },
   };
 }
@@ -112,13 +112,13 @@ export async function fSCacher(tmpPath: string) {
           })
         : "{}"
     ),
-    onDataUpdate: async (ndata: any) => {
+    onDataUpdate: async (data: any) => {
       try {
         await fsPromises.unlink(tmpPath);
         // eslint-disable-next-line no-empty
       } catch {}
 
-      await fsPromises.writeFile(tmpPath, JSON.stringify(ndata), {
+      await fsPromises.writeFile(tmpPath, JSON.stringify(data), {
         encoding: "utf-8",
         flag: "w",
       });

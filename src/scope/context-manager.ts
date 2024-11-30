@@ -535,17 +535,17 @@ export default class ContextManager {
           if (!tfile) continue;
         }
 
-        const mimtype = mime.lookup(tfile.extension) || "";
+        const mimeType = mime.lookup(tfile.extension) || "";
 
         const buff = convertArrayBufferToBase64Link(
           await this.app.vault.readBinary(tfile as any),
-          mimtype
+          mimeType
         );
 
         if (
-          (options?.images && mimtype.startsWith("image")) ||
-          (options?.audio && mimtype.startsWith("audio")) ||
-          (options?.videos && mimtype.startsWith("video"))
+          (options?.images && mimeType.startsWith("image")) ||
+          (options?.audio && mimeType.startsWith("audio")) ||
+          (options?.videos && mimeType.startsWith("video"))
         ) {
           // @ts-ignore
           elements[i].image_url.url = buff;
@@ -704,7 +704,7 @@ export default class ContextManager {
         return JSON5.parse(jsonCodeBlock);
       } catch (err: any) {
         new Notice(
-          "JSON not parseable check console(CTRL+SHIFT+i) for more info"
+          "JSON cannot be parsed. Check console(CTRL+SHIFT+i) for more info"
         );
         this.plugin.handelError(err);
         return null;
@@ -935,8 +935,7 @@ export default class ContextManager {
     );
 
     const targetFile = filePath
-      ? this.app.vault.getAbstractFileByPath(filePath) ||
-        this.app.workspace.getActiveFile()
+      ? this.app.vault.getAbstractFileByPath(filePath)
       : this.app.workspace.getActiveFile();
 
     const targetFileContent = editor
@@ -982,6 +981,7 @@ export default class ContextManager {
 
       frontmatter: {
         ...cache?.frontmatter,
+        outputToBlockQuote: cache?.frontmatter?.outputToBlockQuote,
 
         ...(!withoutCompatibility && {
           PromptInfo: {
@@ -1219,6 +1219,32 @@ export default class ContextManager {
       return hbd;
     }) as any;
   }
+
+  extractFrontmatterFromTemplateContent(templateContent: string) {
+    const regex = /---([\s\S]*?)---/;
+    const match = templateContent.match(regex);
+
+    // turn yaml it into an object
+    const yaml = match ? match[1] : "";
+    const obj = this.yamlToObj(yaml);
+    return obj;
+  }
+
+  /** Simple yaml parser, as fallback */
+  yamlToObj(yaml: string) {
+    const frontmatterRegex = /---\n([\s\S]+?)\n---/;
+    const match = yaml.match(frontmatterRegex);
+    if (!match) return {};
+
+    const frontmatterStr = match[1];
+    const lines = frontmatterStr.split("\n");
+    const frontmatter: Record<string, any> = {};
+    lines.forEach((line) => {
+      const [key, value] = line.split(": ").map((s) => s.trim());
+      frontmatter[key] = value;
+    });
+    return frontmatter;
+  }
 }
 
 export function getOptionsUnder(
@@ -1236,7 +1262,7 @@ export function getOptionsUnder(
   return options[prefix.substring(0, prefix.length - 1)];
 }
 
-export const contextVariablesObj: Record<
+export const ContextVariables: Record<
   string,
   {
     example: string;

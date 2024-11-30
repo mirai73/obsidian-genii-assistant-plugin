@@ -24,7 +24,7 @@ export default class ReqFormatter {
   }
 
   getFrontmatter(templatePath: string, insertMetadata?: boolean) {
-    const activefileFrontmatter: any = insertMetadata
+    const activeFileFrontmatter: any = insertMetadata
       ? this.contextManager.getMetaData()?.frontmatter
       : {};
 
@@ -34,7 +34,7 @@ export default class ReqFormatter {
 
     return {
       ...templateFrontmatter,
-      ...activefileFrontmatter,
+      ...activeFileFrontmatter,
     };
   }
 
@@ -82,7 +82,7 @@ export default class ReqFormatter {
     }
 
     if (!this.plugin.textGenerator.LLMProvider)
-      throw new Error("LLM Provider not intialized");
+      throw new Error("LLM Provider not initialized");
 
     if (
       params.includeAttachmentsInRequest ??

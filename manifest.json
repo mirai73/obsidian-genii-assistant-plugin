@@ -1,11 +1,11 @@
 {
-	"id": "obsidian-generative-ai-plugin",
-	"name": "AI Generator",
-	"version": "0.1.0",
-	"minAppVersion": "1.6.0",
-	"description": "Text and image generation using AI",
-	"author": "Massimiliano Angelino",
-	"authorUrl": "https://",
-	"isDesktopOnly": true,
-	"fundingUrl": "https://www.buymeacoffee.com/haouarine"
+  "id": "obsidian-generative-ai-plugin",
+  "name": "AI Generator",
+  "version": "0.1.0",
+  "minAppVersion": "1.6.0",
+  "description": "Text and image generation using AI",
+  "author": "Massimiliano Angelino",
+  "authorUrl": "https://",
+  "isDesktopOnly": true,
+  "fundingUrl": "https://www.buymeacoffee.com/haouarine"
 }

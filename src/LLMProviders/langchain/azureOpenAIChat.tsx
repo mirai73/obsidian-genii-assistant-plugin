@@ -9,13 +9,13 @@ import debug from "debug";
 import clsx from "clsx";
 
 import { Input, SettingItem, useGlobal } from "../refs";
+import { HeaderEditor } from "../utils";
 
 const logger = debug("textgenerator:llmProvider:azureopenaiChat");
 
 export default class LangchainAzureOpenAIChatProvider
   extends LangchainBase
-  implements LLMProviderInterface
-{
+  implements LLMProviderInterface {
   static provider = "Langchain";
   static id = "Azure OpenAI Chat (Langchain)" as const;
   static slug = "azureOpenaiChat" as const;
@@ -53,6 +53,7 @@ export default class LangchainAzureOpenAIChatProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
+      headers: options.headers || undefined as any,
     });
   }
 
@@ -178,6 +179,22 @@ export default class LangchainAzureOpenAIChatProvider
             }}
           />
         </SettingItem>
+
+        <HeaderEditor
+          enabled={!!config.headers}
+          setEnabled={async (value) => {
+            if (!value) config.headers = undefined;
+            else config.headers = "{}";
+            global.triggerReload();
+            await global.plugin.saveSettings();
+          }}
+          headers={config.headers}
+          setHeaders={async (value) => {
+            config.headers = value;
+            global.triggerReload();
+            await global.plugin.saveSettings();
+          }}
+        />
         <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-2">
           <div className="plug-tg-text-lg plug-tg-opacity-70">Useful links</div>
           <a href="https://beta.openai.com/signup/">

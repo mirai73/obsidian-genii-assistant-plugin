@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import type { Register } from ".";
 import { Context } from "#/types";
 import AvailableVars from "#/ui/components/availableVars";
-import { contextVariablesObj } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/context-manager";
 
 const extendedInfo: Record<
   string,
@@ -110,7 +110,7 @@ export default function ConsideredContextSetting(props: {
                 rows={10}
               />
             </SettingItem>
-            <AvailableVars vars={contextVariablesObj} />
+            <AvailableVars vars={ContextVariables} />
           </>
         )}
 
@@ -178,7 +178,7 @@ export default function ConsideredContextSetting(props: {
             </SettingItem>
             <AvailableVars
               vars={{
-                ...contextVariablesObj,
+                ...ContextVariables,
                 query: {
                   example: "{{content255}}",
                   hint: "first 255 letters of trimmed content of the note",
@@ -234,7 +234,7 @@ export default function ConsideredContextSetting(props: {
             rows={10}
           />
         </SettingItem>
-        <AvailableVars vars={contextVariablesObj} />
+        <AvailableVars vars={ContextVariables} />
 
         {(["includeClipboard"] as (keyof Context)[])
           //   .filter((d) => !contextNotForTemplate.contains(d as any))

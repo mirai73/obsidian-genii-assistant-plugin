@@ -25,7 +25,7 @@ const logger = debug("textgenerator:PackageManager");
 const packageRegistry = `https://raw.githubusercontent.com/text-gen/text-generator-packages/master/community-packages.json`;
 const corePackageRegistry = `https://raw.githubusercontent.com/text-gen/text-generator-packages/master/core-packages.json`;
 
-export const PackageProviderid = "package-provider";
+export const PackageProviderId = "package-provider";
 
 export const ProviderServer = "";
 
@@ -110,14 +110,14 @@ export default class PackageManager {
     const self = this;
 
     try {
-      this.plugin.registerAction<{ apikey?: string }>(
+      this.plugin.registerAction<{ apiKey?: string }>(
         "login",
         async (props) => {
-          const apikey = props.apikey;
+          const apiKey = props.apiKey;
 
-          if (!apikey) return "";
+          if (!apiKey) return "";
 
-          await self.plugin.packageManager.setApiKey(apikey);
+          await self.plugin.packageManager.setApiKey(apiKey);
         }
       );
     } catch {
@@ -182,7 +182,7 @@ export default class PackageManager {
       Object.entries(this.configuration.installedPackagesHash).map(
         async ([promptId, installedPackage], i: number) => {
           try {
-            const pkg = this.getPackageById(installedPackage.packageId);
+            const pkg = this.getPackageTemplateById(installedPackage.packageId);
             if (
               pkg &&
               installedPackage.version &&
@@ -218,10 +218,10 @@ export default class PackageManager {
   }
 
   async updateBoughtResources() {
-    const apikey = this.getApiKey();
-    if (!ProviderServer || !apikey) return;
+    const apiKey = this.getApiKey();
+    if (!ProviderServer || !apiKey) return;
 
-    const data = await getBoughtResources(apikey);
+    const data = await getBoughtResources(apiKey);
 
     if (data.subscriptions)
       this.configuration.subscriptions = data.subscriptions;
@@ -230,14 +230,14 @@ export default class PackageManager {
   }
 
   getApiKey() {
-    return this.plugin.settings?.LLMProviderOptions?.[PackageProviderid]
+    return this.plugin.settings?.LLMProviderOptions?.[PackageProviderId]
       ?.api_key;
   }
 
   async setApiKey(newKey?: string) {
     set(
       this.plugin.settings,
-      `LLMProviderOptions.[${PackageProviderid}].api_key`,
+      `LLMProviderOptions.[${PackageProviderId}].api_key`,
       newKey
     );
     this.plugin.encryptAllKeys();
@@ -250,7 +250,7 @@ export default class PackageManager {
     );
   }
 
-  getPackageById(packageId: string): PackageTemplate | null {
+  getPackageTemplateById(packageId: string): PackageTemplate | null {
     return this.configuration?.packagesHash?.[packageId] || null;
   }
 
@@ -258,7 +258,7 @@ export default class PackageManager {
     allowed: boolean;
     oneRequired?: string[];
   }> {
-    const pkg = this.getPackageById(packageId);
+    const pkg = this.getPackageTemplateById(packageId);
 
     if (!pkg?.price || !pkg.packageId)
       return {
@@ -269,7 +269,7 @@ export default class PackageManager {
   }
 
   simpleCheckOwnership(packageId: string) {
-    const pkg = this.getPackageById(packageId);
+    const pkg = this.getPackageTemplateById(packageId);
 
     if (!pkg?.price) return true;
 
@@ -285,7 +285,7 @@ export default class PackageManager {
   ) {
     console.log("trying to install package", packageId);
     logger("installPackage", { packageId, installAllPrompts });
-    const p = await this.getPackageById(packageId);
+    const p = await this.getPackageTemplateById(packageId);
 
     if (!p?.repo) throw new Error("couldn't find package");
 
@@ -358,7 +358,7 @@ export default class PackageManager {
 
   async uninstallPackage(packageId: string) {
     logger("uninstallPackage", { packageId });
-    const p = await this.getPackageById(packageId);
+    const p = await this.getPackageTemplateById(packageId);
 
     if (p?.type === "feature")
       await this.app.vault.adapter.rmdir(
@@ -431,7 +431,7 @@ export default class PackageManager {
 
   async updatePackage(packageId: string) {
     logger("updatePackage", { packageId });
-    const p = await this.getPackageById(packageId);
+    const p = await this.getPackageTemplateById(packageId);
     const index = packageId;
 
     if (p?.type === "feature") {
@@ -500,7 +500,7 @@ export default class PackageManager {
 
   async updatePackageInfoById(packageId: string) {
     logger("updatePackageInfoById", { packageId });
-    let manifest = await this.getPackageById(packageId);
+    let manifest = await this.getPackageTemplateById(packageId);
     if (!manifest)
       throw new Error(`couldn't get repo from package ${packageId}`);
     if (manifest.type !== "feature")
@@ -554,7 +554,7 @@ export default class PackageManager {
 
   async getReleaseByPackageId(packageId: string) {
     logger("getReleaseByPackageId", { packageId });
-    const p = await this.getPackageById(packageId);
+    const p = await this.getPackageTemplateById(packageId);
     if (p?.repo) {
       logger("getReleaseByPackageId end", { packageId });
       return await this.getReleaseByRepo(p.repo);
@@ -620,7 +620,7 @@ export default class PackageManager {
 
   async getReadme(packageId: string) {
     logger("getReadme", { packageId });
-    const repo = await this.getPackageById(packageId)?.repo;
+    const repo = await this.getPackageTemplateById(packageId)?.repo;
     const url = `https://raw.githubusercontent.com/${repo}/main/README.md`;
     try {
       const readmeMD = await request({ url, throw: true });
@@ -643,8 +643,8 @@ export default class PackageManager {
   async installPrompt(packageId: string, promptId: string, overwrite = true) {
     try {
       logger("installPrompt", { packageId, promptId, overwrite });
-      const pacakge = await this.getPackageById(packageId);
-      const repo = pacakge?.repo;
+      const packageTemplate = await this.getPackageTemplateById(packageId);
+      const repo = packageTemplate?.repo;
       const url = `https://raw.githubusercontent.com/${repo}/master/prompts/${promptId}.md`;
 
       await this.writePrompt(
@@ -787,9 +787,7 @@ export default class PackageManager {
       let write = true;
       if (!overwrite && (await adapter.exists(path))) {
         const text =
-          "Template " +
-          path +
-          " exists!\nEither OK to Overread or over Cancel.";
+          "Template " + path + " exists!\nEither OK to Override or Cancel.";
         if (!(await Confirm(text))) {
           write = false;
         }
@@ -812,7 +810,7 @@ export default class PackageManager {
       ...(
         JSON5.parse(await request({ url: packageRegistry, throw: true })) || []
       )
-        // to exclude any community features or labled as core
+        // to exclude any community features or labeled as core
         .filter((p: PackageTemplate) => p.type !== "feature" && !p.core),
 
       // core packages can be templates or features
@@ -823,7 +821,7 @@ export default class PackageManager {
 
     const newPackages = remotePackagesList.filter(
       (p) =>
-        !this.getPackageById(p.packageId) ||
+        !this.getPackageTemplateById(p.packageId) ||
         JSON.stringify(p) !==
           JSON.stringify(this.configuration.packagesHash[p.packageId])
     );
@@ -893,12 +891,12 @@ import FC from "func-cache";
 import funCache, { localStorageCacher } from "#/lib/func-cache";
 
 const validateOwnership = funCache(
-  async (packageId: string, apikey: string) => {
+  async (packageId: string, apiKey: string) => {
     const res = await requestUrl({
       url: new URL(`/api/content/package/${packageId}/verify`, ProviderServer)
         .href,
       headers: {
-        Authorization: `Bearer ${apikey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       throw: false,
     });
@@ -913,7 +911,7 @@ const validateOwnership = funCache(
     return d;
   },
   {
-    // in miliseconds
+    // in milliseconds
     lifeTime: 10000,
 
     /** debounce time wait to call onDataUpdate, default 1000ms */
@@ -926,12 +924,12 @@ const validateOwnership = funCache(
 );
 
 const getBoughtResources = FC(
-  async (apikey: string) => {
+  async (apiKey: string) => {
     console.log("getting bought resources");
     const res = await requestUrl({
       url: new URL(`/api/v2/resources`, ProviderServer).href,
       headers: {
-        Authorization: `Bearer ${apikey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       throw: false,
     });

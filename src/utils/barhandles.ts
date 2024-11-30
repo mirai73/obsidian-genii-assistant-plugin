@@ -1,4 +1,4 @@
-import { contextVariablesObj } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/context-manager";
 import Helpersfn from "#/helpers/handlebars-helpers";
 import set from "lodash.set";
 
@@ -97,7 +97,7 @@ export const getHBValues = (text: string) => {
     }
 
     if ("#^".includes(tag[0])) {
-      if (contextVariablesObj[tag.substring(1)]) {
+      if (ContextVariables[tag.substring(1)]) {
         setVar(tag.substring(1), true);
         stack.push(context);
         continue;

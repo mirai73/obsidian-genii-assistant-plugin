@@ -4,10 +4,7 @@ import { TextGeneratorSettings } from "../types";
 import TextGeneratorPlugin from "../main";
 import ReqFormatter from "../utils/api-request-formatter";
 import { SetPath } from "../ui/settings/components/set-path";
-import {
-  contextVariablesObj,
-  type InputContext,
-} from "../scope/context-manager";
+import { ContextVariables, type InputContext } from "../scope/context-manager";
 import {
   makeId,
   createFileWithInput,
@@ -682,7 +679,7 @@ ${removeYAML(content)}
     };
     logger("variables", variables);
     const filteredVariables = variables.filter(
-      (v) => contextVariablesObj[v] === undefined
+      (v) => ContextVariables[v] === undefined
     );
     if (filteredVariables.length > 0)
       new TemplateInputModalUI(
@@ -725,7 +722,7 @@ ${removeYAML(content)}
     logger("getMetadata");
     const metadata = this.getFrontmatter(path);
 
-    const validedMetaData: Partial<{
+    const validatedMetadata: Partial<{
       id: string;
       name: string;
       description: string;
@@ -738,55 +735,55 @@ ${removeYAML(content)}
     }> = {};
 
     if (metadata?.PromptInfo?.promptId) {
-      validedMetaData.id = metadata.PromptInfo.promptId;
+      validatedMetadata.id = metadata.PromptInfo.promptId;
     }
 
     if (metadata?.PromptInfo?.name) {
-      validedMetaData.name = metadata.PromptInfo.name;
+      validatedMetadata.name = metadata.PromptInfo.name;
     }
 
     if (metadata?.PromptInfo?.description) {
-      validedMetaData.description = metadata.PromptInfo.description;
+      validatedMetadata.description = metadata.PromptInfo.description;
     }
 
     if (metadata?.PromptInfo?.required_values) {
-      validedMetaData.required_values =
+      validatedMetadata.required_values =
         typeof metadata.PromptInfo.required_values === "string"
           ? metadata.PromptInfo.required_values.split(",")
           : metadata.PromptInfo.required_values;
     }
 
     if (metadata?.PromptInfo?.author) {
-      validedMetaData.author = metadata.PromptInfo.author;
+      validatedMetadata.author = metadata.PromptInfo.author;
     }
 
     if (metadata?.PromptInfo?.tags) {
-      validedMetaData.tags =
+      validatedMetadata.tags =
         typeof metadata.PromptInfo.tags === "string"
           ? metadata.PromptInfo.tags.split(",")
           : metadata.PromptInfo.tags;
     }
 
     if (metadata?.PromptInfo?.version) {
-      validedMetaData.version = metadata.PromptInfo.version;
+      validatedMetadata.version = metadata.PromptInfo.version;
     }
 
     if (metadata?.PromptInfo?.commands) {
-      validedMetaData.commands =
+      validatedMetadata.commands =
         typeof metadata.PromptInfo.commands === "string"
           ? metadata.PromptInfo.commands.split(",")
           : metadata.PromptInfo.commands;
     }
 
     if (metadata?.PromptInfo?.viewTypes) {
-      validedMetaData.viewTypes =
+      validatedMetadata.viewTypes =
         typeof metadata.PromptInfo.viewTypes === "string"
           ? metadata.PromptInfo.viewTypes.split(",")
           : metadata.PromptInfo.viewTypes;
     }
 
     logger("getMetadata end");
-    return validedMetaData;
+    return validatedMetadata;
   }
 
   getFrontmatter(path = "") {

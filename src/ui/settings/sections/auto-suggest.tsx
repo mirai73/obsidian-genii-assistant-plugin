@@ -7,7 +7,7 @@ import type { Register } from ".";
 import LLMProviderController from "../components/llmProviderController";
 import { useToggle } from "usehooks-ts";
 import AvailableVars from "#/ui/components/availableVars";
-import { contextVariablesObj } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/context-manager";
 import { useReloder } from "../components/reloadPlugin";
 
 export default function AutoSuggestSetting(props: { register: Register }) {
@@ -278,7 +278,45 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               </SettingItem>
               <AvailableVars
                 vars={{
-                  ...contextVariablesObj,
+                  ...ContextVariables,
+                  query: {
+                    example: "{{query}}",
+                    hint: "query text that triggered auto-suggest",
+                  },
+                }}
+              />
+            </>
+          )}
+
+          {global.plugin.settings.autoSuggestOptions.customInstructEnabled && (
+            <>
+              <SettingItem
+                name=""
+                register={props.register}
+                sectionId={sectionId}
+                textArea
+              >
+                <textarea
+                  placeholder="Textarea will autosize to fit the content"
+                  className="plug-tg-input plug-tg-h-fit plug-tg-w-full plug-tg-resize-y plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-outline-none"
+                  value={
+                    global.plugin.settings.autoSuggestOptions.systemPrompt ||
+                    global.plugin.defaultSettings.autoSuggestOptions
+                      .systemPrompt
+                  }
+                  onChange={async (e) => {
+                    global.plugin.settings.autoSuggestOptions.systemPrompt =
+                      e.target.value;
+                    global.triggerReload();
+                    await global.plugin.saveSettings();
+                  }}
+                  spellCheck={false}
+                  rows={10}
+                />
+              </SettingItem>
+              <AvailableVars
+                vars={{
+                  ...ContextVariables,
                   query: {
                     example: "{{query}}",
                     hint: "query text that triggered auto-suggest",

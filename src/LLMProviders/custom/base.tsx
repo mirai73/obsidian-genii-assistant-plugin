@@ -39,7 +39,7 @@ export const default_values = {
   // stream: false,
   // temperature: 0.7,
 
-  sanatization_streaming: `// catch error
+  sanitization_streaming: `// catch error
 if (res.status >= 300) {
   const err = data?.error?.message || JSON.stringify(data);
   throw err;
@@ -67,7 +67,7 @@ for (const parsedLine of parsedLines) {
     }
 }
 return resultTexts.join("");`,
-  sanatization_response: `// catch error
+  sanitization_response: `// catch error
 if (res.status >= 300) {
   const err = data?.error?.message || JSON.stringify(data);
   throw err;
@@ -104,8 +104,8 @@ export default class CustomProvider
       signal?: AbortSignal;
       stream?: boolean;
       onToken?: (token: string, first: boolean) => Promise<void>;
-      sanatization_streaming: string;
-      sanatization_response: string;
+      sanitization_streaming: string;
+      sanitization_response: string;
       CORSBypass?: boolean;
     }
   ) {
@@ -163,8 +163,8 @@ export default class CustomProvider
 
         // backward compatibilty with the old way
         const c =
-          params.sanatization_streaming ||
-          this.default_values.sanatization_streaming;
+          params.sanitization_streaming ||
+          this.default_values.sanitization_streaming;
         const n = c.split("\n");
         if (n[0]?.trim().startsWith("async")) {
           n.shift();
@@ -195,8 +195,8 @@ export default class CustomProvider
       }
 
       const c =
-        params.sanatization_response ||
-        this.default_values.sanatization_response;
+        params.sanitization_response ||
+        this.default_values.sanitization_response;
       const n = c.split("\n");
       if (n[0]?.trim().startsWith("async")) {
         n.shift();
@@ -289,12 +289,12 @@ export default class CustomProvider
 
           signal: handlebarData.requestParams?.signal || undefined,
           stream: handlebarData.stream,
-          sanatization_streaming:
-            handlebarData.sanatization_streaming ||
-            this.default_values.sanatization_streaming,
-          sanatization_response:
-            handlebarData.sanatization_response ||
-            this.default_values.sanatization_response,
+          sanitization_streaming:
+            handlebarData.sanitization_streaming ||
+            this.default_values.sanitization_streaming,
+          sanitization_response:
+            handlebarData.sanitization_response ||
+            this.default_values.sanitization_response,
           CORSBypass: handlebarData.CORSBypass,
           async onToken(token: string) {
             onToken?.(token, first);
@@ -368,10 +368,10 @@ export default class CustomProvider
             )
           ) as any,
 
-          sanatization_response: handlebarData.sanatization_response,
-          sanatization_streaming:
-            handlebarData.sanatization_streaming ||
-            this.default_values.sanatization_streaming,
+          sanitization_response: handlebarData.sanitization_response,
+          sanitization_streaming:
+            handlebarData.sanitization_streaming ||
+            this.default_values.sanitization_streaming,
         });
 
         const choices = res

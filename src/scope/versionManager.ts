@@ -136,7 +136,7 @@ export default class VersionManager {
         customConfig.path_to_error_message ??
         true
       ) {
-        customConfig.sanatization_response = `async (data, res)=>{
+        customConfig.sanitization_response = `async (data, res)=>{
           // catch error
           if (res.status >= 300) {
             const err = data?.${customConfig.path_to_error_message} || JSON.stringify(data);
@@ -209,8 +209,8 @@ export default class VersionManager {
       this.plugin.settings.LLMProviderOptions["Anthropic Legacy (Custom)"] = {
         ...anthropicLegacy,
         ...anthropicLegacyDefaultValues,
-        sanatization_response:
-          anthropicLegacyDefaultValues.sanatization_response,
+        sanitization_response:
+          anthropicLegacyDefaultValues.sanitization_response,
         endpoint:
           anthropicLegacy.endpoint?.replace("v1/complete", "v1/messages") ||
           anthropicLegacyDefaultValues.endpoint,

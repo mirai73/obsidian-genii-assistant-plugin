@@ -19,7 +19,15 @@ import {
   ExtractorSlug,
   Extractors,
 } from "#/extractors/content-extractor";
-import { isMap, isSet } from "util/types";
+
+const isMap = (value: any): value is Map<any, any> => {
+  return value instanceof Map;
+};
+
+const isSet = (value: any): value is Set<any> => {
+  return value instanceof Set;
+};
+
 import Read from "#/extractors";
 import lodashSet from "lodash.set";
 import lodashGet from "lodash.get";
@@ -29,14 +37,14 @@ import runJsInSandbox from "./javascript-sandbox";
 import { AvailableContext } from "#/scope/context-manager";
 
 export default function Helpersfn(self: ContextManager) {
-  const extract = async (id: string, cntn: string, other: any) => {
+  const extract = async (id: string, content: string, other: any) => {
     const ce = new ContentExtractor(self.app, self.plugin);
 
     ce.setExtractor(
       ExtractorSlug[id as keyof typeof ExtractorSlug] as keyof typeof Extractors
     );
 
-    return await ce.convert(cntn, other);
+    return await ce.convert(co, other);
   };
 
   const _runTemplate = async (id: string, metadata?: any) => {
@@ -266,7 +274,7 @@ export default function Helpersfn(self: ContextManager) {
       return JSON5.parse(context);
     },
 
-    async escp(context: any) {
+    async escapeSpecialChars(context: any) {
       let t = context?.fn ? await context?.fn(context.data.root) : "" + context;
 
       while (t?.contains("\n")) {
@@ -285,8 +293,8 @@ export default function Helpersfn(self: ContextManager) {
       return k.substring(1, k.length - 1);
     },
 
-    async escp2(context: any) {
-      const t = await Helpers.escp(context);
+    async escapeSpecialChars2(context: any) {
+      const t = await Helpers.escapeSpecialChars(context);
 
       return await Helpers.trim(t);
     },
@@ -516,20 +524,20 @@ export default function Helpersfn(self: ContextManager) {
       if (!(firstVar in ExtractorSlug))
         throw new Error(`Extractor ${firstVar} Not found`);
 
-      let cntn = "";
+      let content = "";
       let varname = id;
       let other = "";
       if (options.fn) {
-        cntn = await options.fn?.(this);
+        content = await options.fn?.(this);
         if (otherVariables[0]) varname = `vars["${otherVariables[0]}"]`;
         other = otherVariables[1];
       } else {
-        cntn = otherVariables[0];
+        content = otherVariables[0];
         if (otherVariables[1]) varname = `vars["${otherVariables[1]}"]`;
         other = otherVariables[2];
       }
 
-      const res = await extract(firstVar, cntn, other);
+      const res = await extract(firstVar, content, other);
 
       lodashSet(options.data.root, varname, res);
 
@@ -548,11 +556,11 @@ export default function Helpersfn(self: ContextManager) {
 
       const otherVariables = vars;
 
-      const cntn = ((await options.fn?.(this)) + "") as string;
+      const content = ((await options.fn?.(this)) + "") as string;
 
       const reg = new RegExp(otherVariables[0], otherVariables[1]);
 
-      const regexResults = cntn.match(reg);
+      const regexResults = content.match(reg);
 
       lodashSet(options.data.root, `vars["${firstVar}"]`, regexResults);
       return regexResults;
@@ -724,7 +732,7 @@ export default function Helpersfn(self: ContextManager) {
       const api = await getDataviewApi(self.app);
       const res = await api?.queryMarkdown(content);
 
-      if (!res) throw new Error("Couln't find DataViewApi");
+      if (!res) throw new Error("Couldn't find DataViewApi");
 
       if (res?.successful) {
         return res.value;

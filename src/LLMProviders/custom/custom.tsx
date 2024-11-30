@@ -83,7 +83,7 @@ export default class DefaultCustomProvider
       ...default_values,
     });
 
-    // delete any global variables that would interfer with global context
+    // delete any global variables that would interfere with global context
     useEffect(() => {
       for (const c in globalVars) {
         delete config[c];
@@ -97,9 +97,9 @@ export default class DefaultCustomProvider
       ).filter((d) => !globalVars[d]);
     }, [global.trg]);
 
-    const limitedExperiance = config.CORSBypass && !Platform.isDesktop;
+    const limitedExperience = config.CORSBypass && !Platform.isDesktop;
 
-    const isStreamable = config.streamable && !limitedExperiance;
+    const isStreamable = config.streamable && !limitedExperience;
 
     return (
       <>
@@ -139,6 +139,31 @@ export default class DefaultCustomProvider
           </SettingItem>
         )}
 
+        {vars.map((v: string) =>
+          v == "api_key" ? null : (
+            <SettingItem
+              key={v}
+              name={v}
+              register={props.register}
+              sectionId={props.sectionId}
+            >
+              <Input
+                value={config[v]}
+                placeholder={`Enter your ${v}`}
+                type={v.toLowerCase().contains("key") ? "password" : "text"}
+                setValue={async (value) => {
+                  config[v] = value;
+                  global.triggerReload();
+                  if (v.toLowerCase().contains("key"))
+                    global.plugin.encryptAllKeys();
+                  // TODO: it could use a debounce here
+                  await global.plugin.saveSettings();
+                }}
+              />
+            </SettingItem>
+          )
+        )}
+
         <SettingItem
           name="Advance mode"
           register={props.register}
@@ -153,7 +178,6 @@ export default class DefaultCustomProvider
             }}
           />
         </SettingItem>
-
         {showAdvanced && (
           <>
             <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
@@ -248,44 +272,18 @@ export default class DefaultCustomProvider
               <div className="plug-tg-text-red-300">{bodyValidityError}</div>
             </div>
 
-            <div className="plug-tg-opacity-70">Variables</div>
-            {vars.map((v: string) =>
-              v === "api_key" ? null : (
-                <SettingItem
-                  key={v}
-                  name={v}
-                  register={props.register}
-                  sectionId={props.sectionId}
-                >
-                  <Input
-                    value={config[v]}
-                    placeholder={`Enter your ${v}`}
-                    type={v.toLowerCase().contains("key") ? "password" : "text"}
-                    setValue={async (value) => {
-                      config[v] = value;
-                      global.triggerReload();
-                      if (v.toLowerCase().contains("key"))
-                        global.plugin.encryptAllKeys();
-                      // TODO: it could use a debounce here
-                      await global.plugin.saveSettings();
-                    }}
-                  />
-                </SettingItem>
-              )
-            )}
-
             <div className="plug-tg-w-full plug-tg-pb-8"></div>
 
             <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-              <div className="plug-tg-font-bold">Response Sanatization:</div>
+              <div className="plug-tg-font-bold">Response sanitization:</div>
               <textarea
                 placeholder="Textarea will autosize to fit the content"
                 value={
-                  config.sanatization_response ||
-                  default_values.sanatization_response
+                  config.sanitization_response ||
+                  default_values.sanitization_response
                 }
                 onChange={async (e) => {
-                  config.sanatization_response = e.target.value;
+                  config.sanitization_response = e.target.value;
                   global.triggerReload();
                   await global.plugin.saveSettings();
                 }}
@@ -296,7 +294,7 @@ export default class DefaultCustomProvider
             <SettingItem
               name="Streamable"
               description={
-                limitedExperiance
+                limitedExperience
                   ? "Disable CORS Bypass to be able to use this feature"
                   : "If enabled, means this API is streamable"
               }
@@ -304,13 +302,13 @@ export default class DefaultCustomProvider
               sectionId={props.sectionId}
               className={clsx({
                 "plug-tg-pointer-events-none plug-tg-cursor-not-allowed plug-tg-opacity-60":
-                  limitedExperiance,
+                  limitedExperience,
               })}
             >
               <Input
                 type="checkbox"
                 value={
-                  !limitedExperiance && config.streamable ? "true" : "false"
+                  !limitedExperience && config.streamable ? "true" : "false"
                 }
                 placeholder="Is it Streamable"
                 setValue={async (value) => {
@@ -340,15 +338,15 @@ export default class DefaultCustomProvider
             {isStreamable && (
               <>
                 <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-                  <div className="plug-tg-font-bold">Stream Sanatization:</div>
+                  <div className="plug-tg-font-bold">Stream sanitization:</div>
                   <textarea
                     placeholder="Textarea will autosize to fit the content"
                     value={
-                      config.sanatization_streaming ||
-                      default_values.sanatization_streaming
+                      config.sanitization_streaming ||
+                      default_values.sanitization_streaming
                     }
                     onChange={async (e) => {
-                      config.sanatization_streaming = e.target.value;
+                      config.sanitization_streaming = e.target.value;
                       global.triggerReload();
                       await global.plugin.saveSettings();
                     }}
