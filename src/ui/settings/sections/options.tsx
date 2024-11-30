@@ -1,6 +1,6 @@
 import React, { useId, useMemo } from "react";
 import useGlobal from "../../context/global";
-import { useReloder } from "../components/reloadPlugin";
+import { useReloader } from "../components/reloadPlugin";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
@@ -24,7 +24,7 @@ const extendedInfo: Record<
 };
 
 export default function OptionsSetting(props: { register: Register }) {
-  const [setReloader] = useReloder();
+  const [setReloader] = useReloader();
 
   const global = useGlobal();
   const sectionId = useId();

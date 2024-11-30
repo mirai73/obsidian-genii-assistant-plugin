@@ -13,7 +13,8 @@ const logger = debug("textgenerator:llmProvider:azureopenaiInstruct");
 
 export default class LangchainAzureOpenAIInstructProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "Azure OpenAI Instruct (Langchain)" as const;
   static slug = "azureOpenaiInstruct" as const;
@@ -51,7 +52,7 @@ export default class LangchainAzureOpenAIInstructProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 

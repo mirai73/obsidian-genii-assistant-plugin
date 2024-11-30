@@ -46,7 +46,7 @@ export default class LangchainOllamaProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 

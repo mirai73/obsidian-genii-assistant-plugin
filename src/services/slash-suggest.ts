@@ -84,7 +84,7 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
     if (!activeView) return console.warn("couldn't find activeView");
 
     const CM = ContentManagerCls.compile(activeView, this.plugin, {
-      templatePath: value.path
+      templatePath: value.path,
     });
 
     activeView.editor.replaceRange("", value.context.start, value.context.end);

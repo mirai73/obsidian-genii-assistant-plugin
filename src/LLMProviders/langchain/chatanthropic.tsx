@@ -36,8 +36,8 @@ export default class LangchainChatAnthropicProvider
   default_values = default_values;
 
   defaultHeaders?: Record<string, string | null> | undefined = {
-    "anthropic-dangerous-direct-browser-access": "true"
-  }
+    "anthropic-dangerous-direct-browser-access": "true",
+  };
 
   getConfig(
     options: LLMConfig

@@ -5,10 +5,10 @@ import SettingsSection from "../components/section";
 import Input from "../components/input";
 import type { Register } from ".";
 import { useToggle } from "usehooks-ts";
-import { useReloder } from "../components/reloadPlugin";
+import { useReloader } from "../components/reloadPlugin";
 
 export default function SlashSuggestSetting(props: { register: Register }) {
-  const [setReloader] = useReloder();
+  const [setReloader] = useReloader();
 
   const global = useGlobal();
   const sectionId = useId();

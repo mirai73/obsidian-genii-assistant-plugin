@@ -8,10 +8,10 @@ import LLMProviderController from "../components/llmProviderController";
 import { useToggle } from "usehooks-ts";
 import AvailableVars from "#/ui/components/availableVars";
 import { ContextVariables } from "#/scope/context-manager";
-import { useReloder } from "../components/reloadPlugin";
+import { useReloader } from "../components/reloadPlugin";
 
 export default function AutoSuggestSetting(props: { register: Register }) {
-  const [setReloader] = useReloder();
+  const [setReloader] = useReloader();
 
   const global = useGlobal();
   const sectionId = useId();

@@ -17,7 +17,8 @@ const default_values = {
 
 export default class LangchainOpenAIInstructProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "OpenAI Instruct (Langchain)" as const;
   static slug = "openAIInstruct" as const;
@@ -43,7 +44,7 @@ export default class LangchainOpenAIInstructProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     } as Partial<OpenAIInput>);
   }
 
@@ -64,14 +65,14 @@ export default class LangchainOpenAIInstructProvider
           ...this.cleanConfig(this.plugin.settings),
           ...this.cleanConfig(
             this.plugin.settings.LLMProviderOptions[
-            this.id as keyof typeof this.plugin.settings
+              this.id as keyof typeof this.plugin.settings
             ]
           ),
           ...this.cleanConfig(reqParams.otherOptions),
           ...this.cleanConfig(reqParams),
           otherOptions: this.cleanConfig(
             this.plugin.settings.LLMProviderOptions[
-            this.id as keyof typeof this.plugin.settings
+              this.id as keyof typeof this.plugin.settings
             ]
           ),
         };

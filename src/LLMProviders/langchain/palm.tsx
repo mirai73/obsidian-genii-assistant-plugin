@@ -13,7 +13,8 @@ const logger = debug("textgenerator:llmProvider:palm");
 const id = "Google Palm (Langchain)" as const;
 export default class LangchainPalmProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = id;
   static slug = "palm" as const;
@@ -40,7 +41,7 @@ export default class LangchainPalmProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 
