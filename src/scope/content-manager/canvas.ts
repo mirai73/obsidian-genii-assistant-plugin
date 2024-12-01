@@ -1,13 +1,15 @@
-import { ContentManager, Mode } from "./types";
+import { ContentManager, Mode, Options } from "./types";
 
 type Item = (CanvasNode & { rawText?: string }) | undefined;
 export default class CanvasManager implements ContentManager {
   canvas: Canvas;
   view: View;
+  options: Options;
 
-  constructor(canvas: Canvas, view: View) {
+  constructor(canvas: Canvas, view: View, options: Options) {
     this.canvas = canvas;
     this.view = view;
+    this.options = options;
   }
 
   protected async updateNode(
@@ -287,9 +289,9 @@ export default class CanvasManager implements ContentManager {
       const posting = postingContent;
       if (!posting) return;
 
-      const postinglines = posting.split("\n");
+      const postingLines = posting.split("\n");
 
-      for (const postingLine of postinglines) {
+      for (const postingLine of postingLines) {
         if (firstTime)
           cursor = (await this.insertText(postingLine, pos, mode)) || cursor;
         else cursor = await this.insertText(postingLine, cursor, "stream");
@@ -297,9 +299,6 @@ export default class CanvasManager implements ContentManager {
         postingContent = postingContent.substring(postingLine.length);
         firstTime = false;
       }
-
-      // if (!this.plugin.settings.freeCursorOnStreaming)
-      //     this.setCursor(cursor);
     }, 200);
 
     return {

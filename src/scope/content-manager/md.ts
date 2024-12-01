@@ -2,6 +2,7 @@ import { Editor, EditorPosition, TFile, View } from "obsidian";
 import { ContentManager, Mode, Options } from "./types";
 import { minPos, maxPos } from "./utils";
 import { removeYAML } from "#/utils";
+
 export default class MarkdownManager implements ContentManager {
   editor: Editor;
   view: View;
@@ -267,9 +268,6 @@ export default class MarkdownManager implements ContentManager {
 
       firstTime = false;
       cursor.ch += posting.length;
-
-      // if (!this.plugin.settings.freeCursorOnStreaming)
-      //     this.setCursor(cursor);
     }, 400);
 
     return {

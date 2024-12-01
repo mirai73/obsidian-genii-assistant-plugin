@@ -13,7 +13,6 @@ const DEFAULT_SETTINGS: TextGeneratorSettings = {
   frequency_penalty: 0.5,
   showStatusBar: true,
   outputToBlockQuote: false,
-  freeCursorOnStreaming: false,
   allowJavascriptRun: false,
   experiment: false,
   promptsPath: "textgenerator/templates",

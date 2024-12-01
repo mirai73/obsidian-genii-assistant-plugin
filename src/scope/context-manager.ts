@@ -30,7 +30,10 @@ import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";
 
 import mime from "mime-types";
 import { InputOptions } from "#/lib/models";
-import { MessageContent } from "@langchain/core/messages";
+import {
+  MessageContent,
+  MessageContentComplex,
+} from "@langchain/core/messages";
 
 const logger = debug("textgenerator:ContextManager");
 
@@ -201,7 +204,7 @@ export default class ContextManager {
   async getContextFromFiles(
     files: TFile[],
     templatePath = "",
-    addtionalOpts: any = {}
+    additionalOptions: any = {}
   ) {
     const contexts: (InputContext | undefined)[] = [];
 
@@ -212,7 +215,7 @@ export default class ContextManager {
         {},
         this.getFrontmatter(this.getMetaData(templatePath)),
         this.getFrontmatter(fileMeta),
-        addtionalOpts,
+        additionalOptions,
         {
           tg_selection: removeYAML(
             await this.plugin.app.vault.cachedRead(file)
@@ -245,7 +248,7 @@ export default class ContextManager {
       //           insertMetadata,
       //           templatePath,
       //           {
-      //             ...addtionalOpts,
+      //             ...additionalOptions,
       //             selection: app.workspace.activeEditor.editor.getValue(),
       //           }
       //         )
@@ -454,34 +457,33 @@ export default class ContextManager {
     return context;
   }
 
-  async splitContent(
+  /**
+   * Add the embedded content from the current context
+   * Embedded content in Obsidian is added via `![[]]` in the note
+   */
+  async getEmbeddedContent(
     markdownText: string,
     source?: TFile,
     options?: InputOptions
   ): Promise<MessageContent> {
     if (!source) return markdownText;
     const metadata = this.app.metadataCache.getFileCache(source);
+
     if (!metadata?.embeds) return markdownText;
 
-    const elements: MessageContent = [];
+    const elements: MessageContentComplex[] = [];
 
     // splitting
     let lastIndex = 0;
 
-    // Sort the embeds by the length of the original text in descending order to prevent substring conflicts
-    metadata.embeds.sort((a, b) => b.original.length - a.original.length);
-
     // Create a function to escape regex special characters in strings
-    const escapeRegex = (s: string) =>
-      s.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
 
     // Replace each embed in the markdown text
     metadata.embeds.forEach((embed) => {
-      const regex = new RegExp(escapeRegex(embed.original), "g");
-
-      markdownText.replace(regex, (match, index) => {
+      markdownText.replace(embed.original, (match, index) => {
         // Add text segment before the embed if there is any
         const content = markdownText.substring(lastIndex, index);
+        logger("getEmbeddedContent", { content, match, index, lastIndex });
         if (index > lastIndex) {
           elements.push({ type: "text", text: content.trim() ? content : "_" });
         }
@@ -504,62 +506,78 @@ export default class ContextManager {
     if (lastIndex < markdownText.length) {
       elements.push({ type: "text", text: markdownText.substring(lastIndex) });
     }
-
+    logger("getEmbeddedContent", { elements });
+    const processedElements: MessageContent = [];
     // making base64 for
-    for (let i = 0; i < elements.length; i++) {
-      // @ts-ignore
-      if (
-        elements[i].type === "image_url" && // @ts-ignore
-        elements[i].image_url?.url && // @ts-ignore
-        !elements[i].image_url.url.startsWith("http")
-      ) {
-        // @ts-ignore
-        const path = elements[i].image_url?.url;
-        // @ts-ignore
-        const attachmentFolderPath: string = this.app.vault.getConfig?.(
-          "attachmentFolderPath"
-        ); // it works to getConfig in obsidian v1.6.5
-
-        let tfile = await this.app.vault.getFileByPath(path);
-        if (!tfile) {
-          // try to find in attachment folder, base user's preferences
-          tfile = await this.app.vault.getFileByPath(
-            fspath.join("Images", path)
-          );
-        }
-        if (!tfile) {
-          // try to find in attachment folder, base user's preferences
-          tfile = await this.app.vault.getFileByPath(
-            fspath.join(attachmentFolderPath, path)
-          );
-          if (!tfile) continue;
-        }
-
-        const mimeType = mime.lookup(tfile.extension) || "";
-
-        const buff = convertArrayBufferToBase64Link(
-          await this.app.vault.readBinary(tfile as any),
-          mimeType
-        );
-
-        if (
-          (options?.images && mimeType.startsWith("image")) ||
-          (options?.audio && mimeType.startsWith("audio")) ||
-          (options?.videos && mimeType.startsWith("video"))
-        ) {
+    for (const element of elements) {
+      if (element.type === "text" && element.text !== "_") {
+        processedElements.push(element);
+        continue;
+      }
+      if (element.type === "image_url") {
+        if (!element.image_url?.url?.startsWith("http")) {
+          const path = element.image_url?.url;
+          // https://forum.obsidian.md/t/getresourcepath-does-not-return-the-correct-path-for-user-defined-attachment-folder/13012
           // @ts-ignore
-          elements[i].image_url.url = buff;
+          const attachmentFolderPath: string = this.app.vault.getConfig?.(
+            "attachmentFolderPath"
+          );
+          const filePath = this.app.metadataCache.getFirstLinkpathDest(
+            path,
+            path
+          );
+          if (!filePath?.path) {
+            // We do not add the title of the embedding link to the messages
+            continue;
+          } else {
+            let file = await this.app.vault.getFileByPath(filePath?.path);
+            if (!file) {
+              // try to find in attachment folder, base user's preferences
+              file = await this.app.vault.getFileByPath(
+                fspath.join(attachmentFolderPath, path)
+              );
+              if (!file) continue;
+            }
+
+            const mimeType = mime.lookup(file.extension) || "";
+
+            const buff = convertArrayBufferToBase64Link(
+              await this.app.vault.readBinary(file),
+              mimeType
+            );
+            if (
+              options?.images &&
+              mimeType.startsWith("image/")
+              // Support for audio and video depends on the model
+              // audio might need transcription
+              // || (options?.audio && mimeType.startsWith("audio/"))
+              // || (options?.videos && mimeType.startsWith("video/"))
+            ) {
+              element.image_url.url = buff;
+              processedElements.push(element);
+            }
+            if (options?.text && mimeType.startsWith("text/")) {
+              processedElements.push({
+                type: "text",
+                text: Buffer.from(
+                  await this.app.vault.readBinary(file)
+                ).toString("utf-8"),
+              });
+            } else {
+              // TODO: add support for additional content, like PDF, audio transcription, etc,
+              logger("getEmbeddedContent", `${mimeType} not supported`);
+            }
+          }
         } else {
-          elements[i] = {
+          // TODO: add an option to read external embedded content
+          processedElements.push({
             type: "text",
-            // @ts-ignore
-            text: elements[i].image_url.url,
-          };
+            text: element.image_url.url,
+          });
         }
       }
     }
-
-    return elements;
+    return processedElements;
   }
 
   overProcessTemplate(templateContent: string) {

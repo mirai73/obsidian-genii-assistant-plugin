@@ -22,7 +22,7 @@ import PluginServiceAPI from "./services/pluginAPI-service";
 import PackageManager from "./scope/package-manager/package-manager";
 import { PackageManagerUI } from "./scope/package-manager/package-manager-ui";
 import { EditorView } from "@codemirror/view";
-import { spinnersPlugin, SpinnersPlugin } from "./cm/plugin";
+import { spinnersPlugin, SpinnersPlugin } from "./code-mirror/plugin";
 import PrettyError from "pretty-error";
 import ansiToHtml from "ansi-to-html";
 import { AutoSuggest } from "./services/auto-suggest";
@@ -273,7 +273,7 @@ export default class TextGeneratorPlugin extends Plugin {
     this.statusBarTokens = this.addStatusBarItem();
     this.statusBarItemEl = this.addStatusBarItem();
 
-    this.updateStatusBar(``);
+    this.updateStatusBar("");
 
     if (this.settings.autoSuggestOptions.showStatus)
       this.autoSuggest?.AddStatusBar();
@@ -379,7 +379,7 @@ export default class TextGeneratorPlugin extends Plugin {
       });
       const span1 = document.createElement("span");
 
-      span1.textContent = `${this.textGenerator.LLMProvider?.getSettings()?.model ?? "No model selected"}`;
+      span1.textContent = `${this.textGenerator?.LLMProvider?.getSettings()?.model ?? "No model selected"}`;
       this.modelBar.append(span1);
       if (processing) {
         const span = document.createElement("span");
@@ -499,11 +499,11 @@ export default class TextGeneratorPlugin extends Plugin {
   async handelError(error: any) {
     if (error?.length || error?.message) {
       new Notice(
-        "🔴 TG Error: " + (typeof error === "string" ? error : error.message)
+        "🔴 Genii Error: " + (typeof error === "string" ? error : error.message)
       );
     } else {
       new Notice(
-        "🔴 TG Error: An error has occurred. Please check the console by pressing CTRL+SHIFT+I or turn on display errors in the editor within the settings for more information."
+        "🔴 Genii Error: Please check the console by pressing CTRL+SHIFT+I or turn on display errors in the editor within the settings for more information."
       );
     }
 

@@ -87,13 +87,14 @@ export default class ReqFormatter {
     if (
       params.includeAttachmentsInRequest ??
       params.advancedOptions?.includeAttachmentsInRequest
-    )
-      params.prompt = await this.plugin.contextManager.splitContent(
+    ) {
+      params.prompt = await this.plugin.contextManager.getEmbeddedContent(
         params.prompt,
         params.noteFile,
         (AI_MODELS[params.model] || AI_MODELS["models/" + params.model])
           ?.inputOptions || {}
       );
+    }
 
     let bodyParams: Partial<LLMConfig & { prompt: string }> & {
       messages: Message[];

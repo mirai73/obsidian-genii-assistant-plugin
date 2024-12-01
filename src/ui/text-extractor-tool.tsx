@@ -177,7 +177,6 @@ const ContentExtractorComponent = ({
 export default ContentExtractorComponent;
 
 export class TextExtractorTool extends Modal {
-  result: string;
   plugin: TextGeneratorPlugin;
   root: any;
   constructor(app: App, plugin: TextGeneratorPlugin) {

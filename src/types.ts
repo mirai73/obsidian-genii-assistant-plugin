@@ -56,7 +56,6 @@ type TextGeneratorSettings = {
   showStatusBar: boolean;
   displayErrorInEditor: boolean;
   outputToBlockQuote: boolean;
-  freeCursorOnStreaming: boolean;
   models: any;
   context: Context;
   requestTimeout: number;

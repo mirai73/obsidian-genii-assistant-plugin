@@ -306,7 +306,7 @@ export default class RequestHandler {
               bodyParams.messages?.length === 1 &&
               !this.plugin.settings.advancedOptions
                 ?.includeAttachmentsInRequest,
-          } as any;
+          };
 
           const k =
             provider.providerOptions.estimatingMode ||

@@ -41,7 +41,7 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={
             "" +
-            (global.plugin.textGenerator.LLMProvider.streamable &&
+            (global.plugin.textGenerator?.LLMProvider?.streamable &&
               global.plugin.settings.stream)
           }
           setValue={async (val) => {
@@ -102,22 +102,6 @@ export default function AdvancedSetting(props: { register: Register }) {
         />
       </SettingItem>
 
-      <SettingItem
-        name="Free cursor on streaming"
-        description="Note that it might result in weird bugs, the auto-scrolling might not work"
-        register={props.register}
-        sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.freeCursorOnStreaming}
-          setValue={async (val) => {
-            global.plugin.settings.freeCursorOnStreaming = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
       <SettingItem
         name="Experimentation Features"
         description="This adds experiment features, which might not be stable yet"

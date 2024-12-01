@@ -91,7 +91,7 @@ export default function SectionsMain() {
     <div className="plug-tg-flex plug-tg-w-full plug-tg-flex-col plug-tg-gap-3">
       <div className="w-full gap-2 plug-tg-flex plug-tg-flex-col plug-tg-justify-between md:plug-tg-flex-row">
         <div>
-          <h1>Text Generator</h1>
+          <h1>Genii Assistant</h1>
         </div>
         <Input
           setValue={(val) => setSearchTerm(val.toLocaleLowerCase())}
@@ -104,11 +104,11 @@ export default function SectionsMain() {
       <div className="tags plug-tg-flex plug-tg-flex-wrap plug-tg-gap-2">
         <a
           className="tag"
-          href={`https://github.com/nhaouari/obsidian-textgenerator-plugin/releases/tag/${global.plugin.manifest.version}`}
+          href={`https://github.com/mirai73/obsidian-genii-assistant-plugin/releases/tag/${global.plugin.manifest.version}`}
         >
           V{global.plugin.manifest.version}
         </a>
-        <a className="tag" href="https://bit.ly/tg_docs">
+        {/* <a className="tag" href="https://bit.ly/tg_docs">
           {"\u{1F4D6}"} Documentation
         </a>
         <a className="tag" href="https://bit.ly/Tg-discord">
@@ -119,7 +119,7 @@ export default function SectionsMain() {
         </a>
         <a className="tag" href="https://bit.ly/tg-twitter2">
           {"\u{1F426}"} Twitter
-        </a>
+        </a> */}
       </div>
 
       <ProviderSetting register={register} />
