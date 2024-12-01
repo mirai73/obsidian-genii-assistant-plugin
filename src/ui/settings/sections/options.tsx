@@ -14,12 +14,12 @@ const extendedInfo: Record<
   }
 > = {
   "modal-suggest": {
-    name: "Slash suggestions",
-    description: "modal-suggest",
+    name: "modal-suggest",
+    description: "Slash suggestions",
   },
   "set-llm": {
-    name: "Chose LLM",
-    description: "set-llm",
+    name: "set-llm",
+    description: "Choose LLM",
   },
 };
 
@@ -29,43 +29,18 @@ export default function OptionsSetting(props: { register: Register }) {
   const global = useGlobal();
   const sectionId = useId();
   const ops = useMemo(
-    () =>
-      Object.keys({
-        ...global.plugin.defaultSettings.options,
-        // ...global.plugin.settings.options,
-      }),
+    () => Object.keys(global.plugin.defaultSettings.options),
     []
   );
 
   return (
     <>
       <SettingsSection
-        title="Text Generator Options"
+        title="Command Palette options"
         className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
         register={props.register}
         id={sectionId}
       >
-        <SettingItem
-          name="Keys encryption"
-          description="Enable encrypting keys, this could cause incompatibility with mobile devices"
-          register={props.register}
-          sectionId={sectionId}
-        >
-          <Input
-            type="checkbox"
-            value={"" + global.plugin.settings.encrypt_keys}
-            setValue={async (val) => {
-              try {
-                global.plugin.settings.encrypt_keys = val === "true";
-                await global.plugin.encryptAllKeys();
-                await global.plugin.saveSettings();
-                global.triggerReload();
-              } catch (err: any) {
-                global.plugin.handelError(err);
-              }
-            }}
-          />
-        </SettingItem>
         {ops.map((key) => {
           const moreData = extendedInfo[key];
           return (

@@ -60,25 +60,25 @@ debug.enable("textgenerator:*"); // TODO: have a setting for this
 const logger = debug("textgenerator:main");
 
 export default class TextGeneratorPlugin extends Plugin {
-  settings: TextGeneratorSettings = undefined as any;
-  textGenerator: TextGenerator = undefined as any;
-  pluginAPIService: PluginServiceAPI = undefined as any;
-  packageManager: PackageManager = undefined as any;
-  versionManager: VersionManager = undefined as any;
-  contextManager: ContextManager = undefined as any;
-  contentManager: typeof ContentManagerCls = ContentManagerCls;
-  tokensScope: TokensScope = undefined as any;
+  settings: TextGeneratorSettings = DEFAULT_SETTINGS;
+  textGenerator?: TextGenerator;
+  pluginAPIService?: PluginServiceAPI;
+  packageManager?: PackageManager;
+  versionManager?: VersionManager;
+  contextManager?: ContextManager;
+  contentManager = ContentManagerCls;
+  tokensScope?: TokensScope;
   autoSuggest?: AutoSuggest;
-  processing: boolean = undefined as any;
-  defaultSettings: TextGeneratorSettings = undefined as any;
+  processing = false;
+  defaultSettings: TextGeneratorSettings = DEFAULT_SETTINGS;
 
   textGeneratorIconItem: HTMLElement = createDiv();
   statusBarTokens: HTMLElement = createDiv();
   modelBar: HTMLElement = createDiv();
 
-  notice: Notice = undefined as any;
-  commands: Commands = undefined as any;
-  statusBarItemEl: HTMLElement = undefined as any;
+  notice?: Notice;
+  commands?: Commands;
+  statusBarItemEl?: HTMLElement;
   spinner?: SpinnersPlugin;
   temp: Record<string, any> = {};
 
@@ -118,10 +118,10 @@ export default class TextGeneratorPlugin extends Plugin {
             item.onClick(async () => {
               try {
                 if (this.processing)
-                  return this.textGenerator.signalController?.abort();
+                  return this.textGenerator?.signalController?.abort();
                 const activeView = await this.getActiveView();
                 const CM = ContentManagerCls.compile(activeView, this);
-                await this.textGenerator.generateInEditor({}, false, CM);
+                await this.textGenerator?.generateInEditor({}, false, CM);
               } catch (error) {
                 this.handleError(error);
               }
@@ -146,7 +146,7 @@ export default class TextGeneratorPlugin extends Plugin {
                     async (result) => {
                       if (!result.path)
                         return this.handelError("couldn't find path");
-                      await this.textGenerator.generateBatchFromTemplate(
+                      await this.textGenerator?.generateBatchFromTemplate(
                         files.filter(
                           // @ts-ignore
                           (f) => !f.children && f.path.endsWith(".md")
@@ -184,7 +184,7 @@ export default class TextGeneratorPlugin extends Plugin {
           if (activeView !== null) {
             const CM = ContentManagerCls.compile(activeView, this);
             try {
-              await this.textGenerator.generateInEditor({}, false, CM);
+              await this.textGenerator?.generateInEditor({}, false, CM);
             } catch (error) {
               this.handelError(error);
             }
@@ -282,7 +282,7 @@ export default class TextGeneratorPlugin extends Plugin {
   async onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TOOL_ID);
     this.app.workspace.detachLeavesOfType(VIEW_Playground_ID);
-    await this.textGenerator.unload();
+    await this.textGenerator?.unload();
   }
 
   async loadSettings() {
@@ -658,8 +658,8 @@ export default class TextGeneratorPlugin extends Plugin {
     const keys: Record<string, string | undefined> = {};
     for (const k in this.settings.LLMProviderOptions) {
       if (k && this.settings.LLMProviderOptions.hasOwnProperty(k)) {
-        if (this.textGenerator.LLMRegistry) {
-          keys[this.textGenerator.LLMRegistry.UnProviderSlugs[k]] =
+        if (this.textGenerator?.LLMRegistry) {
+          keys[this.textGenerator?.LLMRegistry.UnProviderSlugs[k]] =
             this.settings.LLMProviderOptions[k]?.api_key;
         }
       }

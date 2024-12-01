@@ -189,12 +189,13 @@ export default function ConsideredContextSetting(props: {
         )}
 
         <SettingItem
-          name="TG Selection Limiter(regex)"
+          name="Selection Limiter(regex)"
           description="tg_selection stopping character. Empty means disabled. Default: ^\*\*\*"
           register={props.register}
           sectionId={sectionId}
         >
           <Input
+            type="text"
             value={global.plugin.settings.tgSelectionLimiter}
             setValue={async (val) => {
               global.plugin.settings.tgSelectionLimiter = val;

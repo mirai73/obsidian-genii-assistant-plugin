@@ -5,7 +5,7 @@ import { ZodSchema } from "zod";
 import JSON5 from "json5";
 
 export default function Input(props: {
-  type?: string;
+  type: string;
   value: any;
   placeholder?: string;
   datalistId?: string;

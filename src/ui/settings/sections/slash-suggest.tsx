@@ -57,6 +57,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Trigger Phrase"
               value={global.plugin.settings.slashSuggestOptions.triggerPhrase}
               setValue={async (val) => {

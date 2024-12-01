@@ -475,32 +475,36 @@ export default class ContextManager {
 
     // splitting
     let lastIndex = 0;
-
-    // Create a function to escape regex special characters in strings
+    logger("getEmbeddedContent", metadata.embeds);
 
     // Replace each embed in the markdown text
-    metadata.embeds.forEach((embed) => {
-      markdownText.replace(embed.original, (match, index) => {
-        // Add text segment before the embed if there is any
-        const content = markdownText.substring(lastIndex, index);
-        logger("getEmbeddedContent", { content, match, index, lastIndex });
-        if (index > lastIndex) {
-          elements.push({ type: "text", text: content.trim() ? content : "_" });
-        }
+    metadata.embeds
+      .sort((a, b) => a.link.length - b.link.length)
+      .forEach((embed) => {
+        markdownText.replace(embed.original, (match, index) => {
+          // Add text segment before the embed if there is any
+          const content = markdownText.substring(lastIndex, index);
+          logger("getEmbeddedContent", { content, match, index, lastIndex });
+          if (index > lastIndex) {
+            elements.push({
+              type: "text",
+              text: content.trim() ? content : "_",
+            });
+          }
 
-        // Add embed segment
-        elements.push({
-          type: "image_url",
-          image_url: {
-            url: embed.link,
-          },
+          // Add embed segment
+          elements.push({
+            type: "image_url",
+            image_url: {
+              url: embed.link,
+            },
+          });
+
+          lastIndex = index + match.length;
+
+          return match;
         });
-
-        lastIndex = index + match.length;
-
-        return match;
       });
-    });
 
     // Add remaining text after the last embed
     if (lastIndex < markdownText.length) {

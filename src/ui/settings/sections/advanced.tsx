@@ -150,6 +150,7 @@ export default function AdvancedSetting(props: { register: Register }) {
         sectionId={sectionId}
       >
         <Input
+          type="text"
           value={global.plugin.settings.promptsPath}
           setValue={async (val) => {
             global.plugin.settings.promptsPath = val;
@@ -166,6 +167,7 @@ export default function AdvancedSetting(props: { register: Register }) {
         sectionId={sectionId}
       >
         <Input
+          type="text"
           value={global.plugin.settings.textGenPath}
           setValue={async (val) => {
             global.plugin.settings.textGenPath = val;
@@ -193,6 +195,27 @@ export default function AdvancedSetting(props: { register: Register }) {
         <button className="plug-tg-btn-danger" onClick={resetSettings}>
           Reset
         </button>
+      </SettingItem>
+      <SettingItem
+        name="Keys encryption"
+        description="Enable encrypting keys, this could cause incompatibility with mobile devices"
+        register={props.register}
+        sectionId={sectionId}
+      >
+        <Input
+          type="checkbox"
+          value={"" + global.plugin.settings.encrypt_keys}
+          setValue={async (val) => {
+            try {
+              global.plugin.settings.encrypt_keys = val === "true";
+              await global.plugin.encryptAllKeys();
+              await global.plugin.saveSettings();
+              global.triggerReload();
+            } catch (err: any) {
+              global.plugin.handelError(err);
+            }
+          }}
+        />
       </SettingItem>
     </SettingsSection>
   );

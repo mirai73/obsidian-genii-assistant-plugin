@@ -21,7 +21,7 @@ export default class Commands {
   static commands: Command[] = [
     {
       id: "generate-text",
-      name: "Generate Text!",
+      name: "Generate text",
       icon: "GENERATE_ICON",
       hotkeys: [{ modifiers: ["Mod"], key: "j" }],
       async callback() {
@@ -40,7 +40,7 @@ export default class Commands {
 
     {
       id: "generate-text-with-metadata",
-      name: "Generate Text (use Metadata))!",
+      name: "Generate text (use Metadata)",
       icon: "GENERATE_META_ICON",
       hotkeys: [{ modifiers: ["Mod", "Alt"], key: "j" }],
       async callback() {
@@ -56,7 +56,7 @@ export default class Commands {
     },
 
     {
-      id: "insert-generated-text-From-template",
+      id: "insert-generated-text-from-template",
       name: "Templates: Generate & Insert",
       icon: "circle",
       // hotkeys: [{ modifiers: ["Mod"], key: "q"}],
@@ -95,7 +95,7 @@ export default class Commands {
     },
 
     {
-      id: "generated-text-to-clipboard-From-template",
+      id: "generated-text-to-clipboard-from-template",
       name: "Templates: Generate & Copy To Clipboard ",
       icon: "circle",
       // hotkeys: [{ modifiers: ["Mod"], key: "q"}],
@@ -131,7 +131,7 @@ export default class Commands {
     },
 
     {
-      id: "create-generated-text-From-template",
+      id: "create-generated-text-from-template",
       name: "Templates: Generate & Create Note",
       icon: "plus-circle",
       // hotkeys: [{ modifiers: ["Mod","Shift"], key: "q"}],
@@ -207,7 +207,7 @@ export default class Commands {
     },
 
     {
-      id: "insert-text-From-template",
+      id: "insert-text-from-template",
       name: "Templates: Insert Template",
       icon: "square",
       // hotkeys: [{ modifiers: ['Alt'], key: "q"}],
@@ -238,7 +238,7 @@ export default class Commands {
                 self.plugin.handelError(error);
               }
             },
-            "Insert Template In The Active Note"
+            "Insert template in the active Note"
           ).open();
         } catch (error) {
           self.plugin.handelError(error);
@@ -247,7 +247,7 @@ export default class Commands {
     },
 
     {
-      id: "create-text-From-template",
+      id: "create-text-from-template",
       name: "Templates: Insert & Create Note",
       icon: "plus-square",
       // hotkeys: [{ modifiers: ["Shift","Alt"], key: "q"}],
@@ -279,7 +279,7 @@ export default class Commands {
                 self.plugin.handelError(error);
               }
             },
-            "Create a New Note From Template"
+            "Create a new Note from Template"
           ).open();
         } catch (error) {
           self.plugin.handelError(error);
@@ -288,8 +288,8 @@ export default class Commands {
     },
 
     {
-      id: "show-modal-From-template",
-      name: "Show modal From Template",
+      id: "show-modal-from-template",
+      name: "Show modal from Template",
       icon: "layout",
       // hotkeys: [{ modifiers: ["Alt"], key: "4"}],
       async callback() {
@@ -325,7 +325,7 @@ export default class Commands {
 
     {
       id: "open-template-as-tool",
-      name: "Open Template as Tool",
+      name: "Open Template as tool",
       icon: "layout",
       // hotkeys: [{ modifiers: ["Alt"], key: "4"}],
       async callback() {
@@ -354,7 +354,7 @@ export default class Commands {
 
     {
       id: "open-playground",
-      name: "Open Template Playground",
+      name: "Open Template playground",
       icon: "layout",
       // hotkeys: [{ modifiers: ["Alt"], key: "4"}],
       async callback() {
@@ -370,8 +370,8 @@ export default class Commands {
       },
     },
     {
-      id: "set_max_tokens",
-      name: "Set max_tokens",
+      id: "set-max-tokens",
+      name: "Set Max Tokens",
       icon: "separator-horizontal",
       // hotkeys: [{ modifiers: ["Alt"], key: "1" }],
       async callback() {
@@ -455,7 +455,7 @@ export default class Commands {
     },
 
     {
-      id: "packageManager",
+      id: "package-manager",
       name: "Template Packages Manager",
       icon: "boxes",
       // hotkeys: [{ modifiers: ["Alt"], key: "3" }],
@@ -490,7 +490,7 @@ export default class Commands {
 
     {
       id: "get-title",
-      name: "Generate a Title",
+      name: "Generate a title",
       icon: "heading",
       // hotkeys: [{ modifiers: ["Alt"], key: "c"}],
       async callback() {
@@ -664,7 +664,7 @@ export default class Commands {
 
     {
       id: "text-extractor-tool",
-      name: "Text Extractor Tool",
+      name: "Text extractor tool",
       icon: "layout",
       async callback() {
         const self: Commands = this as any;
@@ -678,7 +678,7 @@ export default class Commands {
 
     {
       id: "stop-stream",
-      name: "Stop Stream",
+      name: "Stop stream",
       icon: "layout",
       async callback() {
         const self: Commands = this as any;
@@ -689,7 +689,7 @@ export default class Commands {
     },
     {
       id: "reload",
-      name: "reload Plugin",
+      name: "Reload plugin",
       icon: "layout",
       async callback() {
         const self: Commands = this as any;

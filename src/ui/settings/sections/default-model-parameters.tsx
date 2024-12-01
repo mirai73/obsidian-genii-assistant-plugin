@@ -127,6 +127,7 @@ export default function DMPSetting(props: { register: Register }) {
         sectionId={sectionId}
       >
         <Input
+          type="text"
           value={
             "" +
             global.plugin.settings.prefix?.replaceAll(

@@ -31,7 +31,7 @@ export default function SectionsMain() {
       string,
       {
         term: string;
-        sectionId?: string;
+        sectionId: string;
       }
     >
   >({});
@@ -71,7 +71,7 @@ export default function SectionsMain() {
       setItems((items) => {
         items[id] = {
           term: searchInfo,
-          sectionId,
+          sectionId: sectionId ?? "",
         };
         return { ...items };
       });

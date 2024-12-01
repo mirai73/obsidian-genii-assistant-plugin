@@ -39,6 +39,7 @@ export default function WhisperProviderSetting(props: { register: Register }) {
           sectionId={sectionId}
         >
           <Input
+            type="text"
             value={config.basePath || default_values.base_path}
             setValue={async (val) => {
               config.basePath = val;
@@ -72,6 +73,7 @@ export default function WhisperProviderSetting(props: { register: Register }) {
           sectionId={sectionId}
         >
           <Input
+            type="text"
             value={config.model || default_values.model}
             setValue={async (val) => {
               config.model = val;

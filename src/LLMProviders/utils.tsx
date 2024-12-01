@@ -47,7 +47,7 @@ export function ModelsHandler(props: {
     });
 
   const updateModels = async () => {
-    if (!config.api_key && !global.plugin.settings.api_key)
+    if (!config.api_key && !global.plugin.settings?.api_key)
       throw "Please provide a valid api key.";
     setLoadingUpdate(true);
     try {

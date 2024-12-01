@@ -104,6 +104,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Trigger Phrase"
               value={global.plugin.settings.autoSuggestOptions.triggerPhrase}
               setValue={async (val) => {
@@ -121,6 +122,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               value={
                 "" + global.plugin.settings.autoSuggestOptions.overrideTrigger
               }
@@ -161,6 +163,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="number"
               value={
                 "" +
                 global.plugin.settings.autoSuggestOptions.numberOfSuggestions
@@ -181,6 +184,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Stop Phrase"
               value={global.plugin.settings.autoSuggestOptions.stop}
               setValue={async (val) => {
