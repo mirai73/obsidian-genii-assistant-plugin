@@ -10,7 +10,7 @@ if (!Platform.isMobile) {
   remote = (require("electron") as any)?.remote;
 }
 
-const logger = debug("textgenerator:Extractor:WebPageExtractor");
+const logger = debug("genii:Extractor:WebPageExtractor");
 export default class WebPageExtractor extends Extractor {
   constructor(app: App, plugin: TextGeneratorPlugin) {
     super(app, plugin);

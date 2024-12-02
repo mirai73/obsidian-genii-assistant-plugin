@@ -5,11 +5,13 @@ import {
   EditorPosition,
   EditorSuggest,
   MarkdownView,
-  Scope,
 } from "obsidian";
 import TextGeneratorPlugin from "../main";
 import { TemplatesModal } from "../models/model";
 import ContentManagerCls from "../scope/content-manager";
+import { debug } from "debug";
+
+const logger = debug("genii:slash-suggest");
 
 export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   app: App;
@@ -45,12 +47,9 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   public async getSuggestions(context: PromptTemplate["context"]) {
     const { query } = context;
 
-    const modal = new TemplatesModal(
-      this.app,
-      this.plugin,
-      async (result) => {},
-      "Choose a template"
-    );
+    const modal = new TemplatesModal(this.app, this.plugin, async (result) => {
+      logger("getSuggestions", result);
+    });
 
     const suggestions = modal.getSuggestions(query);
     return suggestions.map((s) => ({
@@ -89,7 +88,7 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
 
     activeView.editor.replaceRange("", value.context.start, value.context.end);
 
-    await this.plugin.textGenerator.templateToModal({
+    await this.plugin.textGenerator?.templateToModal({
       params: {},
       templatePath: value.path,
       editor: CM,

@@ -3,36 +3,28 @@ import TextGeneratorPlugin from "src/main";
 import { PromptTemplate } from "src/types";
 import debug from "debug";
 
-const logger = debug("textgenerator:model");
+const logger = debug("genii:model");
 
 export class TemplatesModal extends FuzzySuggestModal<PromptTemplate> {
   plugin: TextGeneratorPlugin;
-  title: string;
   onChoose: (result: PromptTemplate) => void;
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
     onChoose: (result: PromptTemplate) => void,
-    title = ""
+    placeholder = "Select a template"
   ) {
     super(app);
     this.onChoose = onChoose;
     this.plugin = plugin;
-    this.title = title;
-    this.modalEl.insertBefore(
-      createEl("div", {
-        text: title,
-        cls: "plug-tg-text-center plug-tg-text-xl plug-tg-font-bold",
-      }),
-      this.modalEl.children[0]
-    );
+    this.setPlaceholder(placeholder);
   }
 
   getItems() {
     const viewType = this.plugin.app.workspace.activeLeaf?.view.getViewType();
     return (
       this.plugin.textGenerator
-        .getTemplates()
+        ?.getTemplates()
         // show only templates that works with this view type
         .filter(
           (t) => !viewType || !t.viewTypes || t.viewTypes?.includes(viewType)

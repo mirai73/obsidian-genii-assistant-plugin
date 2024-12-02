@@ -12,11 +12,11 @@ interface CommandPaletteEnabledOptions {
   "show-modal-from-template": boolean;
   "open-template-as-tool": boolean;
   "set-max-tokens": boolean;
-  "set-llm": boolean;
+  "set-provider": boolean;
   "set-model": boolean;
   "package-manager": boolean;
   "create-template": boolean;
-  "get-title": boolean;
+  //"get-title": boolean;
   "generated-text-to-clipboard-from-template": boolean;
   "calculate-tokens": boolean;
   "calculate-tokens-for-template": boolean;

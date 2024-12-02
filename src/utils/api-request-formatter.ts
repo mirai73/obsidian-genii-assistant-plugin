@@ -7,16 +7,16 @@ import { transformStringsToChatFormat } from ".";
 import { LLMConfig } from "../LLMProviders/interface";
 import { AI_MODELS } from "#/constants";
 
-const logger = debug("textgenerator:ReqFormatter");
+const logger = debug("genii:ReqFormatter");
 
 export default class ReqFormatter {
   plugin: TextGeneratorPlugin;
   app: App;
-  contextManager: ContextManager;
+  contextManager?: ContextManager;
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
-    contextManager: ContextManager
+    contextManager?: ContextManager
   ) {
     this.app = app;
     this.plugin = plugin;
@@ -113,12 +113,11 @@ export default class ReqFormatter {
       (typeof params.prompt === "object" ||
         params.prompt?.replaceAll?.("\n", "").trim().length)
     ) {
-      bodyParams.messages.push(
-        this.plugin.textGenerator.LLMProvider.makeMessage(
-          params.prompt || "",
-          "user"
-        )
+      const m = this.plugin.textGenerator?.LLMProvider?.makeMessage(
+        params.prompt || "",
+        "user"
       );
+      if (m) bodyParams.messages.push(m);
     }
 
     let reqParams: RequestInit & {

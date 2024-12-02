@@ -12,7 +12,7 @@ import LLMProviderRegistry from "../LLMProviders/registery";
 import { defaultProvidersMap } from "../LLMProviders";
 import providerOptionsValidator from "../LLMProviders/providerOptionsValidator";
 import { ProxyService } from "./proxy-service";
-const logger = debug("textgenerator:TextGenerator");
+const logger = debug("genii:TextGenerator");
 
 export default class RequestHandler {
   plugin: TextGeneratorPlugin;
@@ -155,7 +155,7 @@ export default class RequestHandler {
     });
 
     const newPrompt: Message["content"] = await Handlebars.compile(
-      this.plugin.contextManager.overProcessTemplate(prompt)
+      this.plugin.contextManager?.overProcessTemplate(prompt)
     )({
       ...settings,
       templatePath: "default/default",

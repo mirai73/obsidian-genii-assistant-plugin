@@ -1,4 +1,5 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
+/* eslint-disable @typescript-eslint/no-var-requires */
 const {
   appendContextPath, createFrame, blockParams, isPromise
 } = require('../utils')

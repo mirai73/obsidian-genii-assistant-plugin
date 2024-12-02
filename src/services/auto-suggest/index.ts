@@ -15,7 +15,7 @@ import debug from "debug";
 import ContentManagerCls from "../../scope/content-manager";
 import { InlineSuggest } from "./inlineSuggest";
 import { ListSuggest } from "./listSuggest";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export interface Completion {
   label: string;

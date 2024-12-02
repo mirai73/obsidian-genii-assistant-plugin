@@ -8,7 +8,7 @@ import debug from "debug";
 
 import { useGlobal, SettingItem, Input } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:palm");
+const logger = debug("genii:llmProvider:palm");
 
 const id = "Google Palm (Langchain)" as const;
 export default class LangchainPalmProvider
@@ -78,7 +78,7 @@ export default class LangchainPalmProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -94,7 +94,7 @@ export default class LangchainPalmProvider
             setValue={async (value) => {
               config.basePath = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

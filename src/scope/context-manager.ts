@@ -12,7 +12,7 @@ import {
   walkUntilTrigger,
 } from "../utils";
 import debug from "debug";
-import Helpersfn, { Handlebars } from "../helpers/handlebars-helpers";
+import HelpersFn, { Handlebars } from "../helpers/handlebars-helpers";
 import {
   ContentExtractor,
   ExtractorSlug,
@@ -35,7 +35,7 @@ import {
   MessageContentComplex,
 } from "@langchain/core/messages";
 
-const logger = debug("textgenerator:ContextManager");
+const logger = debug("genii:ContextManager");
 
 interface CodeBlock {
   type: string;
@@ -106,7 +106,7 @@ export default class ContextManager {
     this.app = app;
     this.plugin = plugin;
 
-    const Helpers = Helpersfn(this);
+    const Helpers = HelpersFn(this);
 
     Object.keys(Helpers).forEach((key) => {
       Handlebars.registerHelper(key, Helpers[key as keyof typeof Helpers]);
@@ -969,16 +969,17 @@ export default class ContextManager {
     for (const key of extractorMethods) {
       contentExtractor.setExtractor(key);
 
-      const links = await contentExtractor.extract(
-        targetFile.path,
-        targetFileContent
-      );
+      const links =
+        (await contentExtractor.extract(targetFile.path, targetFileContent)) ??
+        [];
 
-      if (links.length > 0) {
+      if (links?.length > 0) {
         const parts = await Promise.all(
           links.map((link) => contentExtractor.convert(link))
         );
-        extractedContent[UnExtractorSlug[key]] = parts;
+        extractedContent[UnExtractorSlug[key]] = parts.filter(
+          (p) => p !== undefined
+        );
       }
     }
 
@@ -991,7 +992,7 @@ export default class ContextManager {
 
   getMetaData(path?: string, withoutCompatibility?: boolean) {
     const activeFile = !path
-      ? this.plugin.textGenerator.embeddingsScope.getActiveNote()
+      ? this.plugin.textGenerator?.embeddingsScope.getActiveNote()
       : { path };
 
     if (!activeFile?.path || !activeFile.path.endsWith(".md")) return null;
@@ -1211,14 +1212,16 @@ export default class ContextManager {
 
   // This function returns the next word relative to the cursor's position
   async getNextWord(editor: ContentManager): Promise<string> {
-    const txts = (await this.getAfterCursor(editor)).split(" ");
-    return txts[0]?.trim() || txts[1]?.trim() || "";
+    const texts = (await this.getAfterCursor(editor)).split(" ");
+    return texts[0]?.trim() || texts[1]?.trim() || "";
   }
 
   // This function returns the previous word relative to the cursor's position
   async getPreviousWord(editor: ContentManager): Promise<string> {
-    const txts = (await this.getBeforeCursor(editor)).trim().split(" ");
-    return txts[txts.length - 1]?.trim() || txts[txts.length - 2]?.trim() || "";
+    const texts = (await this.getBeforeCursor(editor)).trim().split(" ");
+    return (
+      texts[texts.length - 1]?.trim() || texts[texts.length - 2]?.trim() || ""
+    );
   }
 
   // This function selects everything except the currently selected text

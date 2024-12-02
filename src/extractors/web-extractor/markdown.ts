@@ -3,7 +3,7 @@ import { Readability } from "@mozilla/readability";
 import debug from "debug";
 import WebPageExtractor from ".";
 
-const logger = debug("textgenerator:Extractor:WebPageExtractor");
+const logger = debug("genii:Extractor:WebPageExtractor");
 export default class WebPageExtractorMD extends WebPageExtractor {
   async convert(url: string, selector?: string | string[]) {
     logger("convert", { url });

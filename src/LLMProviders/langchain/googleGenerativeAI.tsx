@@ -9,7 +9,7 @@ import { HeaderEditor, ModelsHandler } from "../utils";
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:gemini");
+const logger = debug("genii:llmProvider:gemini");
 
 const default_values = {
   model: "gemini-1.5-pro",

@@ -10,7 +10,7 @@ import { requestWithoutCORS, requestWithoutCORSParam, Message } from "../refs";
 import { Platform } from "obsidian";
 import runJSInSandbox from "#/helpers/javascript-sandbox";
 
-const logger = debug("textgenerator:CustomProvider");
+const logger = debug("genii:CustomProvider");
 
 export const default_values = {
   endpoint: "https://api.openai.com/v1/chat/completions",

@@ -1,8 +1,8 @@
 import { ContextVariables } from "#/scope/context-manager";
-import Helpersfn from "#/helpers/handlebars-helpers";
+import HelpersFn from "#/helpers/handlebars-helpers";
 import set from "lodash.set";
 
-const helpers: Record<string, any> = Helpersfn({} as any);
+const helpers: Record<string, any> = HelpersFn({} as any);
 const helpersArr: string[] = Object.keys(helpers);
 
 const ignoredVariables = [

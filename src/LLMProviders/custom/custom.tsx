@@ -12,7 +12,7 @@ import CustomProvider, { default_values as baseDefaultValues } from "./base";
 import JSON5 from "json5";
 import { Platform } from "obsidian";
 
-const logger = debug("textgenerator:CustomProvider");
+const logger = debug("genii:CustomProvider");
 
 const globalVars: Record<string, boolean> = {
   n: true,
@@ -156,7 +156,7 @@ export default class DefaultCustomProvider
                   global.triggerReload();
                   if (v.toLowerCase().contains("key"))
                     global.plugin.encryptAllKeys();
-                  // TODO: it could use a debounce here
+
                   await global.plugin.saveSettings();
                 }}
               />
@@ -314,7 +314,7 @@ export default class DefaultCustomProvider
                 setValue={async (value) => {
                   config.streamable = value === "true";
                   global.triggerReload();
-                  // TODO: it could use a debounce here
+
                   await global.plugin.saveSettings();
                 }}
               />

@@ -13,7 +13,7 @@ if (Platform.isDesktop) {
   Parser = require("rss-parser");
 }
 
-const logger = debug("textgenerator:Extractor:RssExtractor");
+const logger = debug("genii:Extractor:RssExtractor");
 
 export default class RssExtractor extends Extractor {
   parser: PArser;

@@ -2,7 +2,7 @@ import ContentManagerCls from "#/scope/content-manager";
 import TextGeneratorPlugin from "#/main";
 import { MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian";
 import debug from "debug";
-const logger = debug("textgenerator:tgBlock");
+const logger = debug("genii:tgBlock");
 
 export default class TGBlock {
   plugin: TextGeneratorPlugin;

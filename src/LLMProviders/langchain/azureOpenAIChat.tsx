@@ -11,7 +11,7 @@ import clsx from "clsx";
 import { Input, SettingItem, useGlobal } from "../refs";
 import { HeaderEditor } from "../utils";
 
-const logger = debug("textgenerator:llmProvider:azureopenaiChat");
+const logger = debug("genii:llmProvider:azureopenaiChat");
 
 export default class LangchainAzureOpenAIChatProvider
   extends LangchainBase

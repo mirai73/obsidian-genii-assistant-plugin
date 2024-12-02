@@ -2,7 +2,7 @@ import { App, Modal, Setting } from "obsidian";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";
 
-const logger = debug("textgenerator:SetMaxTokens");
+const logger = debug("genii:SetMaxTokens");
 
 export class SetMaxTokens extends Modal {
   result: string;
@@ -19,13 +19,12 @@ export class SetMaxTokens extends Modal {
     this.plugin = plugin;
     this.result = result;
     this.onSubmit = onSubmit;
+    this.setTitle("Max number of tokens");
   }
 
   onOpen() {
-    logger("onOpen");
     const { contentEl } = this;
 
-    contentEl.createEl("h1", { text: "Max number of tokens" });
     setTimeout(() => {
       contentEl.addEventListener("keyup", (event) => {
         event.preventDefault();

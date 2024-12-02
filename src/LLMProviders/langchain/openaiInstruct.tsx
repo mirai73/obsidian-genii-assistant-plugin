@@ -8,7 +8,7 @@ import { HeaderEditor, ModelsHandler } from "../utils";
 
 import { AI_MODELS, Input, Message, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:openaiInstruct");
+const logger = debug("genii:llmProvider:openaiInstruct");
 
 const default_values = {
   basePath: "https://api.openai.com/v1",
@@ -123,7 +123,7 @@ export default class LangchainOpenAIInstructProvider
 
               global.triggerReload();
               global.plugin.encryptAllKeys();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -141,7 +141,7 @@ export default class LangchainOpenAIInstructProvider
               config.basePath = value;
               global.plugin.settings.endpoint = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

@@ -9,7 +9,7 @@ import { OllamaInput } from "@langchain/community/llms/ollama";
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:ollama");
+const logger = debug("genii:llmProvider:ollama");
 
 export default class LangchainOllamaProvider
   extends LangchainBase
@@ -80,7 +80,7 @@ export default class LangchainOllamaProvider
             setValue={async (value) => {
               config.basePath = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -95,7 +95,7 @@ export default class LangchainOllamaProvider
             setValue={async (value) => {
               config.model = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

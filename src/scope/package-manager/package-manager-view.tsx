@@ -54,9 +54,9 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   async function getAllPackages(update = true) {
     let packages: any = [];
     if (update)
-      packages = await glob.plugin.packageManager.updatePackagesList();
+      packages = await glob.plugin.packageManager?.updatePackagesList();
 
-    await glob.plugin.packageManager.updatePackagesStats();
+    await glob.plugin.packageManager?.updatePackagesStats();
 
     return packages;
   }
@@ -64,8 +64,8 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   async function updateView() {
     setItems(
       glob.plugin.packageManager
-        .getPackagesList()
-        .filter((p) => !p.desktopOnly || Platform.isDesktop)
+        ?.getPackagesList()
+        .filter((p) => !p.desktopOnly || Platform.isDesktop) ?? []
     );
   }
 
@@ -82,13 +82,15 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   }
 
   async function checkForUpdates() {
-    setPackagesIdsTOUpdate(await glob.plugin.packageManager.checkUpdates());
+    setPackagesIdsTOUpdate(
+      (await glob.plugin.packageManager?.checkUpdates()) ?? []
+    );
   }
 
   async function reload() {
-    await glob.plugin.packageManager.fetch();
+    await glob.plugin.packageManager?.fetch();
     await checkForUpdates();
-    await glob.plugin.packageManager.updatePackagesStats();
+    await glob.plugin.packageManager?.updatePackagesStats();
     await updateView();
   }
 
@@ -102,7 +104,7 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
     (async () => {
       await getAllPackages();
       try {
-        await glob.plugin.packageManager.updateBoughtResources();
+        await glob.plugin.packageManager?.updateBoughtResources();
       } catch (err: any) {
         setError(err.message);
       }
@@ -111,7 +113,7 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   }, []);
 
   const userApikey = useMemo(
-    () => glob.plugin.packageManager.getApiKey(),
+    () => glob.plugin.packageManager?.getApiKey(),
     [glob.trg]
   );
   const isLoggedIn = !!userApikey;
@@ -287,7 +289,7 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                                 index={i}
                                 selected={selectedIndex === i}
                                 select={select}
-                                owned={glob.plugin.packageManager.simpleCheckOwnership(
+                                owned={glob.plugin.packageManager?.simpleCheckOwnership(
                                   item.packageId
                                 )}
                                 update={pacakgeIdsToUpdateHash[item.packageId]}
@@ -357,13 +359,15 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                   {loginComponent}
                 </div>
                 <div className="community-modal-info">
-                  <TemplateDetails
-                    key={items[selectedIndex].packageId || selectedIndex}
-                    packageId={items[selectedIndex].packageId}
-                    packageManager={glob.plugin.packageManager}
-                    checkForUpdates={checkForUpdates}
-                    updateView={updateView}
-                  />
+                  {glob.plugin.packageManager && (
+                    <TemplateDetails
+                      key={items[selectedIndex].packageId || selectedIndex}
+                      packageId={items[selectedIndex].packageId}
+                      packageManager={glob.plugin.packageManager}
+                      checkForUpdates={checkForUpdates}
+                      updateView={updateView}
+                    />
+                  )}
                 </div>
               </div>
             )}

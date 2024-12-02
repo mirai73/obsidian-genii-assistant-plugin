@@ -56,8 +56,8 @@ if (Platform.isDesktop) {
   // @ts-ignore
   safeStorage = require("electron")?.remote?.safeStorage;
 }
-debug.enable("textgenerator:*"); // TODO: have a setting for this
-const logger = debug("textgenerator:main");
+debug.enable("genii:*"); // TODO: have a setting for this
+const logger = debug("genii:main");
 
 export default class TextGeneratorPlugin extends Plugin {
   settings: TextGeneratorSettings = DEFAULT_SETTINGS;
@@ -355,27 +355,18 @@ export default class TextGeneratorPlugin extends Plugin {
       this.modelBar.addEventListener("click", async () => {
         // @ts-ignore
         try {
-          new SetModel(
-            this.app,
-            this,
-            async (selectedModel) => {
-              console.log(selectedModel);
-              const provider = this.settings.selectedProvider as string;
-              if (!provider || !this.settings.LLMProviderOptions[provider])
-                return;
+          new SetModel(this.app, this, async (selectedModel) => {
+            console.log(selectedModel);
+            const provider = this.settings.selectedProvider as string;
+            if (!provider || !this.settings.LLMProviderOptions[provider])
+              return;
 
-              this.settings.LLMProviderOptions[provider].model = selectedModel;
-              await this.saveSettings();
-            },
-            "Choose a LLM"
-          ).open();
+            this.settings.LLMProviderOptions[provider].model = selectedModel;
+            await this.saveSettings();
+          }).open();
         } catch (error) {
           this.handelError(error);
         }
-        // @ts-ignore
-        // await this.app.setting
-        //   .openTabById(manifest.id)
-        //   .display();
       });
       const span1 = document.createElement("span");
 

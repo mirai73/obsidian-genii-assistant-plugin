@@ -1,6 +1,4 @@
 import debug from "debug";
-import { AI_MODELS } from "src/constants";
-
 import cl100k_base from "@dqbd/tiktoken/encoders/cl100k_base.json";
 import r50k_base from "@dqbd/tiktoken/encoders/r50k_base.json";
 import p50k_base from "@dqbd/tiktoken/encoders/p50k_base.json";
@@ -9,9 +7,8 @@ import wasm from "../../node_modules/@dqbd/tiktoken/tiktoken_bg.wasm";
 import { init, Tiktoken } from "@dqbd/tiktoken/lite/init";
 import { Notice } from "obsidian";
 import React from "react";
-import ReactDOM from "react-dom";
 import { createRoot } from "react-dom/client";
-const logger = debug("textgenerator:tokens-service");
+const logger = debug("genii:tokens-service");
 
 export default class TokensScope {
   plugin: TextGeneratorPlugin;
@@ -57,6 +54,7 @@ export default class TokensScope {
         ? await template.inputTemplate(options)
         : context.context;
 
+    if (!this.plugin.textGenerator?.reqFormatter) return;
     const { bodyParams } =
       await this.plugin.textGenerator.reqFormatter.getRequestParameters(
         {
@@ -67,7 +65,7 @@ export default class TokensScope {
         ""
       );
 
-    const llmSettings = this.plugin.textGenerator.LLMProvider.getSettings();
+    const llmSettings = this.plugin.textGenerator?.LLMProvider?.getSettings();
 
     const conf = {
       ...this.plugin.settings,
@@ -76,12 +74,12 @@ export default class TokensScope {
     };
 
     const { tokens, maxTokens } =
-      await this.plugin.textGenerator.LLMProvider.calcTokens(
+      (await this.plugin.textGenerator?.LLMProvider?.calcTokens(
         bodyParams.messages,
         conf
-      );
+      )) ?? { tokens: 0, maxTokens: 0 };
 
-    const cost = await this.plugin.textGenerator.LLMProvider.calcPrice(
+    const cost = await this.plugin.textGenerator?.LLMProvider?.calcPrice(
       tokens,
       conf
     );
@@ -102,18 +100,12 @@ export default class TokensScope {
     tokens: any;
     maxTokens: number;
     cost: number;
-    // model: string;
     completionTokens: number;
-    // total: number;
   }) {
-    // <tr><td><strong>Model</strong></td><td>${props.model}</td></tr>
-    // <tr><td><strong>Prompt tokens</strong></td><td>${props.tokens}</td></tr>
-
     logger("showTokens", props);
 
     const summaryEl = document.createElement("div");
     summaryEl.classList.add("plug-tg-summary");
-    // summaryEl.innerHTML =  as any;
 
     const provider = createRoot(summaryEl);
 

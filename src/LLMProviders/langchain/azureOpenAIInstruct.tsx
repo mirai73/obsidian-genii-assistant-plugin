@@ -9,7 +9,7 @@ import clsx from "clsx";
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:azureopenaiInstruct");
+const logger = debug("genii:llmProvider:azureopenaiInstruct");
 
 export default class LangchainAzureOpenAIInstructProvider
   extends LangchainBase

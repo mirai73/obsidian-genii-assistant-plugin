@@ -22,7 +22,7 @@ import handlebars from "react-syntax-highlighter/dist/esm/languages/hljs/handleb
 import JSON5 from "json5";
 import { Handlebars } from "#/helpers/handlebars-helpers";
 
-const logger = debug("textgenerator:LangchainProvider");
+const logger = debug("genii:LangchainProvider");
 
 export default class LangchainProvider
   extends BaseProvider

@@ -7,7 +7,7 @@ import debug from "debug";
 import { ModelsHandler } from "../utils";
 import { OpenAIChatInput } from "@langchain/openai";
 
-const logger = debug("textgenerator:llmProvider:mistralChat");
+const logger = debug("genii:llmProvider:mistralChat");
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
@@ -97,7 +97,7 @@ export default class LangchainMistralAIChatProvider
 
               global.triggerReload();
               global.plugin.encryptAllKeys();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -121,7 +121,7 @@ export default class LangchainMistralAIChatProvider
             setValue={async (value) => {
               config.basePath = value || default_values.basePath;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

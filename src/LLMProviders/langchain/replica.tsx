@@ -9,7 +9,7 @@ import Input from "#/ui/settings/components/input";
 import { BaseLLMParams } from "@langchain/core/language_models/llms";
 import debug from "debug";
 
-const logger = debug("textgenerator:llmProvider:replicated");
+const logger = debug("genii:llmProvider:replicated");
 
 const id = "Replica (Langchain)" as const;
 export default class LangchainReplicaProvider
@@ -64,7 +64,7 @@ export default class LangchainReplicaProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -80,7 +80,7 @@ export default class LangchainReplicaProvider
             setValue={async (value) => {
               config.model = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

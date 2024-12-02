@@ -65,10 +65,10 @@ const ContentExtractorComponent = ({
         const files = await contentExtractor.extract(
           app.workspace.getActiveFile().path
         );
-        if (files.length > 0) {
+        if (files && files.length > 0) {
           extractedUrls.push(
-            ...files.map((file: any) => ({
-              url: truncateUrl(file?.path || file, 50),
+            ...files?.map((file: any) => ({
+              url: truncateUrl(file?.path ?? file ?? "", 50),
               file,
               extractorMethod,
             }))
@@ -87,12 +87,11 @@ const ContentExtractorComponent = ({
   ) => {
     const contentExtractor = new ContentExtractor(app, plugin);
     contentExtractor.setExtractor(extractorMethod);
-    const convertedText = await contentExtractor.convert(
-      (file.path || file) as string
-    );
+    const convertedText = await contentExtractor.convert(file.path ?? file);
+
     setConvertedResults((convertedResults) => ({
       ...convertedResults,
-      [(file.path || file) as string]: convertedText,
+      [file.path ?? file]: convertedText,
     }));
   };
 
@@ -119,16 +118,13 @@ const ContentExtractorComponent = ({
 
   return (
     <div className="plug-tg-container plug-tg-mx-auto">
-      <h1 className="plug-tg-mb-4 plug-tg-text-center plug-tg-text-2xl plug-tg-font-bold">
-        Text Extractor Tool
-      </h1>
       <table className="plug-tg-min-w-full plug-tg-divide-y plug-tg-divide-gray-200">
         <thead>
           <tr>
-            <th className="plug-tg-px-6 plug-tg-py-3 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
+            <th className="plug-tg-p-2 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
               File/URL
             </th>
-            <th className="plug-tg-px-6 plug-tg-py-3 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
+            <th className="plug-tg-p-2 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
               Action
             </th>
           </tr>
@@ -136,10 +132,10 @@ const ContentExtractorComponent = ({
         <tbody className="plug-tg-divide-y plug-tg-divide-gray-200">
           {urlResults.map((urlResult, index) => (
             <tr key={index}>
-              <td className="plug-tg-whitespace-nowrap plug-tg-px-6 plug-tg-py-4 plug-tg-text-sm">
+              <td className="plug-tg-whitespace-nowrap plug-tg-p-2 plug-tg-text-sm">
                 {urlResult.url}
               </td>
-              <td className="plug-tg-whitespace-nowrap plug-tg-px-6 plug-tg-py-4 plug-tg-text-sm">
+              <td className="plug-tg-whitespace-nowrap plug-tg-p-2 plug-tg-text-sm">
                 <button
                   onClick={() =>
                     handleConvertClick(
@@ -182,11 +178,14 @@ export class TextExtractorTool extends Modal {
   constructor(app: App, plugin: TextGeneratorPlugin) {
     super(app);
     this.plugin = plugin;
+    this.setTitle("Text Extractor Tool");
   }
 
   async onOpen() {
-    // this.containerEl.createEl("div", { cls: "plug-tg-packageManager" });
-    this.root = createRoot(this.containerEl.children[1]);
+    console.log("onOpen", this.containerEl);
+    this.root = createRoot(
+      this.containerEl.getElementsByClassName("modal-content")[0]
+    );
     this.root.render(
       <React.StrictMode>
         <ContentExtractorComponent

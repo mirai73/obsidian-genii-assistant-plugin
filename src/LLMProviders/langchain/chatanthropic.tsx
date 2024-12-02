@@ -11,7 +11,7 @@ import { Input, Message, SettingItem, useGlobal } from "../refs";
 import type { AnthropicInput } from "@langchain/anthropic";
 import { HeaderEditor, ModelsHandler } from "../utils";
 
-const logger = debug("textgenerator:llmProvider:chatanthropic");
+const logger = debug("genii:llmProvider:chatanthropic");
 
 const default_values = {
   basePath: "https://api.anthropic.com/",
@@ -96,7 +96,7 @@ export default class LangchainChatAnthropicProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -113,7 +113,7 @@ export default class LangchainChatAnthropicProvider
             setValue={async (value) => {
               config.basePath = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

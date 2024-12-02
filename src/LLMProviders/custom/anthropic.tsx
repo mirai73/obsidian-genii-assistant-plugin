@@ -110,12 +110,12 @@ export default class AnthropicLegacyProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.endpoint || default_values.endpoint}
             placeholder="Enter your API endpoint"
             setValue={async (value) => {
               config.endpoint = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
               await global.plugin.saveSettings();
             }}
           />
@@ -137,7 +137,6 @@ export default class AnthropicLegacyProvider
                 global.triggerReload();
                 if (v.toLowerCase().contains("key"))
                   global.plugin.encryptAllKeys();
-                // TODO: it could use a debounce here
                 await global.plugin.saveSettings();
               }}
             />

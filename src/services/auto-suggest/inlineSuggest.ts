@@ -21,11 +21,12 @@ import {
 } from "obsidian";
 import debug from "debug";
 import { debounce } from "#/utils";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export class InlineSuggest {
   plugin: TextGeneratorPlugin;
   autoSuggest: AutoSuggest;
+  app: App;
   delay = 0;
   currentSuggestions: string[] = [];
   viewedSuggestion = 0;
@@ -46,6 +47,7 @@ export class InlineSuggest {
     logger("AutoSuggest", app, plugin);
     this.plugin = plugin;
     this.autoSuggest = autoSuggest;
+    this.app = app;
   }
 
   onSelect(all?: boolean) {
@@ -255,12 +257,13 @@ export class InlineSuggest {
     onSelect: (all?: boolean) => void,
     onExit: () => void
   ) {
+    // eslint-disable-next-line
+    const self = this;
     return Prec.lowest(
       // must be lowest else you get infinite loop with state changes by our plugin
       ViewPlugin.fromClass(
         class RenderPlugin {
           decorations: DecorationSet;
-
           constructor(view: EditorView) {
             this.decorations = Decoration.none;
           }
@@ -277,6 +280,7 @@ export class InlineSuggest {
 
             try {
               const widget = new InlineSuggestionsWidget(
+                self.app,
                 autoSuggest,
                 onSelect,
                 onExit,
@@ -303,18 +307,21 @@ export class InlineSuggest {
 }
 
 class InlineSuggestionsWidget extends WidgetType {
+  app: App;
   onSelect: (v: boolean) => void;
   onExit: () => void;
   autoSuggest: InlineSuggest;
   renderedSuggestion?: string;
   exitHandler?: () => void;
   constructor(
+    app: App,
     autoSuggest: InlineSuggest,
     onSelect: (v: boolean) => void,
     onExit: () => void,
     readonly view: EditorView
   ) {
     super();
+    this.app = app;
     this.autoSuggest = autoSuggest;
     this.onSelect = onSelect;
     this.onExit = onExit;
@@ -355,7 +362,13 @@ class InlineSuggestionsWidget extends WidgetType {
     };
 
     if (this.autoSuggest.plugin.settings.autoSuggestOptions.showInMarkdown)
-      MarkdownRenderer.render(app, content, span, "", this.autoSuggest.plugin);
+      MarkdownRenderer.render(
+        this.app,
+        content,
+        span,
+        "",
+        this.autoSuggest.plugin
+      );
     else span.textContent = content;
 
     const span2 = spanMAM.createEl("span");

@@ -36,7 +36,7 @@ import JSON5 from "json5";
 import runJsInSandbox from "./javascript-sandbox";
 import { AvailableContext } from "#/scope/context-manager";
 
-export default function Helpersfn(self: ContextManager) {
+export default function HelpersFn(self: ContextManager) {
   const extract = async (id: string, content: string, other: any) => {
     const ce = new ContentExtractor(self.app, self.plugin);
 
@@ -44,11 +44,11 @@ export default function Helpersfn(self: ContextManager) {
       ExtractorSlug[id as keyof typeof ExtractorSlug] as keyof typeof Extractors
     );
 
-    return await ce.convert(co, other);
+    return await ce.convert(content, other);
   };
 
   const _runTemplate = async (id: string, metadata?: any) => {
-    return await self.plugin.textGenerator.templateGen(id, {
+    return await self.plugin.textGenerator?.templateGen(id, {
       additionalProps: metadata,
     });
   };
@@ -336,7 +336,7 @@ export default function Helpersfn(self: ContextManager) {
     },
 
     async package(packageId: string, version?: string) {
-      if (!(await self.plugin.textGenerator.packageExists(packageId)))
+      if (!(await self.plugin.textGenerator?.packageExists(packageId)))
         throw new Error(`package ${packageId} was not found.`);
       return true;
     },
@@ -358,7 +358,7 @@ export default function Helpersfn(self: ContextManager) {
 
       const otherVariables = vars;
 
-      const templatePath = await self.plugin.textGenerator.getTemplatePath(id);
+      const templatePath = await self.plugin.textGenerator?.getTemplatePath(id);
 
       if (!templatePath)
         throw new Error(
@@ -627,7 +627,7 @@ export default function Helpersfn(self: ContextManager) {
       const parentPackageId = p?.[p?.length - 2] || "default";
 
       const gen = async (templateContent: string, metadata: any) => {
-        return await self.plugin.textGenerator.gen(templateContent, {
+        return await self.plugin.textGenerator?.gen(templateContent, {
           ...options.data.root,
           disableProvider: false,
           ...metadata,
@@ -636,10 +636,10 @@ export default function Helpersfn(self: ContextManager) {
 
       const genJSON = async (templateContent: string, metadata: any) => {
         return JSON5.parse(
-          await gen(templateContent, {
+          (await gen(templateContent, {
             ...metadata,
             modelKwargs: { response_format: { type: "json_object" } },
-          })
+          })) ?? ""
         );
       };
 
@@ -658,13 +658,13 @@ export default function Helpersfn(self: ContextManager) {
             : [_p[_p.length - 2], id];
 
           console.log({
-            paths: self.plugin.textGenerator.templatePaths,
+            paths: self.plugin.textGenerator?.templatePaths,
             packageId,
             templateId,
           });
           const TemplateMetadata = self.getFrontmatter(
             self.getMetaData(
-              self.plugin.textGenerator.templatePaths[packageId][templateId]
+              self.plugin.textGenerator?.templatePaths[packageId][templateId]
             )
           );
           meta = {

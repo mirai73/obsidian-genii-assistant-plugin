@@ -23,7 +23,7 @@ import {
   MessageContentComplex,
   MessageContentText,
 } from "@langchain/core/messages";
-const logger = debug("textgenerator:BedrockProvider");
+const logger = debug("genii:BedrockProvider");
 
 const globalVars: Record<string, boolean> = {
   n: true,
@@ -45,6 +45,7 @@ const untangableVars = [
 
 export const default_values = {
   ...baseDefaultValues,
+  endpoint: "https://undefined",
   region: "us-west-2",
   model: "anthropic.claude-3-sonnet-20240229-v1:0",
   custom_header: "",
@@ -314,7 +315,7 @@ export default class BedrockProvider
             setValue={async (value) => {
               config.region = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -341,7 +342,6 @@ export default class BedrockProvider
                 global.triggerReload();
                 if (v.toLowerCase().contains("key"))
                   global.plugin.encryptAllKeys();
-                // TODO: it could use a debounce here
                 await global.plugin.saveSettings();
               }}
             />

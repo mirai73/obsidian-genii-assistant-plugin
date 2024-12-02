@@ -8,7 +8,7 @@ import debug from "debug";
 
 import { AI_MODELS, Input, Message, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:openaiChat");
+const logger = debug("genii:llmProvider:openaiChat");
 
 const default_values = {
   basePath: "https://api.openai.com/v1",
@@ -64,7 +64,7 @@ export default class LangchainOpenAIChatProvider
 
               global.triggerReload();
               global.plugin.encryptAllKeys();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -83,7 +83,7 @@ export default class LangchainOpenAIChatProvider
               global.plugin.settings.endpoint =
                 value || default_values.basePath;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

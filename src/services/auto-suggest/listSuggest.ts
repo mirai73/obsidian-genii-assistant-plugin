@@ -17,7 +17,7 @@ import debug from "debug";
 import ContentManagerCls from "../../scope/content-manager";
 import { debounce } from "#/utils";
 import { AutoSuggest, Completion } from ".";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export class ListSuggest extends EditorSuggest<Completion> {
   plugin: TextGeneratorPlugin;

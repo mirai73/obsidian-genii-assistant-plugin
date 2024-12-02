@@ -73,7 +73,10 @@ export class ProxyService {
         console.log("address", address);
         s(true);
       });
-
+      this.server?.once("error", (e) => {
+        console.log("error", e);
+        r(e);
+      });
       this.started = true;
     });
   }

@@ -20,7 +20,7 @@ import set from "lodash.set";
 import JSON5 from "json5";
 import showGratitude from "./gratitude";
 
-const logger = debug("textgenerator:PackageManager");
+const logger = debug("genii:PackageManager");
 
 const packageRegistry = `https://raw.githubusercontent.com/text-gen/text-generator-packages/master/community-packages.json`;
 const corePackageRegistry = `https://raw.githubusercontent.com/text-gen/text-generator-packages/master/core-packages.json`;

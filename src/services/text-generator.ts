@@ -4,7 +4,10 @@ import { TextGeneratorSettings } from "../types";
 import TextGeneratorPlugin from "../main";
 import ReqFormatter from "../utils/api-request-formatter";
 import { SetPath } from "../ui/settings/components/set-path";
-import { ContextVariables, type InputContext } from "../scope/context-manager";
+import ContextManager, {
+  ContextVariables,
+  type InputContext,
+} from "../scope/context-manager";
 import {
   makeId,
   createFileWithInput,
@@ -15,31 +18,29 @@ import {
 import safeAwait from "safe-await";
 import debug from "debug";
 import RequestHandler from "./api-service";
-const logger = debug("textgenerator:TextGenerator");
-const heavyLogger = debug("textgenerator:TextGenerator:heavy");
-
 import EmbeddingScope from "../scope/embeddings";
 import { IGNORE_IN_YAML } from "../constants";
 import merge from "lodash.merge";
 import { ContentManager } from "../scope/content-manager/types";
 
+const logger = debug("genii:TextGenerator");
+
 export default class TextGenerator extends RequestHandler {
   plugin: TextGeneratorPlugin;
   reqFormatter: ReqFormatter;
   signal: AbortSignal = undefined as any;
-
+  contextManager: ContextManager;
   embeddingsScope: EmbeddingScope;
 
   constructor(app: App, plugin: TextGeneratorPlugin) {
     super(plugin);
+    if (!plugin.contextManager) {
+      throw new Error("Genii: ContextManager was not initialized");
+    }
     this.plugin = plugin;
-
+    this.contextManager = plugin.contextManager;
     this.embeddingsScope = new EmbeddingScope();
-    this.reqFormatter = new ReqFormatter(
-      app,
-      plugin,
-      this.plugin.contextManager
-    );
+    this.reqFormatter = new ReqFormatter(app, plugin, this.contextManager);
   }
 
   async getCursor(
@@ -48,18 +49,6 @@ export default class TextGenerator extends RequestHandler {
   ) {
     logger("getCursor");
     const cursor = await editor.getCursor(mode === "replace" ? "from" : "to");
-
-    // let selectedText = editor.getSelection();
-    // if (selectedText.length === 0) {
-    //   const lineNumber = editor.getCursor().line;
-    //   selectedText = editor.getLine(lineNumber);
-    //   if (selectedText.length !== 0) {
-    //     // cursor.ch = selectedText.length;
-    //     if (selectedText[selectedText.length - 1] === " ") {
-    //       cursor.ch = selectedText.length - 1;
-    //     }
-    //   }
-    // }
     logger("getCursor end");
     return cursor;
   }
@@ -80,7 +69,7 @@ export default class TextGenerator extends RequestHandler {
     const activeFile = props.activeFile ?? true;
 
     const [errorContext, context] = await safeAwait(
-      this.plugin.contextManager.getContext({
+      this.contextManager.getContext({
         filePath: props.filePath,
         editor: props.editor,
         insertMetadata,
@@ -120,14 +109,12 @@ export default class TextGenerator extends RequestHandler {
     files: TFile[],
     params: Partial<TextGeneratorSettings>,
     templatePath: string,
-    insertMetadata = true,
     additionalProps: any = {},
     insertMode = false
   ) {
     // get files context
-    const contexts = (await this.plugin.contextManager.getContextFromFiles(
+    const contexts = (await this.contextManager.getContextFromFiles(
       files,
-      //   insertMetadata,
       templatePath,
       additionalProps
     )) as InputContext[];
@@ -176,8 +163,12 @@ export default class TextGenerator extends RequestHandler {
 
     const context =
       customContext ||
-      (await this.plugin.contextManager.getContext({ editor, insertMetadata }));
+      (await this.contextManager.getContext({
+        editor,
+        insertMetadata,
+      }));
 
+    if (!context) return;
     console.log({
       customContext,
       context,
@@ -200,7 +191,7 @@ export default class TextGenerator extends RequestHandler {
         context.templatePath
       );
 
-      // last letter before starting, (used to detirmin if we should add space at the begining)
+      // last letter before starting, (used to determine if we should add space at the beginning)
       const txt = editor.getLastLetterBeforeCursor();
 
       let addedPrefix = false;
@@ -218,7 +209,7 @@ export default class TextGenerator extends RequestHandler {
 			`);
 
               // here you can do some addition magic
-              // check if its starting by space, and space doens't exist in note (used to detirmin if we should add space at the begining).
+              // check if its starting by space, and space doesn't exist in note (used to determine if we should add space at the begining).
               if (txt.length && txt !== " " && content !== " ") {
                 content = " " + content;
               }
@@ -275,7 +266,7 @@ export default class TextGenerator extends RequestHandler {
     const frontmatter = this.reqFormatter.getFrontmatter("", insertMetadata);
     if (
       this.plugin.settings.stream &&
-      this.plugin.textGenerator.LLMProvider?.streamable &&
+      this.plugin.textGenerator?.LLMProvider?.streamable &&
       frontmatter.stream !== false
     ) {
       return this.generateStreamInEditor(
@@ -291,8 +282,12 @@ export default class TextGenerator extends RequestHandler {
 
     const context =
       customContext ||
-      (await this.plugin.contextManager.getContext({ editor, insertMetadata }));
+      (await this.contextManager.getContext({
+        editor,
+        insertMetadata,
+      }));
 
+    if (!context) return;
     const [errorGeneration, text] = await safeAwait(
       this.generate(
         context,
@@ -326,8 +321,11 @@ export default class TextGenerator extends RequestHandler {
     editor: ContentManager
   ) {
     logger("generateToClipboard");
+    if (!this.contextManager) {
+      return;
+    }
     const [errorContext, context] = await safeAwait(
-      this.plugin.contextManager.getContext({
+      this.contextManager.getContext({
         editor,
         insertMetadata,
         templatePath,
@@ -349,11 +347,13 @@ export default class TextGenerator extends RequestHandler {
     if (errorGeneration) {
       return Promise.reject(errorGeneration);
     }
+
     const data = new ClipboardItem({
       "text/plain": new Blob([text], {
         type: "text/plain",
       }),
     });
+
     await navigator.clipboard.write([data]);
     new Notice("Generated Text copied to clipboard");
     editor.setCursor(editor.getCursor());
@@ -472,7 +472,7 @@ export default class TextGenerator extends RequestHandler {
               if (!context)
                 return console.error("generation failed on", { i, text });
 
-              const [errorFile, file] = await safeAwait(
+              const [errorFile] = await safeAwait(
                 createFileWithInput(
                   path +
                     `/${text?.startsWith("FAILED:") ? "FAILED-" : ""}` +
@@ -548,7 +548,7 @@ export default class TextGenerator extends RequestHandler {
         disableProvider: !!options?.disableProvider,
       };
 
-      const metadata = this.plugin.contextManager.getMetaData(undefined, true);
+      const metadata = this.contextManager.getMetaData(undefined, true);
 
       const matter: Record<string, any> = {};
       Object.entries(metadata?.frontmatter || {}).forEach(([key, _content]) => {
@@ -607,7 +607,7 @@ ${removeYAML(content)}
       .map((line) => line.trim())
       .filter((line) => line !== "" && line !== ">");
     lines = lines
-      .map((line, index) => {
+      .map((line) => {
         if (line.includes("[!ai]+ AI")) {
           return ">";
         }
@@ -631,6 +631,7 @@ ${removeYAML(content)}
     activeFile?: boolean;
   }) {
     logger("templateToModal");
+    if (!this.contextManager) return;
     const templateFile = this.plugin.app.vault.getAbstractFileByPath(
       props.templatePath || ""
     );
@@ -649,17 +650,16 @@ ${removeYAML(content)}
     }
 
     const { inputContent, outputContent, preRunnerContent } =
-      this.plugin.contextManager.splitTemplate(templateContent as any);
+      this.contextManager.splitTemplate(templateContent as any);
 
-    const variables = this.plugin.contextManager.getHBVariablesOfTemplate(
+    const variables = this.contextManager.getHBVariablesOfTemplate(
       preRunnerContent,
       inputContent,
       outputContent
     );
 
     const metadata = this.getMetadata(props.templatePath || "");
-    const templateContext =
-      await this.plugin.contextManager.getTemplateContext(props);
+    const templateContext = await this.contextManager.getTemplateContext(props);
 
     const onSubmit = async (results: any) => {
       try {
@@ -790,8 +790,8 @@ ${removeYAML(content)}
     logger("getFrontmatter");
 
     const frontMatter =
-      this.plugin.contextManager.getFrontmatter(
-        this.plugin.contextManager.getMetaData(path)
+      this.contextManager.getFrontmatter(
+        this.contextManager.getMetaData(path)
       ) || null;
 
     logger("getFrontmatter end", frontMatter);
@@ -811,7 +811,7 @@ ${removeYAML(content)}
     // this.plugin.endProcessing(true);
     this.plugin.startProcessing();
     const [errorContext, context] = await safeAwait(
-      this.plugin.contextManager.getContext({
+      this.contextManager.getContext({
         editor: options.editor,
         filePath: options.filePath,
         insertMetadata: options.insertMetadata,
@@ -851,15 +851,15 @@ ${removeYAML(content)}
 
   checkTemplatePathsHasChanged() {
     const nowStats: Record<string, number> = {};
-    // @ts-ignore
-    for (const path in app.vault.adapter.files) {
+
+    for (const path in this.plugin.app.vault.adapter.files) {
       if (
         !path.startsWith(this.plugin.settings.promptsPath) ||
         path.includes("/trash/")
       )
         continue;
-      // @ts-ignore
-      nowStats[path] = app.vault.adapter.files[path].ctime;
+
+      nowStats[path] = this.plugin.app.vault.adapter.files[path].ctime;
       if (nowStats[path] !== this.lastTemplatePathStats[path]) return true;
     }
 
@@ -900,9 +900,9 @@ ${removeYAML(content)}
     const templatePath = await this.getTemplatePath(id);
     if (!templatePath) throw new Error(`template with id:${id} wasn't found.`);
 
-    return this.plugin.contextManager.templateFromPath(templatePath, {
-      ...this.plugin.contextManager.getFrontmatter(
-        this.plugin.contextManager.getMetaData(templatePath)
+    return this.contextManager.templateFromPath(templatePath, {
+      ...this.contextManager.getFrontmatter(
+        this.contextManager.getMetaData(templatePath)
       ),
     });
   }
@@ -912,10 +912,10 @@ ${removeYAML(content)}
     // nico update : stay this await hack here for moment, before find a better solution, but kept only one implementation to load templates list, in getTemplates()
     await this.plugin.getFilesOnLoad();
 
-    const templates = this.plugin.textGenerator.getTemplates();
+    const templates = this.plugin.textGenerator?.getTemplates();
 
     this.templatePaths = {};
-    templates.forEach((template: any) => {
+    templates?.forEach((template: any) => {
       if (template.id) {
         const ss = template.path.split("/");
         this.templatePaths[ss[ss.length - 2]] ??= {};

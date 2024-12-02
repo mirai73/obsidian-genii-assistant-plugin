@@ -7,7 +7,7 @@ import {
   NewTabDirection,
 } from "../types";
 import debug from "debug";
-const logger = debug("textgenerator:utils");
+const logger = debug("genii:utils");
 
 export function makeId(length: number) {
   logger("makeId");
@@ -438,7 +438,7 @@ export function debounce<T extends unknown[], R>(
 
   logger("debounce", func, wait);
   return function debouncedFunction(...args: T): Promise<R> {
-    // @ts-ignore
+    // eslint-disable-next-line
     const context = this;
 
     return new Promise((resolve, reject) => {

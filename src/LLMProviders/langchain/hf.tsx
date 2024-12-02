@@ -6,7 +6,7 @@ import { IconExternalLink } from "@tabler/icons-react";
 import { BaseLLMParams } from "@langchain/core/language_models/llms";
 import type { HFInput } from "@langchain/community/llms/hf";
 
-const logger = debug("textgenerator:llmProvider:hf");
+const logger = debug("genii:llmProvider:hf");
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
@@ -78,7 +78,7 @@ export default class LangchainHFProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -94,7 +94,7 @@ export default class LangchainHFProvider
             setValue={async (value) => {
               config.model = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

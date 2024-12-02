@@ -3,7 +3,7 @@ import { Extractor } from "./content-extractor";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";
 
-const logger = debug("textgenerator:Extractor:AudioExtractor");
+const logger = debug("genii:Extractor:AudioExtractor");
 
 import {
   WhisperProviderName,

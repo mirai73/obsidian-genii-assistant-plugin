@@ -48,7 +48,7 @@ Starred Blocks: {{starredBlocks}}
     "open-template-as-tool": true,
     "open-playground": true,
     "set-max-tokens": true,
-    "set-llm": true,
+    "set-provider": true,
     "set-model": true,
     "package-manager": true,
     "create-template": false,
