@@ -12,7 +12,7 @@ import {
 } from "obsidian";
 
 import debug from "debug";
-import ContentManagerCls from "../../scope/content-manager";
+import ContentManagerFactory from "../../scope/content-manager";
 import { InlineSuggest } from "./inlineSuggest";
 import { ListSuggest } from "./listSuggest";
 const logger = debug("genii:AutoSuggest");
@@ -72,7 +72,7 @@ export class AutoSuggest {
           if (this.plugin.settings.autoSuggestOptions.systemPrompt)
             system = this.plugin.settings.autoSuggestOptions.systemPrompt;
 
-          const editor = ContentManagerCls.compile(
+          const editor = ContentManagerFactory.createContentManager(
             await this.plugin.getActiveView(),
             this.plugin
           );
@@ -223,7 +223,7 @@ export class AutoSuggest {
     this.process = true;
 
     // @ts-ignore
-    const CM = ContentManagerCls.compile(
+    const CM = ContentManagerFactory.createContentManager(
       this.plugin.app.workspace.activeLeaf?.view as any,
       this.plugin
     );

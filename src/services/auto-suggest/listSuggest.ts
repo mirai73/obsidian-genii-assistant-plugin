@@ -14,7 +14,7 @@ import {
 } from "obsidian";
 
 import debug from "debug";
-import ContentManagerCls from "../../scope/content-manager";
+import ContentManagerFactory from "../../scope/content-manager";
 import { debounce } from "#/utils";
 import { AutoSuggest, Completion } from ".";
 const logger = debug("genii:AutoSuggest");
@@ -132,7 +132,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
     this.process = true;
 
     // @ts-ignore
-    const CM = ContentManagerCls.compile(
+    const CM = ContentManagerFactory.createContentManager(
       this.plugin.app.workspace.activeLeaf?.view as any,
       this.plugin
     );

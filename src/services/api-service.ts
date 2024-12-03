@@ -215,7 +215,7 @@ export default class RequestHandler {
       return result;
     } catch (error) {
       logger("gen  error", error);
-      return Promise.reject(error);
+      throw error;
     }
   }
 
@@ -355,7 +355,7 @@ export default class RequestHandler {
       return stream;
     } catch (error) {
       logger("streamGenerate error", error);
-      return Promise.reject(error);
+      throw error;
     }
   }
 
@@ -381,7 +381,7 @@ export default class RequestHandler {
 
       if (this.plugin.processing) {
         logger("generate error", "There is another generation process");
-        return Promise.reject(new Error("There is another generation process"));
+        throw new Error("There is another generation process");
       }
 
       this.startLoading();
@@ -453,7 +453,7 @@ export default class RequestHandler {
 
         onOneFinishes
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.endLoading();
       this.plugin.handelError(err);
     } finally {
@@ -489,7 +489,7 @@ export default class RequestHandler {
 
       if (!additionalParams.doNotCheckProcess && this.plugin.processing) {
         logger("generate error", "There is another generation process");
-        return Promise.reject(new Error("There is another generation process"));
+        throw new Error("There is another generation process");
       }
 
       const prompt = (
@@ -524,7 +524,6 @@ export default class RequestHandler {
         ...allParams,
         ...bodyParams,
         requestParams: {
-          // body: JSON.stringify(bodyParams),
           ...reqParams,
           signal: this.signalController?.signal,
         },
@@ -546,9 +545,6 @@ export default class RequestHandler {
               undefined,
               provider.providerOptions
             );
-
-      // Remove leading/trailing newlines
-      //   result = result.trim();
 
       // output template, template used AFTER the generation happens
 
@@ -586,8 +582,7 @@ export default class RequestHandler {
       return result;
     } catch (error) {
       logger("generate error", error);
-      this.endLoading(additionalParams?.showSpinner);
-      return Promise.reject(error);
+      throw error;
     } finally {
       this.endLoading(additionalParams?.showSpinner);
     }

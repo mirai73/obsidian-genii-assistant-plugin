@@ -1,6 +1,5 @@
-import { ContentManager, Mode, Options } from "./types";
+import { ContentManager, Item, Mode, Options } from "./types";
 
-type Item = (CanvasNode & { rawText?: string }) | undefined;
 export default class CanvasManager implements ContentManager {
   canvas: Canvas;
   view: View;

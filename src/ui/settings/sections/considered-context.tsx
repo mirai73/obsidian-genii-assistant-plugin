@@ -3,7 +3,6 @@ import useGlobal from "../../context/global";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
-import { useMemo } from "react";
 import type { Register } from ".";
 import { Context } from "#/types";
 import AvailableVars from "#/ui/components/availableVars";
@@ -37,7 +36,7 @@ const extendedInfo: Record<
   },
 
   includeMentions: {
-    description: "Include paragraphs from mentions (linked, unliked).",
+    description: "Include paragraphs from mentions (linked, unlinked).",
   },
 
   includeHighlights: {

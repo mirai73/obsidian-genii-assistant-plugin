@@ -43,13 +43,13 @@ export default class PDFExtractor extends Extractor {
     if (!embeds) {
       return [];
     }
-
+    logger("extract", { embeds });
     return embeds
       .map(
         (embed) =>
           this.app.metadataCache.getFirstLinkpathDest(embed.link, filePath)
             ?.path
       )
-      .filter(Boolean) as string[];
+      .filter((e) => e !== undefined);
   }
 }

@@ -1,4 +1,4 @@
-import { App } from "obsidian";
+import { App, TAbstractFile } from "obsidian";
 import PDFExtractor from "./pdf-extractor";
 import WebPageExtractorHTML from "./web-extractor";
 import WebPageExtractor from "./web-extractor/markdown";
@@ -87,17 +87,17 @@ export class ContentExtractor {
     return text;
   }
 
-  async extract(
-    filePath: string,
-    filecontent?: string
-  ): Promise<string[] | undefined> {
-    const fileContent =
-      filecontent ||
-      (await this.app.vault.cachedRead(
-        this.app.vault.getAbstractFileByPath(filePath) as any
-      ));
+  async extract(filePath: string, fileContent?: string): Promise<string[]> {
+    if (!fileContent) {
+      const file = this.app.vault.getFileByPath(filePath);
 
-    return this.extractor?.extract(filePath, fileContent);
+      if (file) {
+        fileContent = await this.app.vault.cachedRead(file);
+      } else {
+        return [];
+      }
+    }
+    return this.extractor?.extract(filePath, fileContent) ?? [];
   }
 
   private createExtractor(extractorName: ExtractorMethod) {

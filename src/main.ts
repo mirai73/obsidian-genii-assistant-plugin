@@ -44,7 +44,7 @@ import VersionManager from "./scope/versionManager";
 
 import { registerAPI } from "@vanakat/plugin-api";
 import { PlaygroundView, VIEW_Playground_ID } from "./ui/playground";
-import ContentManagerCls from "./scope/content-manager";
+import ContentManagerFactory from "./scope/content-manager";
 import ContextManager from "./scope/context-manager";
 import TGBlock from "./services/tgBlock";
 import { SetModel } from "./ui/settings/components/set-model";
@@ -66,7 +66,7 @@ export default class TextGeneratorPlugin extends Plugin {
   packageManager?: PackageManager;
   versionManager?: VersionManager;
   contextManager?: ContextManager;
-  contentManager = ContentManagerCls;
+  contentManager = ContentManagerFactory;
   tokensScope?: TokensScope;
   autoSuggest?: AutoSuggest;
   processing = false;
@@ -120,7 +120,10 @@ export default class TextGeneratorPlugin extends Plugin {
                 if (this.processing)
                   return this.textGenerator?.signalController?.abort();
                 const activeView = await this.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, this);
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this
+                );
                 await this.textGenerator?.generateInEditor({}, false, CM);
               } catch (error) {
                 this.handleError(error);
@@ -176,13 +179,16 @@ export default class TextGeneratorPlugin extends Plugin {
     if (!this.settings.options["disable-ribbon-icons"]) {
       this.addRibbonIcon(
         "GENERATE_ICON",
-        "Generate Text!",
+        "Generate Text",
         async (evt: MouseEvent) => {
           // Called when the user clicks the icon.
           // const activeFile = this.app.workspace.getActiveFile();
           const activeView = this.getActiveViewMD();
           if (activeView !== null) {
-            const CM = ContentManagerCls.compile(activeView, this);
+            const CM = ContentManagerFactory.createContentManager(
+              activeView,
+              this
+            );
             try {
               await this.textGenerator?.generateInEditor({}, false, CM);
             } catch (error) {
@@ -508,7 +514,7 @@ export default class TextGeneratorPlugin extends Plugin {
           activeView.editor.cm.contentDOM.appendChild(this.formatError(error));
         }
       }
-    } catch (err2: any) {
+    } catch (err2) {
       // if it can't add error to activeView, then it doesn't matter, it shouldn't show a second error
       logger("handelError", err2);
     }

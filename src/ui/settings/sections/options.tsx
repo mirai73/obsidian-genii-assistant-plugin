@@ -17,10 +17,6 @@ const extendedInfo: Record<
     name: "modal-suggest",
     description: "Slash suggestions",
   },
-  "set-llm": {
-    name: "set-llm",
-    description: "Choose LLM",
-  },
 };
 
 export default function OptionsSetting(props: { register: Register }) {

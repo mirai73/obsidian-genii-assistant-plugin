@@ -737,10 +737,10 @@ export default class ContextManager {
     }
   }
 
-  getSelections(editor: ContentManager) {
+  async getSelections(editor: ContentManager) {
     logger("getSelections", editor);
-    const selections = editor.getSelections();
-    logger("getSelections", { selections });
+    const selections = await editor.getSelections();
+    logger("getSelections", selections);
     return selections;
   }
 

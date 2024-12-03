@@ -18,6 +18,16 @@ export default class MarkdownManager implements ContentManager {
     return this.editor.getLine(this.editor.getCursor("from").line);
   }
 
+  getPrecedingLine(): string {
+    let currentLine = this.editor.getCursor("from").line;
+    let text = this.editor.getLine(currentLine);
+    while (currentLine > 0 && text.trim() === "") {
+      currentLine--;
+      text = this.editor.getLine(currentLine);
+    }
+    return text;
+  }
+
   async getRange(from?: any, to?: any) {
     let TO = to;
 
@@ -192,12 +202,8 @@ export default class MarkdownManager implements ContentManager {
     return this.editor.setCursor(pos);
   }
 
-  async insertText(text: string, cur: EditorPosition, mode?: Mode) {
-    let cursor = cur || this.getCursor2(mode);
-
-    // if (mode !== "stream") {
-    // 	 text = this.plugin.settings.prefix.replace(/\\n/g, "\n") + text;
-    // }
+  async insertText(text: string, cur: EditorPosition, mode: Mode = "insert") {
+    let cursor = cur ?? this.getCursor2(mode);
 
     if (this.editor.listSelections().length > 0) {
       const anchor = this.editor.listSelections()[0].anchor;

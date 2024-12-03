@@ -8,7 +8,7 @@ import {
 } from "obsidian";
 import TextGeneratorPlugin from "../main";
 import { TemplatesModal } from "../models/model";
-import ContentManagerCls from "../scope/content-manager";
+import ContentManagerFactory from "../scope/content-manager";
 import { debug } from "debug";
 
 const logger = debug("genii:slash-suggest");
@@ -82,9 +82,13 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
 
     if (!activeView) return console.warn("couldn't find activeView");
 
-    const CM = ContentManagerCls.compile(activeView, this.plugin, {
-      templatePath: value.path,
-    });
+    const CM = ContentManagerFactory.createContentManager(
+      activeView,
+      this.plugin,
+      {
+        templatePath: value.path,
+      }
+    );
 
     activeView.editor.replaceRange("", value.context.start, value.context.end);
 

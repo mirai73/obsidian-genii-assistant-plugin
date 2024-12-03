@@ -12,7 +12,7 @@ const logger = debug("genii:ReqFormatter");
 export default class ReqFormatter {
   plugin: TextGeneratorPlugin;
   app: App;
-  contextManager?: ContextManager;
+  contextManager: ContextManager;
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
@@ -20,6 +20,9 @@ export default class ReqFormatter {
   ) {
     this.app = app;
     this.plugin = plugin;
+    if (contextManager === undefined) {
+      throw new Error("contextManager is undefined");
+    }
     this.contextManager = contextManager;
   }
 
@@ -50,7 +53,7 @@ export default class ReqFormatter {
     logger("getRequestParameters start", _params, insertMetadata, templatePath);
 
     const frontmatter: any = this.getFrontmatter(templatePath, insertMetadata);
-    const providerId = this.plugin.textGenerator.LLMRegistry?.get(
+    const providerId = this.plugin.textGenerator?.LLMRegistry?.get(
       frontmatter?.config?.provider
     )?.id as string;
     logger("frontmatter", frontmatter);
@@ -69,7 +72,7 @@ export default class ReqFormatter {
     params.model = params.model?.toLowerCase();
 
     if (
-      !this.plugin.textGenerator.LLMProvider ||
+      !this.plugin.textGenerator?.LLMProvider ||
       (frontmatter.config?.model &&
         frontmatter.config.model.toLowerCase() !== params.model)
     ) {
@@ -78,17 +81,17 @@ export default class ReqFormatter {
       const _provider = AI_MODELS[frontmatter.config?.model].llm[0];
       params.model = frontmatter.config?.model.toLowerCase();
 
-      await this.plugin.textGenerator.loadLLM(_provider);
+      await this.plugin.textGenerator?.loadLLM(_provider);
     }
 
-    if (!this.plugin.textGenerator.LLMProvider)
+    if (!this.plugin.textGenerator?.LLMProvider)
       throw new Error("LLM Provider not initialized");
 
     if (
       params.includeAttachmentsInRequest ??
       params.advancedOptions?.includeAttachmentsInRequest
     ) {
-      params.prompt = await this.plugin.contextManager.getEmbeddedContent(
+      params.prompt = await this.contextManager.getEmbeddedContent(
         params.prompt,
         params.noteFile,
         (AI_MODELS[params.model] || AI_MODELS["models/" + params.model])
@@ -164,12 +167,12 @@ export default class ReqFormatter {
         }
 
         if (params.system || params.config?.system) {
-          bodyParams.messages.unshift(
-            this.plugin.textGenerator.LLMProvider.makeMessage(
+          const systemMessage =
+            this.plugin.textGenerator?.LLMProvider?.makeMessage(
               params.system || params.config.system,
               "system"
-            )
-          );
+            );
+          if (systemMessage) bodyParams.messages.unshift(systemMessage);
         }
       }
 

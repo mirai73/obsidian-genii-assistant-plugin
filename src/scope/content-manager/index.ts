@@ -4,8 +4,9 @@ import ExcalidrawManager from "./ea";
 import CanvasManager from "./canvas";
 import { ContentManager, Options } from "./types";
 import TextGeneratorPlugin from "#/main";
-export default class ContentManagerCls {
-  static compile(
+
+export default class ContentManagerFactory {
+  static createContentManager(
     view: View,
     plugin: TextGeneratorPlugin,
     otherOptions?: {
@@ -18,14 +19,14 @@ export default class ContentManagerCls {
     let wrapInBlockQuote = plugin.settings.outputToBlockQuote;
 
     if (otherOptions?.templatePath) {
-      const templateMetadata = plugin.contextManager.getMetaData(
+      const templateMetadata = plugin.contextManager?.getMetaData(
         otherOptions.templatePath
       );
       wrapInBlockQuote =
         templateMetadata?.frontmatter?.outputToBlockQuote ?? wrapInBlockQuote;
     } else if (otherOptions?.templateContent) {
       const templateFrontmatter =
-        plugin.contextManager.extractFrontmatterFromTemplateContent(
+        plugin.contextManager?.extractFrontmatterFromTemplateContent(
           otherOptions.templateContent
         );
       wrapInBlockQuote =

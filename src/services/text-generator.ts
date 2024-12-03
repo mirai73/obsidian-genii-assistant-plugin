@@ -21,14 +21,18 @@ import RequestHandler from "./api-service";
 import EmbeddingScope from "../scope/embeddings";
 import { IGNORE_IN_YAML } from "../constants";
 import merge from "lodash.merge";
-import { ContentManager } from "../scope/content-manager/types";
+import {
+  ContentManager,
+  Template,
+  TemplateMetadata,
+} from "../scope/content-manager/types";
 
 const logger = debug("genii:TextGenerator");
 
 export default class TextGenerator extends RequestHandler {
   plugin: TextGeneratorPlugin;
   reqFormatter: ReqFormatter;
-  signal: AbortSignal = undefined as any;
+  signal?: AbortSignal;
   contextManager: ContextManager;
   embeddingsScope: EmbeddingScope;
 
@@ -67,42 +71,39 @@ export default class TextGenerator extends RequestHandler {
   }) {
     const insertMetadata = props.insertMetadata ?? true;
     const activeFile = props.activeFile ?? true;
-
-    const [errorContext, context] = await safeAwait(
-      this.contextManager.getContext({
+    try {
+      const context = await this.contextManager.getContext({
         filePath: props.filePath,
         editor: props.editor,
         insertMetadata,
         templatePath: props.templatePath,
         additionalOpts: props.additionalProps,
-      })
-    );
+      });
 
-    if (errorContext) {
-      logger("templateToModal error", errorContext);
-      return Promise.reject(errorContext);
+      switch (true) {
+        case activeFile === false:
+          await this.createToFile(
+            props.params,
+            props.templatePath,
+            context,
+            props.insertMode
+          );
+          break;
+
+        default:
+          if (!props.editor) throw new Error("TG: Editor was not selected");
+          await this.generateInEditor({}, false, props.editor, context, {
+            showSpinner: true,
+            insertMode: props.insertMode,
+          });
+          break;
+      }
+
+      logger("generateFromTemplate end");
+    } catch (error) {
+      logger("generateFromTemplate error", error);
+      throw error;
     }
-
-    switch (true) {
-      case activeFile === false:
-        await this.createToFile(
-          props.params,
-          props.templatePath,
-          context,
-          props.insertMode
-        );
-        break;
-
-      default:
-        if (!props.editor) throw new Error("TG: Editor was not selected");
-        await this.generateInEditor({}, false, props.editor, context, {
-          showSpinner: true,
-          insertMode: props.insertMode,
-        });
-        break;
-    }
-
-    logger("generateFromTemplate end");
   }
 
   async generateBatchFromTemplate(
@@ -184,7 +185,7 @@ export default class TextGenerator extends RequestHandler {
 
     try {
       const streamHandler = await editor.insertStream(startingCursor, mode);
-      const strm = await this.streamGenerate(
+      const stream = await this.streamGenerate(
         context,
         insertMetadata,
         params,
@@ -197,24 +198,23 @@ export default class TextGenerator extends RequestHandler {
       let addedPrefix = false;
 
       const allText =
-        (await strm?.(
-          async (cntnt, first) => {
+        (await stream?.(
+          async (contentChunk, first) => {
             if (mode !== "insert") return;
 
-            let content = cntnt;
-            //   console.log({ content, first });
+            let content = contentChunk;
 
             if (first) {
               const alreadyDidNewLine = prefix?.contains(`
 			`);
 
-              // here you can do some addition magic
+              // here you can do some additional magic
               // check if its starting by space, and space doesn't exist in note (used to determine if we should add space at the begining).
               if (txt.length && txt !== " " && content !== " ") {
                 content = " " + content;
               }
 
-              if (!alreadyDidNewLine && txt === ":" && cntnt !== "\n") {
+              if (!alreadyDidNewLine && txt === ":" && contentChunk !== "\n") {
                 content = "\n" + content;
               }
 
@@ -224,11 +224,7 @@ export default class TextGenerator extends RequestHandler {
                 content = prefix + content;
               }
             }
-
-            // logger("generateStreamInEditor message", { content });
-
             streamHandler.insert(content);
-
             return content;
           },
           (err) => {
@@ -249,7 +245,7 @@ export default class TextGenerator extends RequestHandler {
       // if catched error during or before streaming, it should return to its previews location
       editor.setCursor(startingCursor);
       this.endLoading(true);
-      return Promise.reject(err);
+      throw err;
     }
   }
 
@@ -299,7 +295,7 @@ export default class TextGenerator extends RequestHandler {
     );
 
     if (errorGeneration) {
-      return Promise.reject(errorGeneration);
+      throw errorGeneration;
     }
 
     const mode = this.getMode(context);
@@ -333,7 +329,7 @@ export default class TextGenerator extends RequestHandler {
     );
 
     if (!context) {
-      return Promise.reject("context doesn't exist");
+      throw "context doesn't exist";
     }
 
     const [errorGeneration, text] = await safeAwait(
@@ -341,11 +337,11 @@ export default class TextGenerator extends RequestHandler {
     );
 
     if (errorContext) {
-      return Promise.reject(errorContext);
+      throw errorContext;
     }
 
     if (errorGeneration) {
-      return Promise.reject(errorGeneration);
+      throw errorGeneration;
     }
 
     const data = new ClipboardItem({
@@ -366,27 +362,32 @@ export default class TextGenerator extends RequestHandler {
     outputTemplate: HandlebarsTemplateDelegate<any>
   ) {
     logger("generatePrompt");
-    const cursor = this.getCursor(editor);
+    try {
+      this.plugin.startProcessing(true);
+      const cursor = this.getCursor(editor);
 
-    let text = await this.LLMProvider?.generate(
-      [
-        {
-          role: "user",
-          content: promptText,
-        },
-      ],
-      { ...this.LLMProvider.getSettings(), stream: false }
-    );
+      let text = await this.LLMProvider?.generate(
+        [
+          {
+            role: "user",
+            content: promptText,
+          },
+        ],
+        { ...this.LLMProvider.getSettings(), stream: false }
+      );
 
-    if (outputTemplate) {
-      text = outputTemplate({ output: text });
+      if (outputTemplate) {
+        text = outputTemplate({ output: text });
+      }
+
+      // @TODO: hotfix, improve code later.
+      // @ts-ignore
+      if (text) editor?.editor?.insertText(text, cursor);
+
+      logger("generatePrompt end");
+    } finally {
+      this.plugin.endProcessing(true);
     }
-
-    // @TODO: hotfix, improve code later.
-    // @ts-ignore
-    if (text) editor?.editor?.insertText(text, cursor);
-
-    logger("generatePrompt end");
   }
 
   async createToFile(
@@ -405,7 +406,7 @@ export default class TextGenerator extends RequestHandler {
 
     if (errortext) {
       logger("templateToModal error", errortext);
-      return Promise.reject(errortext);
+      throw errortext;
     }
 
     const title = this.plugin.app.workspace.activeLeaf?.getDisplayText();
@@ -421,7 +422,7 @@ export default class TextGenerator extends RequestHandler {
         );
         if (errorFile) {
           logger("templateToModal error", errorFile);
-          return Promise.reject(errorFile);
+          throw errorFile;
         }
 
         openFile(this.plugin.app, file);
@@ -450,7 +451,7 @@ export default class TextGenerator extends RequestHandler {
       this.plugin.app,
       suggestedPath,
       async (path: string) => {
-        const [errortext, results] = await safeAwait(
+        const [error, results] = await safeAwait(
           this.batchGenerate(
             contexts,
             true,
@@ -484,14 +485,16 @@ export default class TextGenerator extends RequestHandler {
 
               if (errorFile) {
                 logger("templateToModal error", errorFile);
-                return Promise.reject(errorFile);
+                throw errorFile;
               }
             }
           )
         );
 
-        // @ts-ignore
-        const failed = results?.filter((r) => r?.startsWith("FAILED:"));
+        const failed = results?.filter((r) => {
+          if (typeof r === "string") return r?.startsWith("FAILED:");
+          else return false;
+        });
 
         if (failed?.length) {
           logger(`${failed.length} generations failed`, failed);
@@ -501,9 +504,8 @@ export default class TextGenerator extends RequestHandler {
           );
         }
 
-        if (errortext || results === undefined) {
-          logger("templateToModal error", errortext);
-          return Promise.reject(errortext);
+        if (error || results === undefined) {
+          throw error;
         }
 
         await new Promise((s) => setTimeout(s, 500));
@@ -591,7 +593,7 @@ ${removeYAML(content)}
       );
       if (errorFile) {
         logger("createTemplate error", errorFile);
-        return Promise.reject(errorFile);
+        throw errorFile;
       }
       openFile(this.plugin.app, file);
     }).open();
@@ -621,13 +623,9 @@ ${removeYAML(content)}
 
   async templateToModal(props: {
     params: Partial<TextGeneratorSettings>;
-    /** Template path */
     templatePath?: string;
-    /** ContentManager */
     editor: ContentManager;
-    /** filePath */
     filePath?: string;
-    /** defaults to true */
     activeFile?: boolean;
   }) {
     logger("templateToModal");
@@ -635,18 +633,16 @@ ${removeYAML(content)}
     const templateFile = this.plugin.app.vault.getAbstractFileByPath(
       props.templatePath || ""
     );
-
-    const [errortemplateContent, templateContent] = await safeAwait(
-      // @ts-ignore
-      this.plugin.app.vault.adapter.read(templateFile?.path)
+    if (!templateFile) {
+      logger("templateToModal", "templateFile not found");
+      return;
+    }
+    const templateContent = await this.plugin.app.vault.adapter.read(
+      templateFile?.path
     );
 
     if (!templateContent) {
-      return Promise.reject("templateContent is undefined");
-    }
-
-    if (errortemplateContent) {
-      return Promise.reject(errortemplateContent);
+      throw "templateContent is undefined";
     }
 
     const { inputContent, outputContent, preRunnerContent } =
@@ -697,11 +693,7 @@ ${removeYAML(content)}
   getTemplates(promptsPath: string = this.plugin.settings.promptsPath) {
     const templateFolder = this.plugin.app.vault.getFolderByPath(promptsPath);
 
-    const templates: (ReturnType<typeof this.getMetadata> & {
-      title: string;
-      ctime: number;
-      path: string;
-    })[] = [];
+    const templates: Template[] = [];
 
     if (templateFolder) {
       Vault.recurseChildren(templateFolder, (file) => {
@@ -722,17 +714,7 @@ ${removeYAML(content)}
     logger("getMetadata");
     const metadata = this.getFrontmatter(path);
 
-    const validatedMetadata: Partial<{
-      id: string;
-      name: string;
-      description: string;
-      required_values: string[];
-      author: string;
-      tags: string[];
-      version: string;
-      commands: string[];
-      viewTypes?: string[];
-    }> = {};
+    const validatedMetadata: TemplateMetadata = {};
 
     if (metadata?.PromptInfo?.promptId) {
       validatedMetadata.id = metadata.PromptInfo.promptId;
@@ -847,20 +829,21 @@ ${removeYAML(content)}
 
   /** record of template paths, from packageId, templateId */
   templatePaths: Record<string, Record<string, string>> = {};
-  lastTemplatePathStats: Record<string, number> = {};
+  lastTemplatePathStats: Record<string, number | undefined> = {};
 
-  checkTemplatePathsHasChanged() {
-    const nowStats: Record<string, number> = {};
-
-    for (const path in this.plugin.app.vault.adapter.files) {
+  async checkTemplatePathsHasChanged() {
+    const files = this.plugin.app.vault.getFiles();
+    for (const path in files) {
       if (
         !path.startsWith(this.plugin.settings.promptsPath) ||
         path.includes("/trash/")
       )
         continue;
 
-      nowStats[path] = this.plugin.app.vault.adapter.files[path].ctime;
-      if (nowStats[path] !== this.lastTemplatePathStats[path]) return true;
+      const ctime = (await this.plugin.app.vault.adapter.stat(path))?.ctime;
+      if (ctime !== this.lastTemplatePathStats[path]) {
+        return true;
+      }
     }
 
     return false;
@@ -909,13 +892,15 @@ ${removeYAML(content)}
 
   async updateTemplatesCache() {
     // get files, it will be empty onLoad, that's why we are using the getFilesOnLoad function
-    // nico update : stay this await hack here for moment, before find a better solution, but kept only one implementation to load templates list, in getTemplates()
+    // nice update : stay this await hack here for moment,
+    //before find a better solution, but kept only one implementation to load templates
+    // list, in getTemplates()
     await this.plugin.getFilesOnLoad();
 
     const templates = this.plugin.textGenerator?.getTemplates();
 
     this.templatePaths = {};
-    templates?.forEach((template: any) => {
+    templates?.forEach((template: Template) => {
       if (template.id) {
         const ss = template.path.split("/");
         this.templatePaths[ss[ss.length - 2]] ??= {};

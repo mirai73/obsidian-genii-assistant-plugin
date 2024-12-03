@@ -1,4 +1,4 @@
-import ContentManagerCls from "#/scope/content-manager";
+import ContentManagerFactory from "#/scope/content-manager";
 import TextGeneratorPlugin from "#/main";
 import { MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian";
 import debug from "debug";
@@ -10,7 +10,7 @@ export default class TGBlock {
     this.plugin = plugin;
 
     this.plugin.registerMarkdownCodeBlockProcessor(
-      "tg",
+      "prompt",
       async (source, el, ctx) => {
         this.blockTgHandler(source, el, ctx);
       }
@@ -22,50 +22,55 @@ export default class TGBlock {
     container: HTMLElement,
     { sourcePath: path }: MarkdownPostProcessorContext
   ) {
-    setTimeout(async () => {
-      try {
-        const {
-          inputTemplate,
-          outputTemplate,
-          inputContent,
-          outputContent,
-          preRunnerContent,
-        } = this.plugin.contextManager.splitTemplate(source);
-
-        const activeView = this.plugin.getActiveViewMD();
-
-        if (!activeView) throw new Error("active view wasn't detected");
-
-        const CM = ContentManagerCls.compile(activeView, this.plugin, {
-          templateContent: source,
-        });
-
-        const context = {
-          ...(activeView
-            ? await this.plugin.contextManager.getContext({
-                editor: CM,
-                filePath: activeView?.file?.path,
-                templateContent: inputContent,
-              })
-            : {}),
-        };
-
-        const markdown = await inputTemplate(context.options);
-
-        console.log(markdown);
-        await MarkdownRenderer.render(
-          this.plugin.app,
-          markdown,
-          container,
-          path,
-          this.plugin
-        );
-
-        this.addTGMenu(container, markdown, source, outputTemplate);
-      } catch (e) {
-        console.warn(e);
+    try {
+      if (!this.plugin.contextManager) {
+        throw new Error("Context manager wasn't initialized");
       }
-    }, 100);
+      const {
+        inputTemplate,
+        outputTemplate,
+        inputContent,
+        outputContent,
+        preRunnerContent,
+      } = this.plugin.contextManager.splitTemplate(source);
+
+      const activeView = this.plugin.getActiveViewMD();
+
+      if (!activeView) throw new Error("Active View wasn't detected");
+
+      const CM = ContentManagerFactory.createContentManager(
+        activeView,
+        this.plugin,
+        {
+          templateContent: source,
+        }
+      );
+
+      const context = {
+        ...(activeView
+          ? await this.plugin.contextManager.getContext({
+              editor: CM,
+              filePath: activeView?.file?.path,
+              templateContent: inputContent,
+            })
+          : {}),
+      };
+
+      const markdown = await inputTemplate(context.options);
+
+      logger(markdown);
+      await MarkdownRenderer.render(
+        this.plugin.app,
+        markdown.slice(0, 300) + (markdown.length > 300 ? "..." : ""),
+        container,
+        path,
+        this.plugin
+      );
+
+      this.addTGMenu(container, markdown, source, outputTemplate);
+    } catch (e) {
+      console.warn(e);
+    }
   }
 
   private addTGMenu(
@@ -81,11 +86,14 @@ export default class TGBlock {
     const button = this.plugin.createRunButton("Generate Text", generateSVG);
     button.addEventListener("click", async () => {
       const activeView = this.plugin.getActiveViewMD();
-      if (!activeView) throw new Error("activeView wasn't detected");
-      const CM = ContentManagerCls.compile(activeView, this.plugin);
-      console.log(markdown);
+      if (!activeView) throw new Error("Active View wasn't detected");
+      const CM = ContentManagerFactory.createContentManager(
+        activeView,
+        this.plugin
+      );
+      logger("eventListener", markdown);
       if (activeView)
-        await this.plugin.textGenerator.generatePrompt(
+        await this.plugin.textGenerator?.generatePrompt(
           markdown,
           CM,
           outputTemplate
@@ -103,7 +111,7 @@ export default class TGBlock {
       createTemplateSVG
     );
     buttonMakeTemplate.addEventListener("click", async () => {
-      await this.plugin.textGenerator.createTemplate(source, "newTemplate");
+      await this.plugin.textGenerator?.createTemplate(source, "newTemplate");
       logger(`addTGMenu MakeTemplate`, {
         markdown,
         source,

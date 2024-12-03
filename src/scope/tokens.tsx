@@ -8,6 +8,7 @@ import { init, Tiktoken } from "@dqbd/tiktoken/lite/init";
 import { Notice } from "obsidian";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { InputContext } from "./context-manager";
 const logger = debug("genii:tokens-service");
 
 export default class TokensScope {
@@ -45,7 +46,7 @@ export default class TokensScope {
     return encoder;
   }
 
-  async estimate(context: any) {
+  async estimate(context: InputContext) {
     logger("estimateTokens", context);
     const { options, template } = context;
 
@@ -85,7 +86,6 @@ export default class TokensScope {
     );
 
     const result = {
-      // model: this.plugin.textGenerator.LLMProvider.getSettings().model || this.plugin.settings.model || "gpt-3.5-turbo",
       maxTokens,
       completionTokens: this.plugin.settings.max_tokens,
       tokens,
@@ -99,12 +99,14 @@ export default class TokensScope {
   showTokens(props: {
     tokens: any;
     maxTokens: number;
-    cost: number;
+    cost?: number;
     completionTokens: number;
   }) {
     logger("showTokens", props);
 
+    const doc = new DocumentFragment();
     const summaryEl = document.createElement("div");
+    doc.appendChild(summaryEl);
     summaryEl.classList.add("plug-tg-summary");
 
     const provider = createRoot(summaryEl);
@@ -146,7 +148,7 @@ export default class TokensScope {
             <div className="plug-tg-flex plug-tg-items-center plug-tg-justify-between plug-tg-space-x-4">
               <div>Estimated Price</div>
               <div className="plug-tg-inline-flex plug-tg-items-center plug-tg-pr-3 plug-tg-text-base plug-tg-font-semibold plug-tg-text-gray-900 dark:plug-tg-text-white">
-                ${props.cost.toLocaleString()}
+                ${props.cost?.toLocaleString()}
               </div>
             </div>
           </li>
@@ -156,6 +158,6 @@ export default class TokensScope {
 
     logger("showTokens", { summaryEl });
     logger(summaryEl);
-    new Notice(summaryEl as any, 5000);
+    new Notice(doc, 5000);
   }
 }
