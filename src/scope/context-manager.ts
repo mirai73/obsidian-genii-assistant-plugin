@@ -29,7 +29,7 @@ import type { ContentManager } from "./content-manager/types";
 import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";
 
 import mime from "mime-types";
-import { InputOptions } from "#/lib/models";
+import { ContentOptions } from "#/lib/models";
 import {
   MessageContent,
   MessageContentComplex,
@@ -464,7 +464,7 @@ export default class ContextManager {
   async getEmbeddedContent(
     markdownText: string,
     source?: TFile,
-    options?: InputOptions
+    options?: ContentOptions
   ): Promise<MessageContent> {
     logger("getEmbeddedContent", { markdownText, source, options });
     if (!source) return markdownText;

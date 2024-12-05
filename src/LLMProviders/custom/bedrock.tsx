@@ -13,28 +13,16 @@ import {
   ChatMessage,
   fromImageModelId,
   ImageModels,
+  fromVideoModelId,
 } from "@mirai73/bedrock-fm";
 import { AwsCredentialsWrapper } from "./awsCredentialsWrapper";
 import { ModelsHandler } from "../utils";
-import {
-  MessageContentComplex,
-  MessageContentText,
-} from "@langchain/core/messages";
-import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-} from "@aws-sdk/client-bedrock-runtime";
-const logger = debug("genii:BedrockProvider");
+import { MessageContentComplex } from "@langchain/core/messages";
+import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { AI_MODELS } from "../refs";
 
-const globalVars: Record<string, boolean> = {
-  n: true,
-  temperature: true,
-  timeout: true,
-  stream: true,
-  messages: true,
-  max_tokens: true,
-  stop: true,
-};
+const logger = debug("genii:BedrockProvider");
 
 const untangableVars = [
   "custom_header",
@@ -136,23 +124,14 @@ export default class BedrockProvider
 
       const model = reqParams?.model ?? config.model;
       logger("model", model);
-      if (
-        model === ImageModels.AMAZON_TITAN_IMAGE_GENERATOR_V1 ||
-        model === ImageModels.AMAZON_TITAN_IMAGE_GENERATOR_V2_0 ||
-        model === ImageModels.STABILITY_STABLE_DIFFUSION_XL_V1 ||
-        model === ImageModels.STABILITY_STABLE_IMAGE_CORE_V1_0 ||
-        model === ImageModels.STABILITY_STABLE_IMAGE_ULTRA_V1_0 ||
-        model === ImageModels.STABILITY_SD3_LARGE_V1_0 ||
-        model === ImageModels.AMAZON_NOVA_CANVAS_V1_0
-      ) {
+      if (AI_MODELS[model].outputOptions?.images) {
         logger("generate image", model);
-        return await this.generateImage(
-          model,
-          client,
-          messages,
-          reqParams,
-          customConfig
-        );
+        return await this.generateImage(model, client, messages, reqParams);
+      }
+
+      if (AI_MODELS[model].outputOptions?.videos) {
+        logger("generate video", model);
+        return await this.generateVideo(model, client, messages, reqParams);
       }
 
       const fm = fromModelId(model, {
@@ -200,43 +179,40 @@ export default class BedrockProvider
     messages: Message[],
     reqParams: Partial<
       Omit<LLMConfig, "n"> & { prompt: string | MessageContentComplex[] }
-    >,
-    customConfig: CustomConfig | undefined
+    >
   ): Promise<string> {
     logger("generateImage", { model, reqParams, messages });
     let prompt: string | undefined;
     let image: string | undefined;
-    // if (messages?.length > 0) {
-    //   prompt =
-    //     (messages[0].content[0] as MessageContentText).text ??
-    //     messages[0].content;
-    // }
+
     if (typeof reqParams.prompt !== "string") {
       prompt = reqParams.prompt
         ?.filter((x) => x.type === "text")
         ?.at(0)
+        // @ts-ignore
         ?.text.replace("\n", " ")
         .trim();
-      image = reqParams.prompt?.filter((x) => x.type === "image_url")?.at(0)
+      image = reqParams.prompt?.filter((x) => x.type === "image_url")?.at(0) // @ts-ignore
         ?.image_url.url;
     } else {
       prompt = reqParams.prompt;
     }
-    logger("image prompt", { prompt, image });
+    logger("generateImage", { prompt, image });
     if (!prompt) throw new Error("No prompt provided");
     const imageModel = fromImageModelId(model, { client });
     const images = await imageModel.generateImage(prompt, {
-      width: 1024,
-      height: 1024,
+      size: { width: 1024, height: 1024 },
+      // @ts-ignore need to fix the input type
       image: image,
     });
-    logger("images", images);
+    logger("generateImage", { images });
     const imageBytes = Buffer.from(images[0].split("base64,")[1], "base64");
     // @ts-ignore
     const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
       "attachmentFolderPath"
     );
-    const fileName = `Created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.png`;
+    const ext = images[0].split(":")[1].split(";")[0].split("/")[1];
+    const fileName = `Image created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.${ext}`;
     this.plugin.app.vault.createBinary(
       attachmentFolderPath + `/` + fileName,
       imageBytes
@@ -291,6 +267,61 @@ export default class BedrockProvider
       logger("generateMultiple error", errorRequest);
       throw new Error(errorRequest);
     }
+  }
+
+  async generateVideo(
+    model: string,
+    client: BedrockRuntimeClient,
+    messages: Message[],
+    reqParams: Partial<
+      Omit<LLMConfig, "n"> & { prompt: string | MessageContentComplex[] }
+    >
+  ): Promise<string> {
+    logger("generateVideo", { model, reqParams, messages });
+    let prompt: string | undefined;
+    let image: string | undefined;
+
+    if (typeof reqParams.prompt !== "string") {
+      prompt = reqParams.prompt
+        ?.filter((x) => x.type === "text")
+        ?.at(0)
+        // @ts-ignore
+        ?.text.replace("\n", " ")
+        .trim();
+      image = reqParams.prompt?.filter((x) => x.type === "image_url")?.at(0) // @ts-ignore
+        ?.image_url.url;
+    } else {
+      prompt = reqParams.prompt;
+    }
+    logger("generateVideo", { prompt, image });
+    if (!prompt) throw new Error("No prompt provided");
+    // @ts-ignore need to fix the import type - parameter is correct
+    const videoModel = fromVideoModelId(model, { client });
+    const video = await videoModel.generateVideo(prompt, {
+      image: image,
+      s3Uri: "s3://", // config parameter, global and front matter?
+    });
+    logger("generateVideo", { video });
+    const s3client = new S3Client();
+    const resp = await s3client.send(
+      new GetObjectCommand({
+        Bucket: video.s3Uri.split("/")[2],
+        Key: video.s3Uri.split("/").slice(3).join("/"),
+      })
+    );
+
+    const videoBytes = await resp.Body?.transformToByteArray();
+    if (!videoBytes) throw new Error("No video bytes");
+    // @ts-ignore
+    const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
+      "attachmentFolderPath"
+    );
+    const fileName = `Video created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.mp4`;
+    this.plugin.app.vault.createBinary(
+      attachmentFolderPath + `/` + fileName,
+      videoBytes
+    );
+    return `![[${fileName}]]`;
   }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
