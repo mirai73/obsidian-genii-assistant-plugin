@@ -10,7 +10,7 @@ import {
   createFolder,
 } from "#/utils";
 
-import { pluginApi } from "@vanakat/plugin-api";
+// import { pluginApi } from "@vanakat/plugin-api";
 
 export const Handlebars = asyncHelpers(handlebars);
 import type ContextManager from "#/scope/context-manager";
@@ -699,7 +699,7 @@ export default function HelpersFn(self: ContextManager) {
         ...this,
         plugin: self.plugin,
         app: self.app,
-        pluginApi,
+        //pluginApi,
         run,
         gen,
         genJSON,

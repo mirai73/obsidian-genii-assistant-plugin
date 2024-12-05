@@ -5,7 +5,7 @@ import { pull } from "langchain/hub";
 import asyncHelpers from "../lib/async-handlebars-helper";
 import { createFileWithInput, createFolder } from "#/utils";
 
-import { pluginApi } from "@vanakat/plugin-api";
+// import { pluginApi } from "@vanakat/plugin-api";
 
 export const Handlebars = asyncHelpers(handlebars);
 import {
@@ -42,7 +42,7 @@ export default async function runJSInSandbox(
     JSON5,
     lodashGet,
     lodashSet,
-    pluginApi,
+    //pluginApi,
     Notice,
     pull,
     langchain,

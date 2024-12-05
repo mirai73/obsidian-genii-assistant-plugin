@@ -42,7 +42,7 @@ import { ToolView, VIEW_TOOL_ID } from "./ui/tool";
 import { randomUUID } from "crypto";
 import VersionManager from "./scope/versionManager";
 
-import { registerAPI } from "@vanakat/plugin-api";
+//import { registerAPI } from "@vanakat/plugin-api";
 import { PlaygroundView, VIEW_Playground_ID } from "./ui/playground";
 import ContentManagerFactory from "./scope/content-manager";
 import ContextManager from "./scope/context-manager";
@@ -213,7 +213,7 @@ export default class TextGeneratorPlugin extends Plugin {
 
     this.pluginAPIService = new PluginServiceAPI(this);
 
-    registerAPI("tg", this.pluginAPIService, this as any);
+    //registerAPI("tg", this.pluginAPIService, this as any);
 
     this.app.workspace.onLayoutReady(async () => {
       try {
