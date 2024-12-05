@@ -1,4 +1,4 @@
-import { ContentManager, Item, Mode, Options } from "./types";
+import { ContentManager, Item, ContentInsertMode, Options } from "./types";
 
 export default class CanvasManager implements ContentManager {
   canvas: Canvas;
@@ -190,7 +190,11 @@ export default class CanvasManager implements ContentManager {
     return;
   }
 
-  async insertText(text: string, parent?: Item, mode?: Mode): Promise<Item> {
+  async insertText(
+    text: string,
+    parent?: Item,
+    mode?: ContentInsertMode
+  ): Promise<Item> {
     const items = await this.getTextSelectedItems();
     let selectedItem = parent || (await this.getCursor());
     let width = 0;

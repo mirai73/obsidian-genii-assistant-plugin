@@ -21,6 +21,7 @@ import { MessageContentComplex } from "@langchain/core/messages";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { AI_MODELS } from "../refs";
+import { rawListeners } from "process";
 
 const logger = debug("genii:BedrockProvider");
 
@@ -43,6 +44,7 @@ export const default_values = {
   sanitization_streaming: "",
   streamable: true,
   useConverseApi: false,
+  waitForVideo: true,
 };
 
 export type CustomConfig = Record<keyof typeof default_values, string>;
@@ -72,8 +74,6 @@ export default class BedrockProvider
   default_values = default_values;
 
   convertMessage(m: Message): ChatMessage {
-    logger(m.role);
-    logger(m.content);
     if (typeof m.content === "string") {
       return { role: roleMap(m.role), message: m.content };
     }
@@ -108,7 +108,7 @@ export default class BedrockProvider
       let allText = "";
 
       const config = (this.plugin.settings.LLMProviderOptions[this.id] ??= {});
-      logger("config", config);
+      logger("generate", { config });
       if (!Platform.isDesktop) {
         return "";
       }
@@ -123,18 +123,17 @@ export default class BedrockProvider
       });
 
       const model = reqParams?.model ?? config.model;
-      logger("model", model);
-      if (AI_MODELS[model].outputOptions?.images) {
-        logger("generate image", model);
+      logger("generate", { model });
+      if (AI_MODELS[model]?.outputOptions?.images) {
         return await this.generateImage(model, client, messages, reqParams);
       }
 
-      if (AI_MODELS[model].outputOptions?.videos) {
-        logger("generate video", model);
+      if (AI_MODELS[model]?.outputOptions?.videos) {
         return await this.generateVideo(model, client, messages, reqParams);
       }
 
       const fm = fromModelId(model, {
+        // @ts-ignore
         client,
         maxTokenCount: reqParams.max_tokens,
         stopSequences: reqParams.stop ?? [],
@@ -148,7 +147,7 @@ export default class BedrockProvider
       if (messages?.length > 0) {
         converse_messages = messages.map((m) => this.convertMessage(m));
       }
-      logger("messages conv", converse_messages);
+      logger("generate", { converse_messages });
       if (!stream) {
         const resp = await fm.chat(converse_messages);
         logger(resp);
@@ -240,6 +239,7 @@ export default class BedrockProvider
       });
       const model = reqParams.model ?? config.model;
       const fm = fromModelId(model, {
+        // @ts-ignore
         client,
         maxTokenCount: reqParams.max_tokens,
         stopSequences: reqParams.stop ?? [],
@@ -299,29 +299,32 @@ export default class BedrockProvider
     const videoModel = fromVideoModelId(model, { client });
     const video = await videoModel.generateVideo(prompt, {
       image: image,
-      s3Uri: "s3://", // config parameter, global and front matter?
+      rawResponse: true,
+      s3Uri: "s3://bedrock-video-generation-us-east-1-hta1ce", // config parameter, global and front matter?
     });
     logger("generateVideo", { video });
-    const s3client = new S3Client();
-    const resp = await s3client.send(
-      new GetObjectCommand({
-        Bucket: video.s3Uri.split("/")[2],
-        Key: video.s3Uri.split("/").slice(3).join("/"),
-      })
-    );
+    return `\`\`\`bedrock-video\n${video}\n\`\`\``;
+    // video.s3Uri = video.s3Uri.replace("s3://", "");
+    // const s3client = new S3Client();
+    // const resp = await s3client.send(
+    //   new GetObjectCommand({
+    //     Bucket: video.s3Uri.split("/")[0],
+    //     Key: video.s3Uri.split("/")[1],
+    //   })
+    // );
 
-    const videoBytes = await resp.Body?.transformToByteArray();
-    if (!videoBytes) throw new Error("No video bytes");
-    // @ts-ignore
-    const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
-      "attachmentFolderPath"
-    );
-    const fileName = `Video created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.mp4`;
-    this.plugin.app.vault.createBinary(
-      attachmentFolderPath + `/` + fileName,
-      videoBytes
-    );
-    return `![[${fileName}]]`;
+    // const videoBytes = await resp.Body?.transformToByteArray();
+    // if (!videoBytes) throw new Error("No video bytes");
+    // // @ts-ignore
+    // const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
+    //   "attachmentFolderPath"
+    // );
+    // const fileName = `Video created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.mp4`;
+    // this.plugin.app.vault.createBinary(
+    //   attachmentFolderPath + `/` + fileName,
+    //   videoBytes
+    // );
+    // return `![[${fileName}]]`;
   }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
@@ -373,6 +376,21 @@ export default class BedrockProvider
           llmProviderId={props.self.originalId}
           default_values={default_values}
         />
+        <SettingItem
+          name="Wait for video generation"
+          register={props.register}
+          sectionId={props.sectionId}
+        >
+          <Input
+            value={config.waitForVideo || default_values.waitForVideo}
+            type="checkbox"
+            setValue={async (value) => {
+              config.waitForVideo = value;
+              global.triggerReload();
+              await global.plugin.saveSettings();
+            }}
+          />
+        </SettingItem>
         {/* <SettingItem
           key="useConverseApi"
           name="Use Converse API"

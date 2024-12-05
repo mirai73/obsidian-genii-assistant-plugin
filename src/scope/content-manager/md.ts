@@ -1,5 +1,5 @@
 import { Editor, EditorPosition, TFile, View } from "obsidian";
-import { ContentManager, Mode, Options } from "./types";
+import { ContentManager, ContentInsertMode, Options } from "./types";
 import { minPos, maxPos } from "./utils";
 import { removeYAML } from "#/utils";
 
@@ -65,7 +65,7 @@ export default class MarkdownManager implements ContentManager {
     return this.editor.getCursor(pos);
   }
 
-  getCursor2(mode?: Mode) {
+  getCursor2(mode?: ContentInsertMode) {
     return this.editor.getCursor(mode === "replace" ? "from" : "to");
   }
 
@@ -202,7 +202,11 @@ export default class MarkdownManager implements ContentManager {
     return this.editor.setCursor(pos);
   }
 
-  async insertText(text: string, cur: EditorPosition, mode: Mode = "insert") {
+  async insertText(
+    text: string,
+    cur: EditorPosition,
+    mode: ContentInsertMode = "insert"
+  ) {
     let cursor = cur ?? this.getCursor2(mode);
 
     if (this.editor.listSelections().length > 0) {

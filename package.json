@@ -62,8 +62,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
-    "@aws-sdk/client-bedrock-runtime": "^3.706.0",
-    "@aws-sdk/client-s3": "^3.705.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.654.0",
+    "@aws-sdk/client-s3": "^3.654.0",
     "@aws-sdk/credential-providers": "^3.637.0",
     "@aws-sdk/types": "^3.609.0",
     "@codemirror/language": "^6.10.2",
@@ -84,6 +84,7 @@
     "@rjsf/core": "^5.20.0",
     "@rjsf/utils": "^5.20.0",
     "@rjsf/validator-ajv8": "^5.20.0",
+    "@smithy/node-http-handler": "3.2.2",
     "@smithy/shared-ini-file-loader": "^3.1.4",
     "@tabler/icons-react": "^2.47.0",
     "@tailwindcss/forms": "^0.5.7",

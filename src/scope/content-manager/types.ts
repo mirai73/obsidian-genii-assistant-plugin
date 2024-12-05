@@ -1,7 +1,7 @@
 import { TFile } from "obsidian";
 import type { CanvasNode } from "./canvas.d";
 
-export type Mode = "insert" | "stream" | "replace";
+export type ContentInsertMode = "insert" | "stream" | "replace";
 
 export type EditorPosition = {
   ch: number;
@@ -63,12 +63,12 @@ export interface ContentManager {
   insertText(
     data: string,
     pos: EditorPosition | Item,
-    mode?: Mode
+    mode?: ContentInsertMode
   ): Promise<string | Item>;
 
   insertStream(
     pos: EditorPosition | Item,
-    mode?: Mode
+    mode?: ContentInsertMode
   ): Promise<{
     insert(data: string): void;
     end(): void;

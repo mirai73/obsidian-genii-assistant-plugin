@@ -1,5 +1,5 @@
 import { TFile, View } from "obsidian";
-import { ContentManager, Mode, Options } from "./types";
+import { ContentManager, ContentInsertMode, Options } from "./types";
 
 type Item = any;
 export default class ExcalidrawManager implements ContentManager {
@@ -126,7 +126,11 @@ export default class ExcalidrawManager implements ContentManager {
     return;
   }
 
-  async insertText(text: string, pos: Item, mode?: Mode): Promise<Item> {
+  async insertText(
+    text: string,
+    pos: Item,
+    mode?: ContentInsertMode
+  ): Promise<Item> {
     const items = await this.getTextSelectedItems();
     let selectedItem = pos || this.getCursor();
     let itemId = selectedItem?.id;

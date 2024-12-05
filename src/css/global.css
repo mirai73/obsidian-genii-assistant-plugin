@@ -18,6 +18,11 @@
   /* @apply plug-tg-w-[800px]; */
 }
 
+.plug-video-bedrock {
+  background: #ffd300;
+  color: #ff4e91;
+}
+
 .plug-tg-upsidedown {
   transform: rotate(-90deg);
 }

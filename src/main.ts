@@ -47,6 +47,7 @@ import { PlaygroundView, VIEW_Playground_ID } from "./ui/playground";
 import ContentManagerFactory from "./scope/content-manager";
 import ContextManager from "./scope/context-manager";
 import TGBlock from "./services/tgBlock";
+import BedrockVideoBlock from "./services/bedrockVideoBlock";
 import { SetModel } from "./ui/settings/components/set-model";
 import * as manifest from "../manifest.json";
 //    @ts-ignore
@@ -173,6 +174,7 @@ export default class TextGeneratorPlugin extends Plugin {
     // tg codeblock
     if (this.settings.options["tg-block-processor"]) {
       new TGBlock(this);
+      new BedrockVideoBlock(this);
     }
 
     // This creates an icon in the left ribbon.
