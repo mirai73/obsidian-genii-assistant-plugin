@@ -9,11 +9,12 @@ import { OllamaInput } from "@langchain/community/llms/ollama";
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:ollama");
+const logger = debug("genii:llmProvider:ollama");
 
 export default class LangchainOllamaProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static slug = "ollama" as const;
 
   static provider = "Langchain";
@@ -45,7 +46,7 @@ export default class LangchainOllamaProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 
@@ -74,12 +75,13 @@ export default class LangchainOllamaProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.basePath}
             placeholder="Enter your API basePath"
             setValue={async (value) => {
               config.basePath = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -90,11 +92,12 @@ export default class LangchainOllamaProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.model}
             setValue={async (value) => {
               config.model = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

@@ -1,11 +1,18 @@
-import { contextVariablesObj } from "#/scope/context-manager";
-import Helpersfn from "#/helpers/handlebars-helpers";
+import { ContextVariables } from "#/scope/context-manager";
+import HelpersFn from "#/helpers/handlebars-helpers";
 import set from "lodash.set";
 
-const helpers: Record<string, any> = Helpersfn({} as any);
+const helpers: Record<string, any> = HelpersFn({} as any);
 const helpersArr: string[] = Object.keys(helpers);
 
-const ignoredVariables = ["output", "this", "true", "false", "script", "inputContext"];
+const ignoredVariables = [
+  "output",
+  "this",
+  "true",
+  "false",
+  "script",
+  "inputContext",
+];
 const defaultHelpers = ["if", "unless", "with", "each", "package"];
 
 export const getHBValues = (text: string) => {
@@ -40,7 +47,7 @@ export const getHBValues = (text: string) => {
       tag.startsWith("'") ||
       tag.startsWith('"') ||
       // if its a number
-      "" + +tag == tag ||
+      "" + +tag === tag ||
       // if its a helper
       defaultHelpers.includes(tag) ||
       // if its a ignored variable name
@@ -60,7 +67,7 @@ export const getHBValues = (text: string) => {
       continue;
     }
 
-    if (tag == "else") {
+    if (tag === "else") {
       continue;
     }
 
@@ -90,7 +97,7 @@ export const getHBValues = (text: string) => {
     }
 
     if ("#^".includes(tag[0])) {
-      if (contextVariablesObj[tag.substring(1)]) {
+      if (ContextVariables[tag.substring(1)]) {
         setVar(tag.substring(1), true);
         stack.push(context);
         continue;
@@ -129,9 +136,7 @@ function extractVariablesAndStrings(input: string): string[] {
   let withinQuotes = false;
   let currentQuote = "";
 
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-
+  for (const char of input) {
     if (char === '"' || char === "'") {
       if (withinQuotes && char === currentQuote) {
         currentToken += char;

@@ -1,10 +1,4 @@
-import {
-  App,
-  Notice,
-  Component,
-  TFile,
-  HeadingCache,
-} from "obsidian";
+import { App, Notice, Component, TFile, HeadingCache } from "obsidian";
 import { AsyncReturnType, Context, Message } from "../types";
 import TextGeneratorPlugin from "../main";
 import { IGNORE_IN_YAML } from "../constants";
@@ -18,8 +12,7 @@ import {
   walkUntilTrigger,
 } from "../utils";
 import debug from "debug";
-const logger = debug("textgenerator:ContextManager");
-import Helpersfn, { Handlebars } from "../helpers/handlebars-helpers";
+import HelpersFn, { Handlebars } from "../helpers/handlebars-helpers";
 import {
   ContentExtractor,
   ExtractorSlug,
@@ -30,14 +23,19 @@ import { getAPI as getDataviewApi } from "obsidian-dataview";
 import set from "lodash.set";
 import merge from "lodash.merge";
 import { getHBValues } from "../utils/barhandles";
-
+import * as fspath from "path";
 import JSON5 from "json5";
 import type { ContentManager } from "./content-manager/types";
 import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";
 
-
-import mime from "mime-types"
+import mime from "mime-types";
 import { InputOptions } from "#/lib/models";
+import {
+  MessageContent,
+  MessageContentComplex,
+} from "@langchain/core/messages";
+
+const logger = debug("genii:ContextManager");
 
 interface CodeBlock {
   type: string;
@@ -49,7 +47,7 @@ type CodeBlockProcessor = (block: CodeBlock) => Promise<string>;
 
 export interface ContextTemplate {
   inputTemplate: HandlebarsTemplateDelegate<any>;
-  outputTemplate: HandlebarsTemplateDelegate<any>;
+  outputTemplate?: HandlebarsTemplateDelegate<any>;
 }
 
 export interface InputContext {
@@ -58,7 +56,6 @@ export interface InputContext {
   options?: AvailableContext;
   context?: string;
 }
-
 
 export interface AvailableContext {
   title?: string;
@@ -109,7 +106,7 @@ export default class ContextManager {
     this.app = app;
     this.plugin = plugin;
 
-    const Helpers = Helpersfn(this);
+    const Helpers = HelpersFn(this);
 
     Object.keys(Helpers).forEach((key) => {
       Handlebars.registerHelper(key, Helpers[key as keyof typeof Helpers]);
@@ -122,7 +119,7 @@ export default class ContextManager {
     insertMetadata?: boolean;
     templatePath?: string;
     templateContent?: string;
-    addtionalOpts?: any;
+    additionalOpts?: any;
   }): Promise<InputContext> {
     const templatePath = props.templatePath || "";
     const templateContent = props.templateContent || "";
@@ -131,7 +128,7 @@ export default class ContextManager {
       "getContext",
       props.insertMetadata,
       props.templatePath,
-      props.addtionalOpts
+      props.additionalOpts
     );
 
     /* Template */
@@ -144,24 +141,27 @@ export default class ContextManager {
           templateContent,
           filePath: props.filePath,
         }),
-        props.addtionalOpts
+        props.additionalOpts
       );
 
       if (!templatePath.length)
         return {
           options,
-          templatePath: ""
+          templatePath: "",
         };
 
-      const { context, inputTemplate, outputTemplate } =
-        await this.templateFromPath(templatePath, options, templateContent);
+      const { context, template } = await this.templateFromPath(
+        templatePath,
+        options,
+        templateContent
+      );
 
       logger("Context Template", { context, options });
 
       return {
         context,
         options,
-        template: { inputTemplate, outputTemplate: outputTemplate as any },
+        template,
         templatePath: props.templatePath,
       };
     } else {
@@ -169,7 +169,7 @@ export default class ContextManager {
 
       const contextTemplate = this.plugin.settings.context.customInstructEnabled
         ? this.plugin.settings.context.customInstruct ||
-        this.plugin.defaultSettings.context.customInstruct
+          this.plugin.defaultSettings.context.customInstruct
         : "{{tg_selection}}";
 
       const options = await this.getDefaultContext(
@@ -189,7 +189,7 @@ export default class ContextManager {
           Object.keys(frontmatter).length !== 0
         ) {
           /* Text Generate with metadata */
-          options["frontmatter"] = frontmatter;
+          options.frontmatter = frontmatter;
           context = this.getMetaDataAsStr(frontmatter) + context;
         } else {
           new Notice("No valid Metadata (YAML front matter) found!");
@@ -204,7 +204,7 @@ export default class ContextManager {
   async getContextFromFiles(
     files: TFile[],
     templatePath = "",
-    addtionalOpts: any = {}
+    additionalOptions: any = {}
   ) {
     const contexts: (InputContext | undefined)[] = [];
 
@@ -215,7 +215,7 @@ export default class ContextManager {
         {},
         this.getFrontmatter(this.getMetaData(templatePath)),
         this.getFrontmatter(fileMeta),
-        addtionalOpts,
+        additionalOptions,
         {
           tg_selection: removeYAML(
             await this.plugin.app.vault.cachedRead(file)
@@ -223,15 +223,20 @@ export default class ContextManager {
         }
       );
 
-      const { context, inputTemplate, outputTemplate } =
-        await this.templateFromPath(templatePath, options);
+      const { context, template } = await this.templateFromPath(
+        templatePath,
+        options
+      );
 
-      logger("Context Template", { context, options });
+      logger("Context Template", {
+        context,
+        options,
+      });
 
       contexts.push({
         context,
         options,
-        template: { inputTemplate, outputTemplate },
+        template,
         templatePath,
       } as InputContext);
 
@@ -243,7 +248,7 @@ export default class ContextManager {
       //           insertMetadata,
       //           templatePath,
       //           {
-      //             ...addtionalOpts,
+      //             ...additionalOptions,
       //             selection: app.workspace.activeEditor.editor.getValue(),
       //           }
       //         )
@@ -256,55 +261,6 @@ export default class ContextManager {
 
     return contexts;
   }
-
-  // DEPRICATED
-  // extractVariablesFromTemplate(templateContent: string): string[] {
-  //   const ast: hbs.AST.Program =
-  //     Handlebars.parseWithoutProcessing(templateContent);
-
-  //   const extractVariablesFromBody = (
-  //     body: hbs.AST.Statement[],
-  //     eachContext: string | null = null
-  //   ): string[] => {
-  //     return body
-  //       .flatMap((statement: hbs.AST.Statement) => {
-  //         if (statement.type === "MustacheStatement") {
-  //           const moustacheStatement: hbs.AST.MustacheStatement =
-  //             statement as hbs.AST.MustacheStatement;
-  //           const paramsExpressionList =
-  //             moustacheStatement.params as hbs.AST.PathExpression[];
-  //           const pathExpression =
-  //             moustacheStatement.path as hbs.AST.PathExpression;
-  //           const fullPath = eachContext
-  //             ? `${eachContext}.${pathExpression.original}`
-  //             : pathExpression.original;
-
-  //           return paramsExpressionList[0]?.original || fullPath;
-  //         } else if (
-  //           statement.type === "BlockStatement" &&
-  //           // @ts-ignore
-  //           statement.path.original === "each"
-  //         ) {
-  //           const blockStatement: hbs.AST.BlockStatement =
-  //             statement as hbs.AST.BlockStatement;
-  //           const eachVariable = blockStatement.path.original;
-  //           // @ts-ignore
-  //           const eachContext = blockStatement.params[0]?.original;
-
-  //           return extractVariablesFromBody(
-  //             blockStatement.program.body,
-  //             eachContext
-  //           );
-  //         } else {
-  //           return [];
-  //         }
-  //       })
-  //       .filter((value, index, self) => self.indexOf(value) === index);
-  //   };
-
-  //   const handlebarsVariables = extractVariablesFromBody(ast.body);
-  //   return handlebarsVariables;
-  // }
 
   async getTemplateContext(props: {
     editor?: ContentManager;
@@ -334,10 +290,10 @@ export default class ContextManager {
     const contextObj = await this.getDefaultContext(
       props.editor,
       undefined,
-      contextTemplate + templateContent
+      templateContent
     );
 
-    const context = contextObj._variables["context"]
+    const context = contextObj._variables.context
       ? await getContextAsString(contextObj as any, contextTemplate)
       : "";
 
@@ -347,8 +303,8 @@ export default class ContextManager {
 
     const blocks: any = contextObj;
 
-    blocks["frontmatter"] = {};
-    blocks["headings"] = contextObj.headings;
+    blocks.frontmatter = {};
+    blocks.headings = contextObj.headings;
 
     // const variables = getHBValues(templateContent);
     // const vars: Record<string, true> = {};
@@ -359,7 +315,7 @@ export default class ContextManager {
 
     // logger("getTemplateContext Variables ", { variables });
 
-    blocks["frontmatter"] = merge(
+    blocks.frontmatter = merge(
       {},
       this.getFrontmatter(this.getMetaData(templatePath)),
       contextObj.frontmatter
@@ -367,7 +323,7 @@ export default class ContextManager {
 
     if (contextOptions.includeClipboard)
       try {
-        blocks["clipboard"] = await this.getClipboard();
+        blocks.clipboard = await this.getClipboard();
       } catch {
         // empty
       }
@@ -375,8 +331,8 @@ export default class ContextManager {
     const options = {
       selection,
       selections,
-      ...blocks["frontmatter"],
-      ...blocks["headings"],
+      ...blocks.frontmatter,
+      ...blocks.headings,
       content: ctnt,
       context,
       ...blocks,
@@ -395,100 +351,98 @@ export default class ContextManager {
     filePath?: string,
     contextTemplate?: string
   ) {
-    logger("getDefaultContext", editor, contextTemplate);
+    logger("getDefaultContext");
+    logger("contextTemplate", contextTemplate);
 
     const context: AvailableContext = {
       keys: {},
-      _variables: {}
+      _variables: {},
     };
 
     const vars =
       this.getHBVariablesObjectOfTemplate(contextTemplate || "") || {};
-    context["_variables"] = vars;
+    context._variables = vars;
 
-
-    const activeFile = this.getActiveFile()
+    const activeFile = this.getActiveFile();
     context.noteFile = activeFile || undefined;
 
     const title =
-      vars["title"] || vars["mentions"]
+      vars.title || vars.mentions
         ? (filePath
-          ? this.app.vault.getAbstractFileByPath(filePath)?.name ||
-          activeFile?.basename
-          : activeFile?.basename) || ""
+            ? this.app.vault.getAbstractFileByPath(filePath)?.name ||
+              activeFile?.basename
+            : activeFile?.basename) || ""
         : "";
 
     const activeDocCache = this.getMetaData(filePath || "");
 
     if (editor) {
       //   context["line"] = this.getConsideredContext(editor);
-      context["tg_selection"] = await this.getTGSelection(editor);
+      context.tg_selection = await this.getTGSelection(editor);
 
       const selections = await this.getSelections(editor);
       const selection = await this.getSelection(editor);
 
-      context["selections"] =
-        selection && selections.length == 0 ? [selection] : selections || [];
+      context.selections =
+        selection && selections.length === 0 ? [selection] : selections || [];
 
-      context["selection"] = selection || "";
+      context.selection = selection || "";
 
-      context["title"] = title;
+      context.title = title;
 
-      context["frontmatter"] = this.getFrontmatter(activeDocCache) || "";
+      context.frontmatter = this.getFrontmatter(activeDocCache) || "";
 
-      if (vars["previousWord"])
-        context["previousWord"] = await this.getPreviousWord(editor);
+      if (vars.previousWord)
+        context.previousWord = await this.getPreviousWord(editor);
 
-      if (vars["nextWord"])
-        context["nextWord"] = await this.getNextWord(editor);
+      if (vars.nextWord) context.nextWord = await this.getNextWord(editor);
 
-      if (vars["beforeCursor"])
-        context["beforeCursor"] = await this.getBeforeCursor(editor);
+      if (vars.beforeCursor)
+        context.beforeCursor = await this.getBeforeCursor(editor);
 
-      if (vars["afterCursor"])
-        context["afterCursor"] = await this.getAfterCursor(editor);
+      if (vars.afterCursor)
+        context.afterCursor = await this.getAfterCursor(editor);
 
-      if (vars["inverseSelection"])
-        context["inverseSelection"] = await this.getInverseSelection(editor);
+      if (vars.inverseSelection)
+        context.inverseSelection = await this.getInverseSelection(editor);
 
-      if (vars["cursorParagraph"])
-        context["cursorParagraph"] = await this.getCursorParagraph(editor);
+      if (vars.cursorParagraph)
+        context.cursorParagraph = await this.getCursorParagraph(editor);
 
-      if (vars["cursorSentence"])
-        context["cursorSentence"] = await this.getCursorSentence(editor);
+      if (vars.cursorSentence)
+        context.cursorSentence = await this.getCursorSentence(editor);
 
-      if (vars["content"]) context["content"] = await editor.getValue();
+      if (vars.content) context.content = await editor.getValue();
 
-      if (vars["highlights"])
-        context["highlights"] = editor ? await this.getHighlights(editor) : [];
+      if (vars.highlights)
+        context.highlights = editor ? await this.getHighlights(editor) : [];
     }
 
-    if (vars["starredBlocks"])
-      context["starredBlocks"] =
+    if (vars.starredBlocks)
+      context.starredBlocks =
         (await this.getStarredBlocks(filePath || "")) || "";
 
-    if (vars["yaml"])
-      context["yaml"] = this.clearFrontMatterFromIgnored(
+    if (vars.yaml)
+      context.yaml = this.clearFrontMatterFromIgnored(
         this.getFrontmatter(activeDocCache) || ""
       );
 
-    if (vars["metadata"])
-      context["metadata"] =
-        this.getMetaDataAsStr(context["frontmatter"] || {}) || "";
+    if (vars.metadata)
+      context.metadata = this.getMetaDataAsStr(context.frontmatter || {}) || "";
 
-    if (vars["keys"]) context["keys"] = this.plugin.getApiKeys();
+    if (vars.keys) context.keys = this.plugin.getApiKeys();
 
     if (activeDocCache)
-      context["headings"] = await this.getHeadingContent(activeDocCache);
+      context.headings = await this.getHeadingContent(activeDocCache);
 
-    if (vars["children"] && activeDocCache)
-      context["children"] = await this.getChildrenContent(activeDocCache, vars);
+    if (vars.children && activeDocCache)
+      context.children = await this.getChildrenContent(activeDocCache, vars);
 
-    if (vars["mentions"] && title)
-      context["mentions"] = await this.getMentions(title);
+    if (vars.mentions && title)
+      context.mentions = await this.getMentions(title);
 
-    if (vars["extractions"])
-      context["extractions"] = await this.getExtractions(filePath, editor);
+    if (vars.extractions)
+      context.extractions = await this.getExtractions(filePath, editor);
 
     // // execute dataview
     const _dVCache: any = {};
@@ -499,94 +453,136 @@ export default class ContextManager {
           _dVCache
         );
 
-    logger("getDefaultContext", { context });
+    logger("getDefaultContext_end", { context });
     return context;
   }
 
-  async splitContent(markdownText: string, source?: TFile, options?: InputOptions): Promise<Message["content"]> {
+  /**
+   * Add the embedded content from the current context
+   * Embedded content in Obsidian is added via `![[]]` in the note
+   */
+  async getEmbeddedContent(
+    markdownText: string,
+    source?: TFile,
+    options?: InputOptions
+  ): Promise<MessageContent> {
+    logger("getEmbeddedContent", { markdownText, source, options });
     if (!source) return markdownText;
     const metadata = this.app.metadataCache.getFileCache(source);
+
     if (!metadata?.embeds) return markdownText;
 
-    const elements: Message["content"] = [];
+    const elements: MessageContentComplex[] = [];
 
     // splitting
     let lastIndex = 0;
-
-    // Sort the embeds by the length of the original text in descending order to prevent substring conflicts
-    metadata.embeds.sort((a, b) => b.original.length - a.original.length);
-
-    // Create a function to escape regex special characters in strings
-    const escapeRegex = (string: string) => string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    logger("getEmbeddedContent", metadata.embeds);
 
     // Replace each embed in the markdown text
-    metadata.embeds.forEach(embed => {
-      const regex = new RegExp(escapeRegex(embed.original), 'g');
-
-      markdownText.replace(regex, (match, index) => {
-        // Add text segment before the embed if there is any
-        const content = markdownText.substring(lastIndex, index)
-        if (index > lastIndex) {
-          elements.push({ type: "text", text: content.trim() ? content : "_" });
-        }
-
-        // Add embed segment
-        elements.push({
-          type: "image_url",
-          image_url: {
-            url: embed.link
+    metadata.embeds
+      .sort((a, b) => a.link.length - b.link.length)
+      .forEach((embed) => {
+        markdownText.replace(embed.original, (match, index) => {
+          // Add text segment before the embed if there is any
+          const content = markdownText.substring(lastIndex, index);
+          logger("getEmbeddedContent", { content, match, index, lastIndex });
+          if (index > lastIndex) {
+            elements.push({
+              type: "text",
+              text: content.trim() ? content : "_",
+            });
           }
+
+          // Add embed segment
+          elements.push({
+            type: "image_url",
+            image_url: {
+              url: embed.link,
+            },
+          });
+
+          lastIndex = index + match.length;
+
+          return match;
         });
-
-        lastIndex = index + match.length;
-
-        return match
       });
-    });
 
     // Add remaining text after the last embed
     if (lastIndex < markdownText.length) {
       elements.push({ type: "text", text: markdownText.substring(lastIndex) });
     }
-
+    logger("getEmbeddedContent", { elements });
+    const processedElements: MessageContent = [];
     // making base64 for
-    for (let i = 0; i < elements.length; i++) {
-      // @ts-ignore
-      if (elements[i].type == "image_url" && elements[i].image_url?.url && !elements[i].image_url.url.startsWith("http")) {
-        // @ts-ignore
-        const path = elements[i].image_url?.url;
-        // @ts-ignore
-        const attachmentFolderPath: string = this.app.vault.getConfig?.("attachmentFolderPath"); // it works to getConfig in obsidian v1.6.5 
-
-        let tfile = await this.app.vault.getFileByPath(path);
-        if (!tfile) {
-          // try to find in attachment folder, base user's preferences
-          tfile = await this.app.vault.getFileByPath(attachmentFolderPath + "/" + path);
-          if (!tfile) continue;
-        }
-
-        const mimtype = mime.lookup(tfile.extension) || ""
-
-        const buff = convertArrayBufferToBase64Link(await this.app.vault.readBinary(tfile as any), mimtype)
-
-        if (
-          (options?.images && mimtype.startsWith("image"))
-          || (options?.audio && mimtype.startsWith("audio"))
-          || (options?.videos && mimtype.startsWith("video"))
-        ) {
+    for (const element of elements) {
+      if (element.type === "text" && element.text !== "_") {
+        processedElements.push(element);
+        continue;
+      }
+      if (element.type === "image_url") {
+        if (!element.image_url?.url?.startsWith("http")) {
+          const path = element.image_url?.url;
+          // https://forum.obsidian.md/t/getresourcepath-does-not-return-the-correct-path-for-user-defined-attachment-folder/13012
           // @ts-ignore
-          elements[i].image_url.url = buff
-        } else {
-          elements[i] = {
-            type: "text",
-            // @ts-ignore
-            text: elements[i].image_url.url
+          const attachmentFolderPath: string = this.app.vault.getConfig?.(
+            "attachmentFolderPath"
+          );
+          const filePath = this.app.metadataCache.getFirstLinkpathDest(
+            path,
+            path
+          );
+          if (!filePath?.path) {
+            // We do not add the title of the embedding link to the messages
+            continue;
+          } else {
+            let file = await this.app.vault.getFileByPath(filePath?.path);
+            if (!file) {
+              // try to find in attachment folder, base user's preferences
+              file = await this.app.vault.getFileByPath(
+                fspath.join(attachmentFolderPath, path)
+              );
+              if (!file) continue;
+            }
+
+            const mimeType = mime.lookup(file.extension) || "";
+
+            const buff = convertArrayBufferToBase64Link(
+              await this.app.vault.readBinary(file),
+              mimeType
+            );
+            if (
+              options?.images &&
+              mimeType.startsWith("image/")
+              // Support for audio and video depends on the model
+              // audio might need transcription
+              // || (options?.audio && mimeType.startsWith("audio/"))
+              // || (options?.videos && mimeType.startsWith("video/"))
+            ) {
+              element.image_url.url = buff;
+              processedElements.push(element);
+            }
+            if (options?.text && mimeType.startsWith("text/")) {
+              processedElements.push({
+                type: "text",
+                text: Buffer.from(
+                  await this.app.vault.readBinary(file)
+                ).toString("utf-8"),
+              });
+            } else {
+              // TODO: add support for additional content, like PDF, audio transcription, etc,
+              logger("getEmbeddedContent", `${mimeType} not supported`);
+            }
           }
+        } else {
+          // TODO: add an option to read external embedded content
+          processedElements.push({
+            type: "text",
+            text: element.image_url.url,
+          });
         }
       }
     }
-
-    return elements;
+    return processedElements;
   }
 
   overProcessTemplate(templateContent: string) {
@@ -602,17 +598,19 @@ export default class ContextManager {
     logger("splitTemplate", templateContent);
     templateContent = removeYAML(templateContent);
 
-    let inputContent, outputContent, preRunnerContent;
+    let inputContent;
+    let outputContent;
+    let preRunnerContent;
     if (templateContent.includes("***")) {
       const splitContent = templateContent
         // @ts-ignore
         .replaceAll("\\***", "")
         .split("\n***");
       inputContent = this.overProcessTemplate(
-        splitContent[splitContent.length == 3 ? 1 : 0]
+        splitContent[splitContent.length === 3 ? 1 : 0]
       );
       outputContent = this.overProcessTemplate(
-        splitContent[splitContent.length == 3 ? 2 : 1]
+        splitContent[splitContent.length === 3 ? 2 : 1]
       ).slice(1);
 
       preRunnerContent = this.overProcessTemplate(
@@ -631,19 +629,19 @@ export default class ContextManager {
 
     const preRunnerTemplate = preRunnerContent
       ? this.handlebarsMiddleware(
-        Handlebars.compile(preRunnerContent, {
-          noEscape: true,
-        })
-      )
-      : null;
+          Handlebars.compile(preRunnerContent, {
+            noEscape: true,
+          })
+        )
+      : undefined;
 
     const outputTemplate = outputContent
       ? this.handlebarsMiddleware(
-        Handlebars.compile(outputContent, {
-          noEscape: true,
-        })
-      )
-      : null;
+          Handlebars.compile(outputContent, {
+            noEscape: true,
+          })
+        )
+      : undefined;
 
     return {
       preRunnerTemplate,
@@ -673,12 +671,13 @@ export default class ContextManager {
     templatePath: string,
     options: any,
     _templateContent?: string
-  ) {
-    logger("templateFromPath", templatePath, options);
+  ): Promise<{ context: string; template: ContextTemplate }> {
+    logger("templateFromPath", { templatePath, options });
     const templateFile =
       await this.app.vault.getAbstractFileByPath(templatePath);
 
-    if (!templateFile) throw `Template ${templatePath} couldn't be found`;
+    if (!templateFile)
+      throw new Error(`Template ${templatePath} couldn't be found`);
 
     const templateContent =
       _templateContent || (await this.app.vault.read(templateFile as TFile));
@@ -697,10 +696,11 @@ export default class ContextManager {
       n.hide();
     }
 
+    // Apply the Mustache template
     const input = await templates.inputTemplate(options);
 
-    logger("templateFromPath", { input });
-    return { context: input, ...templates };
+    logger("templateFromPath_end", input);
+    return { context: input, template: templates };
   }
 
   async getTemplateCustomInputConfig(templatePath: string) {
@@ -727,7 +727,7 @@ export default class ContextManager {
         return JSON5.parse(jsonCodeBlock);
       } catch (err: any) {
         new Notice(
-          "JSON not parseable check console(CTRL+SHIFT+i) for more info"
+          "JSON cannot be parsed. Check console(CTRL+SHIFT+i) for more info"
         );
         this.plugin.handelError(err);
         return null;
@@ -738,10 +738,10 @@ export default class ContextManager {
     }
   }
 
-  getSelections(editor: ContentManager) {
+  async getSelections(editor: ContentManager) {
     logger("getSelections", editor);
-    const selections = editor.getSelections();
-    logger("getSelections", { selections });
+    const selections = await editor.getSelections();
+    logger("getSelections", selections);
     return selections;
   }
 
@@ -774,16 +774,16 @@ export default class ContextManager {
     const headings = fileCache?.headings;
     const headingsContent: Record<string, string | undefined> = {};
     if (headings) {
-      for (let i = 0; i < headings.length; i++) {
-        let textBlock = await this.getTextBloc(headings[i].heading);
+      for (const heading of headings) {
+        let textBlock = await this.getTextBloc(heading.heading);
         textBlock = textBlock?.substring(
-          textBlock.indexOf(headings[i].heading),
+          textBlock.indexOf(heading.heading),
           textBlock.length
         );
-        const reSafeHeading = escapeRegExp(headings[i].heading);
+        const reSafeHeading = escapeRegExp(heading.heading);
         const headingRegex = new RegExp(`${reSafeHeading}\\s*?\n`, "ig");
         textBlock = textBlock?.replace(headingRegex, "");
-        headingsContent[headings[i].heading] = textBlock;
+        headingsContent[heading.heading] = textBlock;
       }
     }
     return headingsContent;
@@ -810,17 +810,17 @@ export default class ContextManager {
     );
 
     // remove duplicate links
-    const uniqueLinks = links?.filter((v, i, a) => a.findIndex(t => t.original === v.original) === i) || [];
-
+    const uniqueLinks =
+      links?.filter(
+        (v, i, a) => a.findIndex((t) => t.original === v.original) === i
+      ) || [];
 
     if (!uniqueLinks) return children;
 
-    for (let i = 0; i < uniqueLinks.length; i++) {
-      const link = uniqueLinks[i];
-
+    for (const link of uniqueLinks) {
       if (!link.link) continue;
 
-      const path = getFilePathByName(link.link);
+      const path = getFilePathByName(link.link, this.app);
 
       if (!path) continue;
 
@@ -833,12 +833,12 @@ export default class ContextManager {
 
       const metadata = this.getMetaData(file.path);
 
-      //TODO: only include frontmatter and headings if the option is set
+      // TODO: only include frontmatter and headings if the option is set
       const blocks: any = {};
 
-      blocks["frontmatter"] = metadata?.frontmatter;
+      blocks.frontmatter = metadata?.frontmatter;
 
-      blocks["headings"] = metadata?.headings;
+      blocks.headings = metadata?.headings;
 
       const childInfo: any = {
         ...file,
@@ -908,8 +908,8 @@ export default class ContextManager {
         e.heading.substring(e.heading.length - 1) === "*"
     );
     if (staredHeadings) {
-      for (let i = 0; i < staredHeadings.length; i++) {
-        content += await this.getTextBloc(staredHeadings[i].heading);
+      for (const heading of staredHeadings) {
+        content += await this.getTextBloc(heading.heading);
       }
     }
     return content;
@@ -953,13 +953,12 @@ export default class ContextManager {
     const extractorMethods = getExtractorMethods().filter(
       (e) =>
         this.plugin.settings.extractorsOptions[
-        e as keyof typeof this.plugin.settings.extractorsOptions
+          e as keyof typeof this.plugin.settings.extractorsOptions
         ]
     );
 
     const targetFile = filePath
-      ? this.app.vault.getAbstractFileByPath(filePath) ||
-      this.app.workspace.getActiveFile()
+      ? this.app.vault.getAbstractFileByPath(filePath)
       : this.app.workspace.getActiveFile();
 
     const targetFileContent = editor
@@ -968,20 +967,20 @@ export default class ContextManager {
 
     if (!targetFile) throw new Error("ActiveFile was undefined");
 
-    for (let index = 0; index < extractorMethods.length; index++) {
-      const key = extractorMethods[index];
+    for (const key of extractorMethods) {
       contentExtractor.setExtractor(key);
 
-      const links = await contentExtractor.extract(
-        targetFile.path,
-        targetFileContent
-      );
+      const links =
+        (await contentExtractor.extract(targetFile.path, targetFileContent)) ??
+        [];
 
-      if (links.length > 0) {
+      if (links?.length > 0) {
         const parts = await Promise.all(
           links.map((link) => contentExtractor.convert(link))
         );
-        extractedContent[UnExtractorSlug[key]] = parts;
+        extractedContent[UnExtractorSlug[key]] = parts.filter(
+          (p) => p !== undefined
+        );
       }
     }
 
@@ -994,7 +993,7 @@ export default class ContextManager {
 
   getMetaData(path?: string, withoutCompatibility?: boolean) {
     const activeFile = !path
-      ? this.plugin.textGenerator.embeddingsScope.getActiveNote()
+      ? this.plugin.textGenerator?.embeddingsScope.getActiveNote()
       : { path };
 
     if (!activeFile?.path || !activeFile.path.endsWith(".md")) return null;
@@ -1006,17 +1005,17 @@ export default class ContextManager {
 
       frontmatter: {
         ...cache?.frontmatter,
-        outputToBlockQuote: undefined || cache?.frontmatter?.outputToBlockQuote,
+        outputToBlockQuote: cache?.frontmatter?.outputToBlockQuote,
 
         ...(!withoutCompatibility && {
           PromptInfo: {
             ...cache?.frontmatter,
-            ...(cache?.frontmatter?.PromptInfo),
+            ...cache?.frontmatter?.PromptInfo,
           },
 
           config: {
             ...cache?.frontmatter,
-            ...(cache?.frontmatter?.config),
+            ...cache?.frontmatter?.config,
             path_to_choices:
               cache?.frontmatter?.choices ||
               cache?.frontmatter?.path_to_choices,
@@ -1064,7 +1063,10 @@ export default class ContextManager {
 
   getMetaDataAsStr(frontmatter: Record<string, string | any[]>) {
     let cleanFrontMatter = "";
-    for (const [key, value] of Object.entries(frontmatter) as Array<[string, string | any[]]>) {
+    for (const [key, value] of Object.entries(frontmatter) as [
+      string,
+      string | any[], // or array
+    ][]) {
       if (
         !value ||
         key.includes(".") ||
@@ -1079,7 +1081,7 @@ export default class ContextManager {
           cleanFrontMatter += `${v}, `;
         });
         cleanFrontMatter += `\n`;
-      } else if (typeof value == "object") {
+      } else if (typeof value === "object") {
         continue;
       } else {
         cleanFrontMatter += `${key} : ${value} \n`;
@@ -1112,7 +1114,7 @@ export default class ContextManager {
     md: string,
     _cache: Record<string, string | undefined> = {}
   ): Promise<string> {
-    if (!md || typeof md != "string") return md;
+    if (!md || typeof md !== "string") return md;
 
     const parsedTemplateMD: string = await this.processCodeBlocks(
       md,
@@ -1211,14 +1213,16 @@ export default class ContextManager {
 
   // This function returns the next word relative to the cursor's position
   async getNextWord(editor: ContentManager): Promise<string> {
-    const txts = (await this.getAfterCursor(editor)).split(" ");
-    return txts[0]?.trim() || txts[1]?.trim() || "";
+    const texts = (await this.getAfterCursor(editor)).split(" ");
+    return texts[0]?.trim() || texts[1]?.trim() || "";
   }
 
   // This function returns the previous word relative to the cursor's position
   async getPreviousWord(editor: ContentManager): Promise<string> {
-    const txts = (await this.getBeforeCursor(editor)).trim().split(" ");
-    return txts[txts.length - 1]?.trim() || txts[txts.length - 2]?.trim() || "";
+    const texts = (await this.getBeforeCursor(editor)).trim().split(" ");
+    return (
+      texts[texts.length - 1]?.trim() || texts[texts.length - 2]?.trim() || ""
+    );
   }
 
   // This function selects everything except the currently selected text
@@ -1242,11 +1246,9 @@ export default class ContextManager {
     }) as any;
   }
 
-
   extractFrontmatterFromTemplateContent(templateContent: string) {
     const regex = /---([\s\S]*?)---/;
     const match = templateContent.match(regex);
-
 
     // turn yaml it into an object
     const yaml = match ? match[1] : "";
@@ -1263,8 +1265,8 @@ export default class ContextManager {
     const frontmatterStr = match[1];
     const lines = frontmatterStr.split("\n");
     const frontmatter: Record<string, any> = {};
-    lines.forEach(line => {
-      const [key, value] = line.split(": ").map(s => s.trim());
+    lines.forEach((line) => {
+      const [key, value] = line.split(": ").map((s) => s.trim());
       frontmatter[key] = value;
     });
     return frontmatter;
@@ -1286,7 +1288,7 @@ export function getOptionsUnder(
   return options[prefix.substring(0, prefix.length - 1)];
 }
 
-export const contextVariablesObj: Record<
+export const ContextVariables: Record<
   string,
   {
     example: string;
@@ -1386,8 +1388,8 @@ Or
   },
   headings: {
     example: `{{#each headings}}
-# HEADER: {{@key}} 
-{{this}} 
+# HEADER: {{@key}}
+{{this}}
 {{/each}}`,
     hint: "Contains all the headings within the note and their respective content.",
   },
@@ -1398,8 +1400,8 @@ Or
   },
 
   yaml: {
-    example: `{{#each yaml}} 
-{{@key}}: {{this}} 
+    example: `{{#each yaml}}
+{{@key}}: {{this}}
 {{/each}}`,
     hint: "The initial metadata (Object) of the note.",
   },

@@ -29,22 +29,22 @@ export default function LLMProviderController(props: {
   mini?: boolean;
 }) {
   const global = useGlobal();
-  let llmList = global.plugin.textGenerator.LLMRegestry.getList();
+  let llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
   const sectionId = useId();
   const [selectedLLM, setSelectedLLM] = useState<
     LLMProviderInterface | undefined
   >();
 
   const [selectedLLMId, setSelectedLLMId] = useState<string | undefined>(
-    props.getSelectedProvider() || llmList[0]
+    props.getSelectedProvider()
   );
 
   const updateLLm = (selectedLLMId: string | undefined) => {
     if (!selectedLLMId) return;
 
-    global.plugin.textGenerator.load();
+    global.plugin.textGenerator?.load();
 
-    const llm = global.plugin.textGenerator.LLMRegestry.get(selectedLLMId);
+    const llm = global.plugin.textGenerator?.LLMRegistry?.get(selectedLLMId);
 
     if (llm) {
       props.setSelectedProvider(selectedLLMId as any);
@@ -56,7 +56,7 @@ export default function LLMProviderController(props: {
       );
     }
 
-    global.plugin.textGenerator.load();
+    global.plugin.textGenerator?.load();
   };
 
   const isDefaultProvider = selectedLLM ? !selectedLLM.cloned : false;
@@ -65,21 +65,21 @@ export default function LLMProviderController(props: {
     // pick a name and id
     const name = selectedLLM?.slug || selectedLLMId?.split("(")[0].trim() || "";
     const newId =
-      selectedLLM?.id + " " + llmList.filter((l) => l.startsWith(name)).length;
+      selectedLLM?.id + " " + llmList?.filter((l) => l.startsWith(name)).length;
 
     if (!(isDefaultProvider ? selectedLLMId : selectedLLM?.originalId))
       throw "can't be cloned";
     // add the llm clone
-    await global.plugin.textGenerator.addLLMCloneInRegistry({
+    await global.plugin.textGenerator?.addLLMCloneInRegistry({
       id: newId,
-      name: name + " " + llmList.filter((l) => l.startsWith(name)).length,
+      name: name + " " + llmList?.filter((l) => l.startsWith(name)).length,
       extends: isDefaultProvider
         ? selectedLLMId
         : (selectedLLM?.originalId as any),
       extendsDataFrom: selectedLLMId,
     });
 
-    llmList = global.plugin.textGenerator.LLMRegestry.getList();
+    llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
 
     setSelectedLLMId(newId);
     updateLLm(newId);
@@ -96,9 +96,11 @@ export default function LLMProviderController(props: {
     const parentId = selectedLLM?.originalId;
     if (!selectedLLMId) return;
     // delete the llm clone
-    await global.plugin.textGenerator.deleteLLMCloneFromRegistry(selectedLLMId);
+    await global.plugin.textGenerator?.deleteLLMCloneFromRegistry(
+      selectedLLMId
+    );
 
-    llmList = global.plugin.textGenerator.LLMRegestry.getList();
+    llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
 
     setSelectedLLMId(parentId);
     updateLLm(parentId);
@@ -126,42 +128,12 @@ export default function LLMProviderController(props: {
         register={props.register}
         sectionId={sectionId}
       >
-        {/* {global.plugin.settings.experiment ?
-                <DropdownSearch
-                    value={selectedLLMId}
-                    setValue={(selectedLLMId) => {
-                        setSelectedLLMId(selectedLLMId);
-                        updateLLm(selectedLLMId);
-                        global.plugin.saveSettings();
-                        global.triggerReload();
-                        props.triggerResize();
-                    }}
-                    aliases={global.plugin.textGenerator.LLMRegestry.UnProviderNames}
-                    values={llmList}
-                />
-                : */}
         <Dropdown
           value={selectedLLMId}
           setValue={selectLLM}
-          aliases={global.plugin.textGenerator.LLMRegestry.UnProviderNames}
-          values={llmList}
+          aliases={global.plugin.textGenerator?.LLMRegistry?.UnProviderNames}
+          values={llmList ?? []}
         />
-        {/* } */}
-
-        <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-          <button onClick={clone} className="plug-tg-btn plug-tg-btn-xs">
-            <IconPlus size={11} />
-          </button>
-          <button
-            onClick={!isDefaultProvider ? del : undefined}
-            disabled={isDefaultProvider}
-            className={clsx("plug-tg-btn plug-tg-btn-xs", {
-              "plug-tg-btn-disabled": isDefaultProvider,
-            })}
-          >
-            <IconTrash size={11} />
-          </button>
-        </div>
       </SettingItem>
 
       {!props.mini && selectedLLM && selectedLLMId && (
@@ -185,33 +157,37 @@ export default function LLMProviderController(props: {
               sectionId={sectionId}
             >
               <Input
+                type="text"
                 className="plug-tg-input-sm"
                 placeholder={
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
-                  selectedLLMId
+                  global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                    selectedLLMId
                   ]
                 }
                 value={
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
-                  selectedLLMId
+                  global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                    selectedLLMId
                   ]
                 }
                 setValue={async (val) => {
-                  global.plugin.textGenerator.LLMRegestry.UnProviderNames[
-                    selectedLLMId
-                  ] = val as any;
-                  global.plugin.settings.LLMProviderProfiles[
-                    selectedLLMId
-                  ].name = val;
+                  if (
+                    global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                      selectedLLMId
+                    ]
+                  ) {
+                    global.plugin.settings.LLMProviderProfiles[
+                      selectedLLMId
+                    ].name = val;
 
-                  await global.plugin.saveSettings();
-                  global.triggerReload();
+                    await global.plugin.saveSettings();
+                    global.triggerReload();
+                  }
                 }}
               />
             </SettingItem>
           )}
 
-          <ExportImportHandler
+          {/* <ExportImportHandler
             name={
               global.plugin.settings.LLMProviderProfiles[selectedLLMId]?.name
             }
@@ -236,7 +212,7 @@ export default function LLMProviderController(props: {
                 id =
                   selectedLLM?.id +
                   " " +
-                  llmList.filter((l) => l.startsWith(d.profile.extends)).length;
+                  llmList?.filter((l) => l.startsWith(d.profile.extends)).length;
               }
 
               // if the apikey is empty, in the attempt of updating profile, it will not override the existing one
@@ -248,7 +224,7 @@ export default function LLMProviderController(props: {
               global.plugin.settings.LLMProviderOptions[id] = d.config;
               selectLLM(id);
             }}
-          />
+          /> */}
         </>
       )}
     </>

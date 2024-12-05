@@ -1,36 +1,35 @@
 import { MessageContent } from "@langchain/core/messages";
-import { llmSlugType, llmType } from "./LLMProviders";
+import { LlmType } from "./LLMProviders";
 
-type Options = Record<
-  | "generate-text"
-  | "generate-text-with-metadata"
-  | "insert-generated-text-From-template"
-  | "create-generated-text-From-template"
-  | "insert-text-From-template"
-  | "create-text-From-template"
-  | "search-results-batch-generate-from-template"
-  | "show-modal-From-template"
-  | "open-template-as-tool"
-  | "set_max_tokens"
-  | "set-llm"
-  | "set-model"
-  | "packageManager"
-  | "create-template"
-  | "get-title"
-  | "generated-text-to-clipboard-From-template"
-  | "calculate-tokens"
-  | "calculate-tokens-for-template"
-  | "text-extractor-tool"
-  | "stop-stream"
-  | "custom-instruct"
-  | "generate-in-right-click-menu"
-  | "reload"
-  | "open-playground"
-  | "batch-generate-in-right-click-files-menu"
-  | "tg-block-processor"
-  | "disable-ribbon-icons",
-  boolean
->;
+interface CommandPaletteEnabledOptions {
+  "generate-text": boolean;
+  "generate-text-with-metadata": boolean;
+  "insert-generated-text-from-template": boolean;
+  "create-generated-text-from-template": boolean;
+  "insert-text-from-template": boolean;
+  "create-text-from-template": boolean;
+  "search-results-batch-generate-from-template": boolean;
+  "show-modal-from-template": boolean;
+  "open-template-as-tool": boolean;
+  "set-max-tokens": boolean;
+  "set-provider": boolean;
+  "set-model": boolean;
+  "package-manager": boolean;
+  "create-template": boolean;
+  //"get-title": boolean;
+  "generated-text-to-clipboard-from-template": boolean;
+  "calculate-tokens": boolean;
+  "calculate-tokens-for-template": boolean;
+  "text-extractor-tool": boolean;
+  "stop-stream": boolean;
+  "custom-instruct": boolean;
+  "generate-in-right-click-menu": boolean;
+  reload: boolean;
+  "open-playground": boolean;
+  "batch-generate-in-right-click-files-menu": boolean;
+  "tg-block-processor": boolean;
+  "disable-ribbon-icons": boolean;
+}
 
 type Context = {
   includeClipboard: boolean;
@@ -39,7 +38,7 @@ type Context = {
   contextTemplate: string;
 };
 
-export type Version = `${number}.${number}.${number}${"" | "-beta"}`;
+export type Version = `${number}.${number}.${number}`;
 
 type TextGeneratorSettings = {
   allowJavascriptRun?: boolean;
@@ -56,14 +55,13 @@ type TextGeneratorSettings = {
   showStatusBar: boolean;
   displayErrorInEditor: boolean;
   outputToBlockQuote: boolean;
-  freeCursorOnStreaming: boolean;
   models: any;
   context: Context;
   requestTimeout: number;
   prefix: string;
   tgSelectionLimiter: string;
   stream: boolean;
-  options: Options;
+  options: CommandPaletteEnabledOptions;
   experiment: boolean;
   advancedOptions?: {
     generateTitleInstruct?: string;
@@ -101,7 +99,7 @@ type TextGeneratorSettings = {
     ImageExtractor: boolean;
   };
 
-  selectedProvider?: llmType;
+  selectedProvider?: LlmType;
   // TODO: FUTURE IMPLEMENTATION
   // reason: it will clean code, and also help with custom llm providers later on
   LLMProviderProfiles: Record<
@@ -207,11 +205,11 @@ export type AsyncReturnType<T extends (...args: any) => Promise<any>> =
 
 type LiteralUnion<T extends U, U = string> = T | (U & { zz_IGNORE_ME?: never });
 
-export type Role = LiteralUnion<"assistant" | "user" | "human" | "system" | "admin">;
+export type Role = LiteralUnion<
+  "assistant" | "user" | "human" | "system" | "admin"
+>;
 
 export type Message = {
-  type?: string;
-  image_url?: string;
   role: Role;
   content: MessageContent;
 };

@@ -13,7 +13,7 @@ export default class ExcalidrawManager implements ContentManager {
   }
 
   options: Options = {
-    wrapInBlockQuote: false
+    wrapInBlockQuote: false,
   };
 
   getRange(from?: any, to?: any) {
@@ -63,7 +63,7 @@ export default class ExcalidrawManager implements ContentManager {
 
         return e;
       })
-      .find((e: Item) => e.id == id);
+      .find((e: Item) => e.id === id);
   }
 
   async getSelections(): Promise<string[]> {
@@ -103,7 +103,7 @@ export default class ExcalidrawManager implements ContentManager {
     return txt;
   }
 
-  selectTgSelection(tgSelectionLimiter?: string) { }
+  selectTgSelection(tgSelectionLimiter?: string) {}
 
   getLastLetterBeforeCursor(): string {
     return "";
@@ -112,7 +112,7 @@ export default class ExcalidrawManager implements ContentManager {
   async getCursor(dir?: "from" | "to" | undefined): Promise<Item> {
     // get first or last item
     const items = await this.getSelectedItems();
-    return items[dir == "from" ? 0 : items.length - 1];
+    return items[dir === "from" ? 0 : items.length - 1];
   }
 
   setCursor(pos: Item | Item[]): void {
@@ -150,14 +150,14 @@ export default class ExcalidrawManager implements ContentManager {
 
     let item = this.getElement(itemId) || selectedItem;
 
-    if (pos?.type == "text") {
+    if (pos?.type === "text") {
       if (pos.strokeColor) this.ea.style.strokeColor = pos.strokeColor;
       if (pos.fontSize) this.ea.style.fontSize = pos.fontSize;
       if (pos.fontFamily) this.ea.style.fontFamily = pos.fontFamily;
     }
 
     if (!item) {
-      const textSize: { width: number; height: number } =
+      const _textSize: { width: number; height: number } =
         this.ea.measureText(text);
 
       itemId = this.ea.addText(pos.x, pos.y, text, {
@@ -166,12 +166,12 @@ export default class ExcalidrawManager implements ContentManager {
         id: undefined,
         box: pos?.type
           ? {
-            width: Math.min(
-              textSize.width + 2,
-              Math.max(this.ea.style.fontSize * 20, 200)
-            ),
-            boxPadding: 0,
-          }
+              width: Math.min(
+                _textSize.width + 2,
+                Math.max(this.ea.style.fontSize * 20, 200)
+              ),
+              boxPadding: 0,
+            }
           : { boxPadding: 2 },
       });
 
@@ -186,7 +186,7 @@ export default class ExcalidrawManager implements ContentManager {
       // this.ea.clear();
     }
 
-    if (item?.type == "text") {
+    if (item?.type === "text") {
       if (item.strokeColor) this.ea.style.strokeColor = item.strokeColor;
       if (item.fontSize) this.ea.style.fontSize = item.fontSize;
       if (item.fontFamily) this.ea.style.fontFamily = item.fontFamily;
@@ -250,12 +250,10 @@ export default class ExcalidrawManager implements ContentManager {
       items.length
         ? items
         : this.ea
-          .getViewElements()
-          .map((e: Item) => e.rawText)
-          .filter(Boolean)
+            .getViewElements()
+            .map((e: Item) => e.rawText)
+            .filter(Boolean)
     )[items.length - 1];
-
-    // if (!selectedItem) throw "no selected items";
 
     // create a new item
     const startingCursor = pos;
@@ -264,53 +262,6 @@ export default class ExcalidrawManager implements ContentManager {
 
     let postingContent = "";
     let stillPlaying = true;
-
-    // const testData = [
-    //     `Excalidraw is known for its hand-drawn feel and ease of use when creating diagrams or sketches that can be shared digitally or included in various documents.`,
-    //     `If you need assistance with something specific regarding an Excalidraw file, such as understanding how to open it, share it, or if you have questions about using the tool itself, feel free to ask!`,
-    //     `And then you ended with "hello world," which is often used as a test phrase in computing—one of the simplest programs one can write when learning programming outputs this message to ensure everything's set up correctly.d`,
-    //     `test`,
-    //     `If this was not what you intended to inquire about though and I've misunderstood your query somehow, please provide some more details so I can assist appropriately!`
-    // ]
-
-    // let lastPos = selectedItem;
-    // let arr = [];
-    // for (const section of testData) {
-    //     const item = await this.insertText(section, lastPos, mode)
-    //     await new Promise((s) => setTimeout(s, 500));
-    //     lastPos = item;
-    //     arr.push(item)
-    // }
-
-    // await new Promise((s) => setTimeout(s, 500));
-
-    // this.ea.deleteViewElements(arr)
-
-    // this.ea.addElementsToView(false, false);
-
-    // await this.ea.targetView?.forceSave(true);
-
-    // throw "testing";
-
-    // const writerTimer: any = setInterval(() => {
-    //     if (!stillPlaying) return clearInterval(writerTimer);
-    //     const posting = postingContent;
-    //     if (!posting) return;
-
-    //     console.log({
-    //         firstTime, mode, pos, posting, cursor
-    //     })
-    //     if (firstTime) cursor = await this.insertText(posting, pos, mode) || cursor;
-    //     else cursor = await this.insertText(posting, cursor, "stream");
-
-    //     postingContent = postingContent.substring(posting.length);
-    //     firstTime = false;
-
-    //     cursor.ch += posting.length;
-
-    //     // if (!this.plugin.settings.freeCursorOnStreaming)
-    //     //     this.setCursor(cursor);
-    // }, 1000);
 
     return {
       insert(newInsertData: string) {

@@ -2,33 +2,34 @@ import { App, Notice, FuzzySuggestModal } from "obsidian";
 import TextGeneratorPlugin from "src/main";
 import { Model } from "src/types";
 import debug from "debug";
-const logger = debug("textgenerator:setModel");
+import { log } from "console";
+const logger = debug("genii:setModel");
+
 export class SetModel extends FuzzySuggestModal<Model> {
   plugin: TextGeneratorPlugin;
-  title: string;
   onChoose: (result: string) => void;
+
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
-    onChoose: (result: string) => void,
-    title = ""
+    onChoose: (result: string) => void
   ) {
     super(app);
     this.onChoose = onChoose;
     this.plugin = plugin;
-    this.title = title;
-    this.modalEl.insertBefore(
-      createEl("div", {
-        text: title,
-        cls: "plug-tg-text-center plug-tg-text-xl plug-tg-font-bold",
-      }),
-      this.modalEl.children[0]
+    logger("constructor", this.plugin.textGenerator?.LLMProvider);
+    this.setPlaceholder(
+      `Select a model for ${this.plugin.textGenerator?.LLMProvider?.id}`
     );
+    if (!this.plugin.textGenerator?.LLMProvider) {
+      new Notice("Please select a LLM Provider first");
+      this.close();
+    }
   }
 
   getItems() {
     logger("getItems");
-    return this.plugin.textGenerator.LLMProvider?.getModels() || [];
+    return this.plugin.textGenerator?.LLMProvider?.getModels() ?? [];
   }
 
   getItemText(model: Model): string {
@@ -39,5 +40,6 @@ export class SetModel extends FuzzySuggestModal<Model> {
     logger("onChooseItem", model);
     new Notice(`Selected ${model.id}`);
     this.onChoose(model.id);
+    this.close();
   }
 }

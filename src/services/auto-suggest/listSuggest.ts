@@ -14,10 +14,10 @@ import {
 } from "obsidian";
 
 import debug from "debug";
-import ContentManagerCls from "../../scope/content-manager";
+import ContentManagerFactory from "../../scope/content-manager";
 import { debounce } from "#/utils";
 import { AutoSuggest, Completion } from ".";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export class ListSuggest extends EditorSuggest<Completion> {
   plugin: TextGeneratorPlugin;
@@ -122,7 +122,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
 
     if (
       (!this.plugin.settings.autoSuggestOptions.allowInNewLine &&
-        line == triggerPhrase) ||
+        line === triggerPhrase) ||
       !line.endsWith(triggerPhrase)
     ) {
       this.process = false;
@@ -132,7 +132,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
     this.process = true;
 
     // @ts-ignore
-    const CM = ContentManagerCls.compile(
+    const CM = ContentManagerFactory.createContentManager(
       this.plugin.app.workspace.activeLeaf?.view as any,
       this.plugin
     );
@@ -183,7 +183,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
   }
 
   public renderSuggestion(value: Completion, el: HTMLElement): void {
-    //logger("renderSuggestion",value,el);
+    // logger("renderSuggestion",value,el);
     el.setAttribute("dir", "auto");
     el.addClass("cursor-pointer");
     el.setText(value.label);
@@ -291,5 +291,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
     return suggest;
   }
 
-  public destory() {}
+  public destroy() {
+    // nothing
+  }
 }

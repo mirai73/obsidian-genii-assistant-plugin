@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 const {isPromise, isEmpty, createFrame, appendContextPath, blockParams} = require("../utils")
 
 module.exports = (handlebars) => {

@@ -20,7 +20,7 @@ const globalVars: Record<string, boolean> = {
 const untangableVars = [
   "custom_header",
   "custom_body",
-  "sanatization_response",
+  "sanitization_response",
   "streamable",
   "CORSBypass",
 ];
@@ -40,7 +40,7 @@ export const default_values = {
     messages: {{stringify messages}}
 }`,
 
-  sanatization_response: `async (data, res)=>{
+  sanitization_response: `async (data, res)=>{
     // catch error
     if (res.status >= 300) {
       const err = data?.error?.message || JSON.stringify(data);
@@ -64,7 +64,8 @@ export type CustomConfig = Record<keyof typeof default_values, string>;
 
 export default class AnthropicLegacyProvider
   extends CustomProvider
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Custom";
   static id = "Anthropic Legacy (Custom)" as const;
   static slug = "anthropicLegacy" as const;
@@ -109,12 +110,12 @@ export default class AnthropicLegacyProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.endpoint || default_values.endpoint}
             placeholder="Enter your API endpoint"
             setValue={async (value) => {
               config.endpoint = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
               await global.plugin.saveSettings();
             }}
           />
@@ -136,7 +137,6 @@ export default class AnthropicLegacyProvider
                 global.triggerReload();
                 if (v.toLowerCase().contains("key"))
                   global.plugin.encryptAllKeys();
-                // TODO: it could use a debounce here
                 await global.plugin.saveSettings();
               }}
             />

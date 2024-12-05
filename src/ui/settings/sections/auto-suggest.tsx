@@ -7,11 +7,11 @@ import type { Register } from ".";
 import LLMProviderController from "../components/llmProviderController";
 import { useToggle } from "usehooks-ts";
 import AvailableVars from "#/ui/components/availableVars";
-import { contextVariablesObj } from "#/scope/context-manager";
-import { useReloder } from "../components/reloadPlugin";
+import { ContextVariables } from "#/scope/context-manager";
+import { useReloader } from "../components/reloadPlugin";
 
 export default function AutoSuggestSetting(props: { register: Register }) {
-  const [setReloader] = useReloder();
+  const [setReloader] = useReloader();
 
   const global = useGlobal();
   const sectionId = useId();
@@ -41,7 +41,8 @@ export default function AutoSuggestSetting(props: { register: Register }) {
           type="checkbox"
           value={"" + global.plugin.settings.autoSuggestOptions.isEnabled}
           setValue={async (val) => {
-            global.plugin.settings.autoSuggestOptions.isEnabled = val == "true";
+            global.plugin.settings.autoSuggestOptions.isEnabled =
+              val === "true";
             global.plugin.autoSuggest?.renderStatusBar();
             setReloader(true);
             await global.plugin.saveSettings();
@@ -65,7 +66,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               }
               setValue={async (val) => {
                 global.plugin.settings.autoSuggestOptions.inlineSuggestions =
-                  val == "true";
+                  val === "true";
                 setReloader(true);
                 await global.plugin.saveSettings();
                 global.triggerReload();
@@ -87,7 +88,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
                 }
                 setValue={async (val) => {
                   global.plugin.settings.autoSuggestOptions.showInMarkdown =
-                    val == "true";
+                    val === "true";
                   setReloader(true);
                   await global.plugin.saveSettings();
                   global.triggerReload();
@@ -103,6 +104,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Trigger Phrase"
               value={global.plugin.settings.autoSuggestOptions.triggerPhrase}
               setValue={async (val) => {
@@ -120,6 +122,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               value={
                 "" + global.plugin.settings.autoSuggestOptions.overrideTrigger
               }
@@ -160,6 +163,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="number"
               value={
                 "" +
                 global.plugin.settings.autoSuggestOptions.numberOfSuggestions
@@ -180,6 +184,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Stop Phrase"
               value={global.plugin.settings.autoSuggestOptions.stop}
               setValue={async (val) => {
@@ -203,7 +208,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               }
               setValue={async (val) => {
                 global.plugin.settings.autoSuggestOptions.allowInNewLine =
-                  val == "true";
+                  val === "true";
                 global.plugin.autoSuggest?.renderStatusBar();
                 await global.plugin.saveSettings();
                 global.triggerReload();
@@ -221,7 +226,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               value={"" + global.plugin.settings.autoSuggestOptions.showStatus}
               setValue={async (val) => {
                 global.plugin.settings.autoSuggestOptions.showStatus =
-                  val == "true";
+                  val === "true";
                 global.plugin.autoSuggest?.renderStatusBar();
                 await global.plugin.saveSettings();
                 global.triggerReload();
@@ -243,7 +248,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               }
               setValue={async (val) => {
                 global.plugin.settings.autoSuggestOptions.customInstructEnabled =
-                  val == "true";
+                  val === "true";
                 await global.plugin.saveSettings();
                 global.triggerReload();
               }}
@@ -277,7 +282,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               </SettingItem>
               <AvailableVars
                 vars={{
-                  ...contextVariablesObj,
+                  ...ContextVariables,
                   query: {
                     example: "{{query}}",
                     hint: "query text that triggered auto-suggest",
@@ -315,7 +320,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               </SettingItem>
               <AvailableVars
                 vars={{
-                  ...contextVariablesObj,
+                  ...ContextVariables,
                   query: {
                     example: "{{query}}",
                     hint: "query text that triggered auto-suggest",
@@ -324,7 +329,6 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               />
             </>
           )}
-
 
           <SettingItem
             name="Custom Provider"
@@ -341,7 +345,7 @@ export default function AutoSuggestSetting(props: { register: Register }) {
               }
               setValue={async (val) => {
                 global.plugin.settings.autoSuggestOptions.customProvider =
-                  val == "true";
+                  val === "true";
                 global.plugin.autoSuggest?.renderStatusBar();
                 await global.plugin.saveSettings();
                 global.triggerReload();
@@ -356,8 +360,8 @@ export default function AutoSuggestSetting(props: { register: Register }) {
                 global.plugin.settings.autoSuggestOptions.selectedProvider || ""
               }
               setSelectedProvider={(newVal) =>
-              (global.plugin.settings.autoSuggestOptions.selectedProvider =
-                (newVal as any) || "")
+                (global.plugin.settings.autoSuggestOptions.selectedProvider =
+                  (newVal as any) || "")
               }
               triggerResize={triggerResize}
               mini

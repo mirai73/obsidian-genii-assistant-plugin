@@ -1,4 +1,11 @@
-import { IconList, IconPencil, IconPlus, IconReload, IconScreenshot, IconVideo, IconWaveSine } from "@tabler/icons-react";
+import {
+  IconList,
+  IconPencil,
+  IconReload,
+  IconScreenshot,
+  IconVideo,
+  IconWaveSine,
+} from "@tabler/icons-react";
 import clsx from "clsx";
 import React, { useState, useEffect, useId } from "react";
 import LLMProviderInterface from "./interface";
@@ -16,6 +23,7 @@ import {
 } from "./refs";
 import { arrayBufferToBase64 } from "obsidian";
 import { default_values } from "./custom/custom";
+import { LLMProviderType } from "#/lib/types";
 
 export function ModelsHandler(props: {
   register: Parameters<LLMProviderInterface["RenderSettings"]>[0]["register"];
@@ -39,19 +47,19 @@ export function ModelsHandler(props: {
     });
 
   const updateModels = async () => {
+    if (!config.api_key && !global.plugin.settings?.api_key)
+      throw "Please provide a valid api key.";
     setLoadingUpdate(true);
     try {
-      if (!config.api_key && !global.plugin.settings.api_key)
-        throw "Please provide a valid api key.";
-
       const reqParams = {
         url: `${config.basePath || default_values.basePath}/models`,
         method: "GET",
         body: "",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${config.api_key || global.plugin.settings.api_key
-            }`,
+          Authorization: `Bearer ${
+            config.api_key || global.plugin.settings.api_key
+          }`,
         },
       };
 
@@ -76,7 +84,7 @@ export function ModelsHandler(props: {
 
   useEffect(() => {
     Object.entries(AI_MODELS).forEach(
-      ([e, o]) => o.llm.contains(id) && models.push(e)
+      ([e, o]) => o.llm.contains(id as LLMProviderType) && models.push(e)
     );
 
     setModels(
@@ -89,10 +97,14 @@ export function ModelsHandler(props: {
     );
   }, []);
 
-  const modelName = "" + config.model as string;
-  const model = AI_MODELS[modelName.toLowerCase()] || AI_MODELS["models" + modelName.toLowerCase()];
+  const modelName = ("" + config.model) as string;
+  const model =
+    AI_MODELS[modelName.toLowerCase()] ||
+    AI_MODELS["models" + modelName.toLowerCase()];
 
-  const supportedInputs = Object.keys(model?.inputOptions || {}).filter(e => !!e);
+  const supportedInputs = Object.keys(model?.inputOptions || {}).filter(
+    (e) => !!e
+  );
   return (
     <>
       <SettingItem
@@ -101,53 +113,23 @@ export function ModelsHandler(props: {
         sectionId={props.sectionId}
       >
         <div className="plug-tg-flex plug-tg-flex-col">
-          <div className="plug-tg-flex plug-tg-items-center plug-tg-gap-2">
-            {global.plugin.settings.experiment || edit ? (
-              <DropdownSearch
-                value={config.model}
-                setValue={async (selectedModel) => {
-                  config.model = selectedModel;
-                  await global.plugin.saveSettings();
-                  global.triggerReload();
-                }}
-                values={models}
-              />
-            ) : (
-              <Dropdown
-                value={config.model}
-                setValue={async (selectedModel) => {
-                  config.model = selectedModel;
-                  await global.plugin.saveSettings();
-                  global.triggerReload();
-                }}
-                values={models}
-              />
-            )}
+          <Dropdown
+            value={config.model}
+            setValue={async (selectedModel) => {
+              config.model = selectedModel;
+              await global.plugin.saveSettings();
+              global.triggerReload();
+            }}
+            values={models}
+          />
 
-            <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-              <button
-                className="plug-tg-btn plug-tg-btn-xs"
-                onClick={() => setEdit((i) => !i)}
-              >
-                {edit ? <IconList size={11} /> : <IconPencil size={11} />}
-              </button>
-              <button
-                className={clsx("plug-tg-btn plug-tg-btn-xs", {
-                  "plug-tg-loading": loadingUpdate,
-                })}
-                onClick={updateModels}
-                disabled={loadingUpdate}
-              >
-                <IconReload size={11} />
-              </button>
+          {!!supportedInputs.length && (
+            <div className="plug-tg-flex plug-tg-items-center plug-tg-gap-2">
+              {model?.inputOptions?.images && <IconScreenshot size={16} />}
+              {model?.inputOptions?.audio && <IconWaveSine size={16} />}
+              {model?.inputOptions?.videos && <IconVideo size={16} />}
             </div>
-          </div>
-
-          {!!supportedInputs.length && <div className="plug-tg-flex plug-tg-items-center plug-tg-gap-2">
-            {model?.inputOptions?.images && <IconScreenshot size={16} />}
-            {model?.inputOptions?.audio && <IconWaveSine size={16} />}
-            {model?.inputOptions?.videos && <IconVideo size={16} />}
-          </div>}
+          )}
         </div>
       </SettingItem>
     </>
@@ -189,17 +171,16 @@ export function cleanConfig<T>(options: T): T {
   return cleanedOptions;
 }
 
-
-
-
-export function convertArrayBufferToBase64Link(arrayBuffer: ArrayBuffer, type: string) {
+export function convertArrayBufferToBase64Link(
+  arrayBuffer: ArrayBuffer,
+  type: string
+) {
   // Convert the number array to a Base64 string using btoa and String.fromCharCode
   const base64String = arrayBufferToBase64(arrayBuffer);
 
   // Format as a data URL
   return `data:${type || ""};base64,${base64String}`;
 }
-
 
 export function HeaderEditor({
   headers,
@@ -226,7 +207,11 @@ export function HeaderEditor({
       const parsed = JSON5.parse(value) as Record<string, unknown>;
 
       // Verify it's an object
-      if (typeof parsed !== "object" || Array.isArray(parsed) || parsed === null) {
+      if (
+        typeof parsed !== "object" ||
+        Array.isArray(parsed) ||
+        parsed === null
+      ) {
         throw new Error("Headers must be a JSON object");
       }
 
@@ -263,18 +248,15 @@ export function HeaderEditor({
 
       {enabled && (
         <>
-
           <textarea
             placeholder="Headers"
-            className="plug-tg-resize-none plug-tg-w-full"
+            className="plug-tg-w-full plug-tg-resize-none"
             defaultValue={headers}
             onChange={async (e) => {
               validateAndSetHeaders(e.target.value);
 
-              const compiled = await Handlebars.compile(
-                headers
-              )({
-                ...cleanConfig(default_values),
+              const compiled = await Handlebars.compile(headers)({
+                ...cleanConfig(default_values), // TODO: check this out
                 n: 1,
               });
 
@@ -299,4 +281,3 @@ export function HeaderEditor({
     </div>
   );
 }
-

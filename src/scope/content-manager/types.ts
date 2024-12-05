@@ -1,4 +1,5 @@
 import { TFile } from "obsidian";
+import type { CanvasNode } from "./canvas.d";
 
 export type Mode = "insert" | "stream" | "replace";
 
@@ -6,6 +7,26 @@ export type EditorPosition = {
   ch: number;
   line: number;
 };
+
+export type TemplateMetadata = Partial<{
+  id: string;
+  name: string;
+  description: string;
+  required_values: string[];
+  author: string;
+  tags: string[];
+  version: string;
+  commands: string[];
+  viewTypes?: string[];
+}>;
+
+export type Template = TemplateMetadata & {
+  title: string;
+  ctime: number;
+  path: string;
+};
+
+export type Item = (CanvasNode & { rawText?: string }) | undefined;
 
 export type Options = {
   wrapInBlockQuote?: boolean;
@@ -29,7 +50,9 @@ export interface ContentManager {
   getRange(from?: any, to?: any): any;
   getCurrentLine(): string;
 
-  setCursor(pos: any): void;
+  getPrecedingLine(): string;
+
+  setCursor(pos: EditorPosition): void;
 
   getActiveFile(): Promise<TFile> | TFile | undefined;
 
@@ -37,10 +60,14 @@ export interface ContentManager {
 
   // replaceSelection(str: string): void;
 
-  insertText(data: string, pos: any, mode?: Mode): Promise<any>;
+  insertText(
+    data: string,
+    pos: EditorPosition | Item,
+    mode?: Mode
+  ): Promise<string | Item>;
 
   insertStream(
-    pos: any,
+    pos: EditorPosition | Item,
     mode?: Mode
   ): Promise<{
     insert(data: string): void;

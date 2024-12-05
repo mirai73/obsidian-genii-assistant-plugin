@@ -41,16 +41,16 @@ export default function TemplateDetails(inProps: {
 
   useEffect(() => {
     (async () => {
-      const pkg = packageManager.getPackageById(packageId);
+      const pkg = packageManager.getPackageTemplateById(packageId);
       console.log({
         package: pkg,
         installed: await packageManager.getInstalledPackageById(packageId),
         ownedOrReq:
           pkg?.price || !pkg?.packageId
             ? {
-              allowed: true,
-              oneRequired: [],
-            }
+                allowed: true,
+                oneRequired: [],
+              }
             : await packageManager.validateOwnership(pkg?.packageId),
       });
 
@@ -60,13 +60,13 @@ export default function TemplateDetails(inProps: {
         ownedOrReq:
           pkg?.price || !pkg?.packageId
             ? {
-              allowed: true,
-              oneRequired: [],
-            }
+                allowed: true,
+                oneRequired: [],
+              }
             : {
-              allowed: false,
-              oneRequired: [],
-            },
+                allowed: false,
+                oneRequired: [],
+              },
       });
 
       packageManager.getInstalledPackageById(packageId).then((installed) => {
@@ -85,8 +85,8 @@ export default function TemplateDetails(inProps: {
     try {
       const ownedOrReq = props.installed
         ? {
-          allowed: true,
-        }
+            allowed: true,
+          }
         : await packageManager.validateOwnership(packageId);
 
       setProps((props) => ({
@@ -139,7 +139,7 @@ export default function TemplateDetails(inProps: {
     setInstalling(true);
     try {
       try {
-        if (props.package?.type == "feature") await disable();
+        if (props.package?.type === "feature") await disable();
       } catch (err: any) {
         console.warn("couldn't disable the feature");
       }
@@ -201,13 +201,13 @@ export default function TemplateDetails(inProps: {
       updateView();
       checkForUpdates();
     } finally {
-      setInstalling(false)
+      setInstalling(false);
     }
   }
 
   async function updateLocalView() {
     setProps({
-      package: packageManager.getPackageById(packageId),
+      package: packageManager.getPackageTemplateById(packageId),
       installed: await packageManager.getInstalledPackageById(packageId),
     });
   }
@@ -359,7 +359,7 @@ export default function TemplateDetails(inProps: {
             ) : props.installed ? (
               <>
                 {/* feature controls */}
-                {props.package?.type == "feature" &&
+                {props.package?.type === "feature" &&
                   (!enabledFeature ? (
                     <button
                       className="plug-tg-cursor-pointer plug-tg-bg-red-300"

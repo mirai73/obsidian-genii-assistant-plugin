@@ -8,19 +8,19 @@ import { Message, TextGeneratorSettings } from "../types";
 import { Handlebars } from "../helpers/handlebars-helpers";
 import { Platform } from "obsidian";
 import LLMProviderInterface from "../LLMProviders/interface";
-import LLMProviderRegistry from "../LLMProviders/registery";
+import LLMProviderRegistry from "../LLMProviders/registry";
 import { defaultProvidersMap } from "../LLMProviders";
 import providerOptionsValidator from "../LLMProviders/providerOptionsValidator";
 import { ProxyService } from "./proxy-service";
-const logger = debug("textgenerator:TextGenerator");
+const logger = debug("genii:TextGenerator");
 
 export default class RequestHandler {
   plugin: TextGeneratorPlugin;
   reqFormatter: ReqFormatter;
   signalController?: AbortController;
 
-  LLMProvider: LLMProviderInterface = undefined as any;
-  LLMRegestry: LLMProviderRegistry<LLMProviderInterface> = undefined as any;
+  LLMProvider?: LLMProviderInterface;
+  LLMRegistry?: LLMProviderRegistry<LLMProviderInterface>;
 
   proxyService: ProxyService;
 
@@ -44,7 +44,7 @@ export default class RequestHandler {
   async load() {
     try {
       await this.loadLLMRegistry();
-      await this.loadllm();
+      await this.loadLLM();
     } catch (err: any) {
       this.plugin.handelError(err);
     }
@@ -54,32 +54,34 @@ export default class RequestHandler {
     // default llm Providers;
     const llmProviders: Record<any, any> = { ...defaultProvidersMap };
 
-    // get Customones and merge them with the default ones
+    // get Custom ones and merge them with the default ones
     for (const llmId in this.plugin.settings.LLMProviderProfiles) {
-      const llm = this.plugin.settings.LLMProviderProfiles[llmId];
-      const parent = defaultProvidersMap[llm.extends as any];
+      if (!this.plugin.settings.LLMProviderProfiles.hasOwnProperty(llmId)) {
+        const llm = this.plugin.settings.LLMProviderProfiles[llmId];
+        const parent = defaultProvidersMap[llm.extends as any];
 
-      if (!parent) continue;
+        if (!parent) continue;
 
-      class clone extends parent {
-        static provider = parent.provider;
+        class Clone extends parent {
+          static provider = parent.provider;
 
-        static id = llmId;
-        static slug = llm.name;
+          static id = llmId;
+          static slug = llm.name;
 
-        cloned = true;
-        static cloned = true;
-        static displayName = llm.name;
+          cloned = true;
+          static cloned = true;
+          static displayName = llm.name;
 
-        id = clone.id;
-        provider = clone.provider;
+          id = Clone.id;
+          provider = Clone.provider;
+        }
+
+        llmProviders[llmId] = Clone;
       }
-
-      llmProviders[llmId] = clone;
     }
 
-    this.LLMRegestry = new LLMProviderRegistry(llmProviders);
-    await this.LLMRegestry.load();
+    this.LLMRegistry = new LLMProviderRegistry(llmProviders);
+    await this.LLMRegistry.load();
   }
 
   async addLLMCloneInRegistry(props: {
@@ -100,7 +102,7 @@ export default class RequestHandler {
 
     this.plugin.settings.LLMProviderOptions[props.id] = {
       ...this.plugin.settings.LLMProviderOptions[
-      props.extendsDataFrom || props.extends
+        props.extendsDataFrom || props.extends
       ],
     };
 
@@ -115,14 +117,20 @@ export default class RequestHandler {
     await this.loadLLMRegistry();
   }
 
-  async loadllm(name: string = this.plugin.settings.selectedProvider || "") {
-    const llmList = this.LLMRegestry.getList();
+  async loadLLM(name: string = this.plugin.settings.selectedProvider ?? "") {
+    const llmList = this.LLMRegistry?.getList();
 
-    const llm = this.LLMRegestry.get(name) || this.LLMRegestry.get(llmList[0]);
+    if (!llmList?.length) {
+      throw new Error("No LLM providers found");
+    }
+    const llm =
+      this.LLMRegistry?.get(name) || this.LLMRegistry?.get(llmList[0]);
 
     if (llm && llm.id !== this.LLMProvider?.id) {
-      if (Platform.isMobile && llm.mobileSupport == false)
-        throw `Mobile is not supported for the "${llm?.id}" LLM provider`;
+      if (Platform.isMobile && !llm.mobileSupport)
+        throw new Error(
+          `Mobile is not supported for the "${llm?.id}" LLM provider`
+        );
 
       // @ts-ignore
       const instance = new llm({
@@ -146,8 +154,8 @@ export default class RequestHandler {
       settings,
     });
 
-    const promp: Message["content"] = await Handlebars.compile(
-      this.plugin.contextManager.overProcessTemplate(prompt)
+    const newPrompt: Message["content"] = await Handlebars.compile(
+      this.plugin.contextManager?.overProcessTemplate(prompt)
     )({
       ...settings,
       templatePath: "default/default",
@@ -157,14 +165,17 @@ export default class RequestHandler {
       const { reqParams, bodyParams, provider, allParams } =
         await this.reqFormatter.getRequestParameters(
           {
-            ...this.LLMProvider.getSettings(),
+            ...this.LLMProvider?.getSettings(),
             ...settings,
-            //@ts-ignore
-            prompt: promp,
+            // @ts-ignore
+            prompt: newPrompt,
           },
           false
         );
 
+      if (!this.LLMProvider?.provider) {
+        throw new Error("No LLM provider selected");
+      }
       await providerOptionsValidator(
         this.LLMProvider.provider,
         provider.providerOptions
@@ -174,24 +185,27 @@ export default class RequestHandler {
         ? bodyParams.messages.map((m) => m.content).join(",")
         : provider.providerOptions.disableProvider
           ? ""
-          : await this.LLMProvider.generate(
-            bodyParams.messages,
-            {
-              ...allParams,
-              ...bodyParams,
-              requestParams: {
-                // body: JSON.stringify(bodyParams),
-                ...reqParams,
-                signal: this.signalController?.signal,
+          : await this.LLMProvider?.generate(
+              bodyParams.messages,
+              {
+                ...allParams,
+                ...bodyParams,
+                requestParams: {
+                  // body: JSON.stringify(bodyParams),
+                  ...reqParams,
+                  signal: this.signalController?.signal,
+                },
+                otherOptions:
+                  this.plugin.settings.LLMProviderOptions[this.LLMProvider.id],
+                stream: false,
+                llmPredict:
+                  bodyParams.messages?.length === 1 &&
+                  !this.plugin.settings.advancedOptions
+                    ?.includeAttachmentsInRequest,
               },
-              otherOptions:
-                this.plugin.settings.LLMProviderOptions[this.LLMProvider.id],
-              stream: false,
-              llmPredict: bodyParams.messages?.length == 1 && !this.plugin.settings.advancedOptions?.includeAttachmentsInRequest,
-            },
-            undefined,
-            provider.providerOptions
-          );
+              undefined,
+              provider.providerOptions
+            );
 
       // Remove leading/trailing newlines
       //   result = result.trim();
@@ -201,7 +215,7 @@ export default class RequestHandler {
       return result;
     } catch (error) {
       logger("gen  error", error);
-      return Promise.reject(error);
+      throw error;
     }
   }
 
@@ -210,38 +224,39 @@ export default class RequestHandler {
     insertMetadata = false,
     params: Partial<TextGeneratorSettings> = {},
     templatePath = "",
-    additionnalParams: {
+    additionalParams: {
       showSpinner?: boolean;
-      /** when using custom signal, it will not use textgenerator processing, loading or throw an error when 2 generations */
+      /** when using custom signal, it will not use text generator processing, loading or throw an error when 2 generations */
       signal?: AbortSignal;
       reqParams?: RequestInit | undefined;
       bodyParams?: any;
     } = {
-        showSpinner: true,
-        signal: undefined,
-      }
+      showSpinner: true,
+      signal: undefined,
+    }
   ) {
     try {
-      console.log("calling stream generate")
+      console.log("calling stream generate");
       logger("generate", {
         context,
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams,
       });
 
-      if (this.plugin.processing && !additionnalParams.signal) {
+      if (this.plugin.processing && !additionalParams.signal) {
         logger("streamGenerate error", "There is another generation process");
-        throw "There is another generation process";
+        throw new Error("There is another generation process");
       }
 
       const { options, template } = context;
 
-      const prompt = (typeof template != "undefined" && !context.context
-        ? template.inputTemplate(options)
-        : context.context) as string;
-
+      const prompt = (
+        typeof template !== "undefined" && !context.context
+          ? template.inputTemplate(options)
+          : context.context
+      ) as string;
 
       const { reqParams, bodyParams, provider, allParams } =
         await this.reqFormatter.getRequestParameters(
@@ -252,27 +267,30 @@ export default class RequestHandler {
           },
           insertMetadata,
           templatePath,
-          additionnalParams
+          additionalParams
         );
 
+      if (!this.LLMProvider?.provider) {
+        throw new Error("No LLM provider selected");
+      }
       await providerOptionsValidator(
-        this.LLMProvider.provider,
+        this.LLMProvider?.provider,
         provider.providerOptions
       );
 
-      if (!additionnalParams.signal)
-        this.startLoading(additionnalParams.showSpinner);
+      if (!additionalParams.signal)
+        this.startLoading(additionalParams.showSpinner);
 
       if (!this.LLMProvider?.streamable) {
         logger("streamGenerate error", "LLM not streamable");
-        throw "LLM not streamable";
+        throw new Error("LLM not streamable");
       }
 
-      //const stream = await this.streamRequest(reqParams);
+      // const stream = await this.streamRequest(reqParams);
       const stream = async (
         onToken: Parameters<typeof this.LLMProvider.generate>[2],
         onError?: (error: any) => void
-      ): Promise<string> => {
+      ): Promise<string | undefined> => {
         try {
           const innerContext = {
             ...allParams,
@@ -280,48 +298,50 @@ export default class RequestHandler {
             requestParams: {
               // body: JSON.stringify(bodyParams),
               ...reqParams,
-              signal:
-                additionnalParams.signal ||
-                this.signalController?.signal,
+              signal: additionalParams.signal || this.signalController?.signal,
             },
-            otherOptions: this.LLMProvider.getSettings(),
+            otherOptions: this.LLMProvider?.getSettings(),
             streaming: true,
-            llmPredict: bodyParams.messages?.length == 1 && !this.plugin.settings.advancedOptions?.includeAttachmentsInRequest,
-          } as any;
+            llmPredict:
+              bodyParams.messages?.length === 1 &&
+              !this.plugin.settings.advancedOptions
+                ?.includeAttachmentsInRequest,
+          };
 
           const k =
             provider.providerOptions.estimatingMode ||
-              provider.providerOptions.disableProvider
+            provider.providerOptions.disableProvider
               ? ""
-              : await this.LLMProvider.generate(
-                bodyParams.messages,
-                innerContext,
-                onToken,
-                provider.providerOptions
-              );
+              : await this.LLMProvider?.generate(
+                  bodyParams.messages,
+                  innerContext,
+                  onToken,
+                  provider.providerOptions
+                );
 
           // output template, template used AFTER the generation happens
 
-
-          const t = (provider.providerOptions.output?.length
+          const t = provider.providerOptions.output?.length
             ? await Handlebars.compile(
-              provider.providerOptions.output.replaceAll("\\n", "\n"),
-              {
-                noEscape: true,
-              }
-            ) : await template?.outputTemplate)
+                provider.providerOptions.output.replaceAll("\\n", "\n"),
+                {
+                  noEscape: true,
+                }
+              )
+            : await template?.outputTemplate;
 
           delete innerContext.LLMProviderOptions;
           delete innerContext.LLMProviderOptionsKeysHashed;
           delete innerContext.LLMProviderProfiles;
 
-          return t?.({
-            requestResults: k,
-            ...options,
-            output: k,
-            inputContext: innerContext,
-          }) || k
-
+          return (
+            t?.({
+              requestResults: k,
+              ...options,
+              output: k,
+              inputContext: innerContext,
+            }) || k
+          );
         } catch (err: any) {
           onError?.(err);
           return err.message;
@@ -335,7 +355,7 @@ export default class RequestHandler {
       return stream;
     } catch (error) {
       logger("streamGenerate error", error);
-      return Promise.reject(error);
+      throw error;
     }
   }
 
@@ -344,11 +364,11 @@ export default class RequestHandler {
     insertMetadata = false,
     params: Partial<typeof this.plugin.settings> = this.plugin.settings,
     templatePath = "",
-    additionnalParams = {
+    additionalParams = {
       showSpinner: true,
       insertMode: false,
     },
-    onOneFinishs?: (content: string, index: number) => void
+    onOneFinishes?: (content: string, index: number) => void
   ) {
     try {
       logger("chain", {
@@ -356,26 +376,26 @@ export default class RequestHandler {
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams,
       });
 
       if (this.plugin.processing) {
         logger("generate error", "There is another generation process");
-        return Promise.reject(new Error("There is another generation process"));
+        throw new Error("There is another generation process");
       }
 
       this.startLoading();
 
       const batches = await Promise.all(
-        context.map(async (ctxt) => {
+        context.map(async (ctx) => {
           return this.reqFormatter.getRequestParameters(
             {
-              ...ctxt.options,
+              ...ctx.options,
               ...params,
               prompt:
-                typeof ctxt.template != "undefined" && !ctxt.context
-                  ? await ctxt.template.inputTemplate(ctxt.options)
-                  : ctxt.context,
+                typeof ctx.template !== "undefined" && !ctx.context
+                  ? await ctx.template.inputTemplate(ctx.options)
+                  : ctx.context,
             },
             insertMetadata,
             templatePath
@@ -383,7 +403,7 @@ export default class RequestHandler {
         })
       );
 
-      console.log(batches[0]);
+      logger(batches[0]);
 
       if (batches[0].provider.providerOptions.disableProvider)
         return await Promise.all(
@@ -399,36 +419,41 @@ export default class RequestHandler {
             delete conf.inputContext.LLMProviderOptionsKeysHashed;
             delete conf.inputContext.LLMProviderProfiles;
 
-            onOneFinishs?.(
+            onOneFinishes?.(
               (await context[0].template?.outputTemplate?.(conf)) || "",
               i
             );
           })
         );
-      else
-        return await this.LLMProvider.generateBatch(
-          batches.map((batch) => {
-            return {
-              messages: batch.bodyParams.messages,
-              reqParams: {
-                ...batch.allParams,
-                ...batch.bodyParams,
-                requestParams: {
-                  // body: JSON.stringify(bodyParams),
-                  ...batch.reqParams,
-                  signal: this.signalController?.signal,
-                },
-                otherOptions:
-                  this.plugin.settings.LLMProviderOptions[this.LLMProvider.id],
-                stream: false,
-                llmPredict: batch.bodyParams.messages?.length == 1,
+      else if (!this.LLMProvider) {
+        throw new Error("No LLM provider selected");
+      }
+      return await this.LLMProvider.generateBatch(
+        batches.map((batch) => {
+          if (!this.LLMProvider) {
+            throw new Error("No LLM provider selected");
+          }
+          return {
+            messages: batch.bodyParams.messages,
+            reqParams: {
+              ...batch.allParams,
+              ...batch.bodyParams,
+              requestParams: {
+                // body: JSON.stringify(bodyParams),
+                ...batch.reqParams,
+                signal: this.signalController?.signal,
               },
-            };
-          }),
+              otherOptions:
+                this.plugin.settings.LLMProviderOptions[this.LLMProvider.id],
+              stream: false,
+              llmPredict: batch.bodyParams.messages?.length === 1,
+            },
+          };
+        }),
 
-          onOneFinishs
-        );
-    } catch (err: any) {
+        onOneFinishes
+      );
+    } catch (err: unknown) {
       this.endLoading();
       this.plugin.handelError(err);
     } finally {
@@ -444,32 +469,34 @@ export default class RequestHandler {
     > = this.plugin.settings,
     templatePath = "",
     // @TODO: fix this types
-    additionnalParams: any = {
+    additionalParams: any = {
       showSpinner: true,
       insertMode: false,
-      dontCheckProcess: false,
+      doNotCheckProcess: false,
     }
   ) {
     try {
-      console.log("calling generate")
+      console.log("calling generate");
       logger("generate", {
         context,
         insertMetadata,
         params,
         templatePath,
-        additionnalParams,
+        additionalParams: additionalParams,
       });
 
       const { options, template } = context;
 
-      if (!additionnalParams.dontCheckProcess && this.plugin.processing) {
+      if (!additionalParams.doNotCheckProcess && this.plugin.processing) {
         logger("generate error", "There is another generation process");
-        return Promise.reject(new Error("There is another generation process"));
+        throw new Error("There is another generation process");
       }
 
-      const prompt = (typeof template != "undefined" && !context.context?.trim()
-        ? await template.inputTemplate(options)
-        : context.context) as string;
+      const prompt = (
+        typeof template !== "undefined" && !context.context?.trim()
+          ? await template.inputTemplate(options)
+          : context.context
+      ) as string;
 
       const { reqParams, bodyParams, provider, allParams } =
         await this.reqFormatter.getRequestParameters(
@@ -482,40 +509,42 @@ export default class RequestHandler {
           templatePath
         );
 
+      if (!this.LLMProvider?.provider) {
+        throw new Error("No LLM provider selected");
+      }
+
       await providerOptionsValidator(
-        this.LLMProvider.provider,
+        this.LLMProvider?.provider,
         provider.providerOptions
       );
 
-      this.startLoading(additionnalParams?.showSpinner);
+      this.startLoading(additionalParams?.showSpinner);
 
       const innerContext = {
         ...allParams,
         ...bodyParams,
         requestParams: {
-          // body: JSON.stringify(bodyParams),
           ...reqParams,
           signal: this.signalController?.signal,
         },
         otherOptions:
-          this.plugin.settings.LLMProviderOptions[this.LLMProvider.id],
+          this.plugin.settings.LLMProviderOptions[this.LLMProvider?.id],
         stream: false,
-        llmPredict: bodyParams.messages?.length == 1 && !this.plugin.settings.advancedOptions?.includeAttachmentsInRequest,
-      }
+        llmPredict:
+          bodyParams.messages?.length === 1 &&
+          !this.plugin.settings.advancedOptions?.includeAttachmentsInRequest,
+      };
 
       let result =
         provider.providerOptions.estimatingMode ||
-          provider.providerOptions.disableProvider
+        provider.providerOptions.disableProvider
           ? ""
-          : await this.LLMProvider.generate(
-            bodyParams.messages,
-            innerContext,
-            undefined,
-            provider.providerOptions
-          );
-
-      // Remove leading/trailing newlines
-      //   result = result.trim();
+          : await this.LLMProvider?.generate(
+              bodyParams.messages,
+              innerContext,
+              undefined,
+              provider.providerOptions
+            );
 
       // output template, template used AFTER the generation happens
 
@@ -523,7 +552,7 @@ export default class RequestHandler {
         ...options,
         output: result,
         requestResults: result,
-        inputContext: innerContext
+        inputContext: innerContext,
       };
 
       delete conf.inputContext.LLMProviderOptions;
@@ -532,20 +561,19 @@ export default class RequestHandler {
 
       result = provider.providerOptions.output
         ? await Handlebars.compile(
-          provider.providerOptions.output.replaceAll("\\n", "\n"),
-          {
-            noEscape: true,
-          }
-        )(conf)
+            provider.providerOptions.output.replaceAll("\\n", "\n"),
+            {
+              noEscape: true,
+            }
+          )(conf)
         : result;
 
-      const res = (await template?.outputTemplate?.({
+      const res = await template?.outputTemplate?.({
         ...conf,
         output: result,
-      }))
+      });
 
-      result = res
-        || result;
+      result = res || result;
 
       logger("generate end", {
         result,
@@ -554,10 +582,9 @@ export default class RequestHandler {
       return result;
     } catch (error) {
       logger("generate error", error);
-      this.endLoading(additionnalParams?.showSpinner);
-      return Promise.reject(error);
+      throw error;
     } finally {
-      this.endLoading(additionnalParams?.showSpinner);
+      this.endLoading(additionalParams?.showSpinner);
     }
   }
 

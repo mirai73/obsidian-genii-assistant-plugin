@@ -3,7 +3,7 @@ import { Extractor } from "./content-extractor";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";
 
-const logger = debug("textgenerator:Extractor:AudioExtractor");
+const logger = debug("genii:Extractor:AudioExtractor");
 
 import {
   WhisperProviderName,
@@ -66,21 +66,20 @@ export default class AudioExtractor extends Extractor {
   }
 
   async generateTranscript(audioBuffer: ArrayBuffer, filetype: string) {
-    const whisperApiKey = this.plugin.settings.LLMProviderOptions[WhisperProviderName]?.api_key || this.plugin.settings.api_key;
+    const whisperApiKey =
+      this.plugin.settings.LLMProviderOptions[WhisperProviderName]?.api_key ||
+      this.plugin.settings.api_key;
     try {
       const endpoint = new URL(
         this.plugin.settings.LLMProviderOptions[WhisperProviderName]?.basePath
           ?.length
           ? this.plugin.settings.LLMProviderOptions[WhisperProviderName]
-            ?.basePath
+              ?.basePath
           : this.plugin.settings.endpoint ||
-          this.plugin.defaultSettings.endpoint
+            this.plugin.defaultSettings.endpoint
       );
 
-      if (
-        endpoint.host.contains("openai") &&
-        whisperApiKey.length < 1
-      )
+      if (endpoint.host.contains("openai") && whisperApiKey.length < 1)
         throw new Error("OpenAI API Key is not provided.");
 
       const formData = this.createFormData(audioBuffer, filetype);
@@ -120,7 +119,7 @@ export default class AudioExtractor extends Extractor {
     formData.append(
       "model",
       this.plugin.settings.LLMProviderOptions[WhisperProviderName]?.model ||
-      default_values.model
+        default_values.model
     );
 
     const lang =

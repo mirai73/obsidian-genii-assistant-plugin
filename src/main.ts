@@ -1,5 +1,3 @@
-// import { TextExtractorTool } from "./ui/text-extractor-tool";
-// import Tesseract from "tesseract.js";
 import {
   addIcon,
   Notice,
@@ -24,7 +22,7 @@ import PluginServiceAPI from "./services/pluginAPI-service";
 import PackageManager from "./scope/package-manager/package-manager";
 import { PackageManagerUI } from "./scope/package-manager/package-manager-ui";
 import { EditorView } from "@codemirror/view";
-import { spinnersPlugin, SpinnersPlugin } from "./cm/plugin";
+import { spinnersPlugin, SpinnersPlugin } from "./code-mirror/plugin";
 import PrettyError from "pretty-error";
 import ansiToHtml from "ansi-to-html";
 import { AutoSuggest } from "./services/auto-suggest";
@@ -46,10 +44,11 @@ import VersionManager from "./scope/versionManager";
 
 import { registerAPI } from "@vanakat/plugin-api";
 import { PlaygroundView, VIEW_Playground_ID } from "./ui/playground";
-import ContentManagerCls from "./scope/content-manager";
+import ContentManagerFactory from "./scope/content-manager";
 import ContextManager from "./scope/context-manager";
 import TGBlock from "./services/tgBlock";
-
+import { SetModel } from "./ui/settings/components/set-model";
+import * as manifest from "../manifest.json";
 //    @ts-ignore
 let safeStorage: Electron.SafeStorage;
 
@@ -57,30 +56,35 @@ if (Platform.isDesktop) {
   // @ts-ignore
   safeStorage = require("electron")?.remote?.safeStorage;
 }
-
-const logger = debug("textgenerator:main");
+debug.enable("genii:*"); // TODO: have a setting for this
+const logger = debug("genii:main");
 
 export default class TextGeneratorPlugin extends Plugin {
-  settings: TextGeneratorSettings = undefined as any;
-  textGenerator: TextGenerator = undefined as any;
-  pluginAPIService: PluginServiceAPI = undefined as any;
-  packageManager: PackageManager = undefined as any;
-  versionManager: VersionManager = undefined as any;
-  contextManager: ContextManager = undefined as any;
-  contentManager: typeof ContentManagerCls = ContentManagerCls;
-  tokensScope: TokensScope = undefined as any;
+  settings: TextGeneratorSettings = DEFAULT_SETTINGS;
+  textGenerator?: TextGenerator;
+  pluginAPIService?: PluginServiceAPI;
+  packageManager?: PackageManager;
+  versionManager?: VersionManager;
+  contextManager?: ContextManager;
+  contentManager = ContentManagerFactory;
+  tokensScope?: TokensScope;
   autoSuggest?: AutoSuggest;
-  processing: boolean = undefined as any;
-  defaultSettings: TextGeneratorSettings = undefined as any;
+  processing = false;
+  defaultSettings: TextGeneratorSettings = DEFAULT_SETTINGS;
 
   textGeneratorIconItem: HTMLElement = createDiv();
   statusBarTokens: HTMLElement = createDiv();
+  modelBar: HTMLElement = createDiv();
 
-  notice: Notice = undefined as any;
-  commands: Commands = undefined as any;
-  statusBarItemEl: HTMLElement = undefined as any;
+  notice?: Notice;
+  commands?: Commands;
+  statusBarItemEl?: HTMLElement;
   spinner?: SpinnersPlugin;
   temp: Record<string, any> = {};
+
+  async handleError(error: any) {
+    console.log(error);
+  }
 
   async onload() {
     logger("loading textGenerator plugin");
@@ -104,7 +108,6 @@ export default class TextGeneratorPlugin extends Plugin {
     // "open template as tool" view
     this.registerView(VIEW_TOOL_ID, (leaf) => new ToolView(leaf, this));
 
-
     // register events such as right click
     if (this.settings.options["generate-in-right-click-menu"])
       this.registerEvent(
@@ -115,12 +118,15 @@ export default class TextGeneratorPlugin extends Plugin {
             item.onClick(async () => {
               try {
                 if (this.processing)
-                  return this.textGenerator.signalController?.abort();
+                  return this.textGenerator?.signalController?.abort();
                 const activeView = await this.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, this);
-                await this.textGenerator.generateInEditor({}, false, CM);
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this
+                );
+                await this.textGenerator?.generateInEditor({}, false, CM);
               } catch (error) {
-                this.handelError(error);
+                this.handleError(error);
               }
             });
           });
@@ -143,7 +149,7 @@ export default class TextGeneratorPlugin extends Plugin {
                     async (result) => {
                       if (!result.path)
                         return this.handelError("couldn't find path");
-                      await this.textGenerator.generateBatchFromTemplate(
+                      await this.textGenerator?.generateBatchFromTemplate(
                         files.filter(
                           // @ts-ignore
                           (f) => !f.children && f.path.endsWith(".md")
@@ -164,8 +170,6 @@ export default class TextGeneratorPlugin extends Plugin {
         )
       );
 
-
-
     // tg codeblock
     if (this.settings.options["tg-block-processor"]) {
       new TGBlock(this);
@@ -175,15 +179,18 @@ export default class TextGeneratorPlugin extends Plugin {
     if (!this.settings.options["disable-ribbon-icons"]) {
       this.addRibbonIcon(
         "GENERATE_ICON",
-        "Generate Text!",
+        "Generate Text",
         async (evt: MouseEvent) => {
           // Called when the user clicks the icon.
           // const activeFile = this.app.workspace.getActiveFile();
           const activeView = this.getActiveViewMD();
           if (activeView !== null) {
-            const CM = ContentManagerCls.compile(activeView, this);
+            const CM = ContentManagerFactory.createContentManager(
+              activeView,
+              this
+            );
             try {
-              await this.textGenerator.generateInEditor({}, false, CM);
+              await this.textGenerator?.generateInEditor({}, false, CM);
             } catch (error) {
               this.handelError(error);
             }
@@ -198,7 +205,7 @@ export default class TextGeneratorPlugin extends Plugin {
           new PackageManagerUI(
             this.app,
             this,
-            async (result: string) => { }
+            async (result: string) => {}
           ).open();
         }
       );
@@ -207,7 +214,6 @@ export default class TextGeneratorPlugin extends Plugin {
     this.pluginAPIService = new PluginServiceAPI(this);
 
     registerAPI("tg", this.pluginAPIService, this as any);
-
 
     this.app.workspace.onLayoutReady(async () => {
       try {
@@ -252,10 +258,8 @@ export default class TextGeneratorPlugin extends Plugin {
         } catch (err: any) {
           console.trace("[TG:Error] in Loading a Service", err);
         }
-
-
       } catch (err: any) {
-        this.handelError(err);
+        this.handleError(err);
       }
 
       try {
@@ -269,24 +273,22 @@ export default class TextGeneratorPlugin extends Plugin {
     });
   }
 
-
   async addStatusBar() {
     // add status bar items
     this.textGeneratorIconItem = this.addStatusBarItem();
     this.statusBarTokens = this.addStatusBarItem();
     this.statusBarItemEl = this.addStatusBarItem();
 
-    this.updateStatusBar(``);
+    this.updateStatusBar("");
 
     if (this.settings.autoSuggestOptions.showStatus)
       this.autoSuggest?.AddStatusBar();
   }
 
   async onunload() {
-
     this.app.workspace.detachLeavesOfType(VIEW_TOOL_ID);
     this.app.workspace.detachLeavesOfType(VIEW_Playground_ID);
-    await this.textGenerator.unload();
+    await this.textGenerator?.unload();
   }
 
   async loadSettings() {
@@ -311,11 +313,11 @@ export default class TextGeneratorPlugin extends Plugin {
 
   async activateView(id: string, state?: any) {
     if (state?.openInPopout) {
-      const leaf = this.app.workspace.getRightLeaf(true);
+      const _leaf = this.app.workspace.getRightLeaf(true);
 
-      if (!leaf) return;
+      if (!_leaf) return;
 
-      await leaf.setViewState({
+      await _leaf.setViewState({
         type: id,
         active: true,
         state: { ...state, id: randomUUID() },
@@ -323,8 +325,8 @@ export default class TextGeneratorPlugin extends Plugin {
 
       await new Promise((s) => setTimeout(s, 500));
 
-      this.app.workspace.setActiveLeaf(leaf);
-      this.app.workspace.moveLeafToPopout(leaf);
+      this.app.workspace.setActiveLeaf(_leaf);
+      this.app.workspace.moveLeafToPopout(_leaf);
 
       return;
     }
@@ -354,7 +356,28 @@ export default class TextGeneratorPlugin extends Plugin {
     if (this.settings.showStatusBar) {
       this.textGeneratorIconItem.innerHTML = "";
       this.statusBarTokens.innerHTML = "";
+      this.modelBar.innerHTML = "";
+      this.modelBar.addClass("mod-clickable");
+      this.modelBar.addEventListener("click", async () => {
+        // @ts-ignore
+        try {
+          new SetModel(this.app, this, async (selectedModel) => {
+            console.log(selectedModel);
+            const provider = this.settings.selectedProvider as string;
+            if (!provider || !this.settings.LLMProviderOptions[provider])
+              return;
 
+            this.settings.LLMProviderOptions[provider].model = selectedModel;
+            await this.saveSettings();
+          }).open();
+        } catch (error) {
+          this.handelError(error);
+        }
+      });
+      const span1 = document.createElement("span");
+
+      span1.textContent = `${this.textGenerator?.LLMProvider?.getSettings()?.model ?? "No model selected"}`;
+      this.modelBar.append(span1);
       if (processing) {
         const span = document.createElement("span");
         span.addClasses(["plug-tg-loading", "dots"]);
@@ -368,15 +391,13 @@ export default class TextGeneratorPlugin extends Plugin {
       } else {
         const icon = getIcon("bot");
         if (icon) this.textGeneratorIconItem.append(icon);
-        this.textGeneratorIconItem.title = "Text Generator";
+        this.textGeneratorIconItem.title = "AI Generator";
         this.textGeneratorIconItem.addClass("mod-clickable");
         this.textGeneratorIconItem.addEventListener("click", async () => {
           // @ts-ignore
           await this.app.setting.open();
           // @ts-ignore
-          await this.app.setting
-            .openTabById("obsidian-textgenerator-plugin")
-            .display();
+          await this.app.setting.openTabById(manifest.id).display();
         });
 
         if (this.notice) {
@@ -399,7 +420,7 @@ export default class TextGeneratorPlugin extends Plugin {
           this,
           this.settings.max_tokens.toString(),
           async (result: string) => {
-            this.settings.max_tokens = parseInt(result);
+            this.settings.max_tokens = parseInt(result, 10);
             await this.saveSettings();
             new Notice(`Set Max Tokens to ${result}!`);
             this.updateStatusBar("");
@@ -475,17 +496,17 @@ export default class TextGeneratorPlugin extends Plugin {
   async handelError(error: any) {
     if (error?.length || error?.message) {
       new Notice(
-        "🔴 TG Error: " + (typeof error == "string" ? error : error.message)
+        "🔴 Genii Error: " + (typeof error === "string" ? error : error.message)
       );
     } else {
       new Notice(
-        "🔴 TG Error: An error has occurred. Please check the console by pressing CTRL+SHIFT+I or turn on display errors in the editor within the settings for more information."
+        "🔴 Genii Error: Please check the console by pressing CTRL+SHIFT+I or turn on display errors in the editor within the settings for more information."
       );
     }
 
     console.error(error);
     try {
-      //this.updateStatusBar(`Error check console`);
+      // this.updateStatusBar(`Error check console`);
       if (this.settings.displayErrorInEditor) {
         const activeView = this.getActiveViewMD(false);
         if (activeView) {
@@ -493,7 +514,7 @@ export default class TextGeneratorPlugin extends Plugin {
           activeView.editor.cm.contentDOM.appendChild(this.formatError(error));
         }
       }
-    } catch (err2: any) {
+    } catch (err2) {
       // if it can't add error to activeView, then it doesn't matter, it shouldn't show a second error
       logger("handelError", err2);
     }
@@ -514,7 +535,7 @@ export default class TextGeneratorPlugin extends Plugin {
     const button = document.createElement("div");
     button.classList.add("clickable-icon");
     button.setAttribute("aria-label", label);
-    //aria-label-position="right"
+    // aria-label-position="right"
     button.innerHTML = svg;
 
     return button;
@@ -556,9 +577,9 @@ export default class TextGeneratorPlugin extends Plugin {
 
     // get all secret keys
     Object.entries(this.settings?.LLMProviderOptions).forEach(([key1, l1]) => {
-      if (typeof l1 != "object") return;
+      if (typeof l1 !== "object") return;
       Object.entries(l1).forEach(([key2, l2]) => {
-        if (key2.toLowerCase().includes("key") && typeof l2 == "string") {
+        if (key2.toLowerCase().includes("key") && typeof l2 === "string") {
           keyList.push(`${key1}.${key2}`);
         }
       });
@@ -580,9 +601,9 @@ export default class TextGeneratorPlugin extends Plugin {
 
     // get all secret keys
     Object.entries(LLMProviderOptions).forEach(([key1, l1]) => {
-      if (typeof l1 != "object") return;
+      if (typeof l1 !== "object") return;
       Object.entries(l1).forEach(([key2, l2]) => {
-        if (key2.toLowerCase().includes("key") && typeof l2 == "string") {
+        if (key2.toLowerCase().includes("key") && typeof l2 === "string") {
           set(LLMProviderOptions, `${key1}.${key2}`, "");
         }
       });
@@ -602,7 +623,7 @@ export default class TextGeneratorPlugin extends Plugin {
         !safeStorage?.isEncryptionAvailable() ||
         !this.settings.encrypt_keys
       ) {
-        throw "disabled decryption";
+        throw new Error("disabled decryption");
       }
 
       const buff = Buffer.from(keyBuffer?.data || []);
@@ -633,14 +654,11 @@ export default class TextGeneratorPlugin extends Plugin {
   getApiKeys() {
     const keys: Record<string, string | undefined> = {};
     for (const k in this.settings.LLMProviderOptions) {
-      if (
-        Object.prototype.hasOwnProperty.call(
-          this.settings.LLMProviderOptions,
-          k
-        )
-      ) {
-        keys[this.textGenerator.LLMRegestry.UnProviderSlugs[k]] =
-          this.settings.LLMProviderOptions[k]?.api_key;
+      if (k && this.settings.LLMProviderOptions.hasOwnProperty(k)) {
+        if (this.textGenerator?.LLMRegistry) {
+          keys[this.textGenerator?.LLMRegistry.UnProviderSlugs[k]] =
+            this.settings.LLMProviderOptions[k]?.api_key;
+        }
       }
     }
     return keys;
@@ -654,11 +672,11 @@ export default class TextGeneratorPlugin extends Plugin {
   /** Reloads the plugin */
   async reload() {
     // @ts-ignore
-    await this.app.plugins.disablePlugin("obsidian-textgenerator-plugin");
+    await this.app.plugins.disablePlugin(manifest.id);
     // @ts-ignore
-    await this.app.plugins.enablePlugin("obsidian-textgenerator-plugin");
+    await this.app.plugins.enablePlugin(manifest.id);
     // @ts-ignore
-    this.app.setting.openTabById("obsidian-textgenerator-plugin").display();
+    this.app.setting.openTabById(manifest.id).display();
   }
 
   actions: Record<string, any> = {};
@@ -682,11 +700,11 @@ export default class TextGeneratorPlugin extends Plugin {
   }
 
   async getActiveView() {
-    if (!this.app.workspace.activeLeaf) throw "activeLeaf not found";
+    if (!this.app.workspace.activeLeaf) throw new Error("activeLeaf not found");
     const activeView = this.app.workspace.activeLeaf.view;
 
     if (!activeView) {
-      throw "No active view.";
+      throw new Error("No active view.");
     }
     return activeView;
   }

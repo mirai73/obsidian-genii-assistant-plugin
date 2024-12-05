@@ -1,6 +1,4 @@
 import debug from "debug";
-import { AI_MODELS } from "src/constants";
-
 import cl100k_base from "@dqbd/tiktoken/encoders/cl100k_base.json";
 import r50k_base from "@dqbd/tiktoken/encoders/r50k_base.json";
 import p50k_base from "@dqbd/tiktoken/encoders/p50k_base.json";
@@ -9,9 +7,9 @@ import wasm from "../../node_modules/@dqbd/tiktoken/tiktoken_bg.wasm";
 import { init, Tiktoken } from "@dqbd/tiktoken/lite/init";
 import { Notice } from "obsidian";
 import React from "react";
-import ReactDOM from "react-dom";
 import { createRoot } from "react-dom/client";
-const logger = debug("textgenerator:tokens-service");
+import { InputContext } from "./context-manager";
+const logger = debug("genii:tokens-service");
 
 export default class TokensScope {
   plugin: TextGeneratorPlugin;
@@ -48,7 +46,7 @@ export default class TokensScope {
     return encoder;
   }
 
-  async estimate(context: any) {
+  async estimate(context: InputContext) {
     logger("estimateTokens", context);
     const { options, template } = context;
 
@@ -57,8 +55,9 @@ export default class TokensScope {
         ? await template.inputTemplate(options)
         : context.context;
 
-    const { bodyParams } = await
-      this.plugin.textGenerator.reqFormatter.getRequestParameters(
+    if (!this.plugin.textGenerator?.reqFormatter) return;
+    const { bodyParams } =
+      await this.plugin.textGenerator.reqFormatter.getRequestParameters(
         {
           ...this.plugin.settings,
           prompt,
@@ -67,7 +66,7 @@ export default class TokensScope {
         ""
       );
 
-    const llmSettings = this.plugin.textGenerator.LLMProvider.getSettings();
+    const llmSettings = this.plugin.textGenerator?.LLMProvider?.getSettings();
 
     const conf = {
       ...this.plugin.settings,
@@ -76,18 +75,17 @@ export default class TokensScope {
     };
 
     const { tokens, maxTokens } =
-      await this.plugin.textGenerator.LLMProvider.calcTokens(
+      (await this.plugin.textGenerator?.LLMProvider?.calcTokens(
         bodyParams.messages,
         conf
-      );
+      )) ?? { tokens: 0, maxTokens: 0 };
 
-    const cost = await this.plugin.textGenerator.LLMProvider.calcPrice(
+    const cost = await this.plugin.textGenerator?.LLMProvider?.calcPrice(
       tokens,
       conf
     );
 
     const result = {
-      // model: this.plugin.textGenerator.LLMProvider.getSettings().model || this.plugin.settings.model || "gpt-3.5-turbo",
       maxTokens,
       completionTokens: this.plugin.settings.max_tokens,
       tokens,
@@ -101,19 +99,15 @@ export default class TokensScope {
   showTokens(props: {
     tokens: any;
     maxTokens: number;
-    cost: number;
-    // model: string;
+    cost?: number;
     completionTokens: number;
-    // total: number;
   }) {
-    // <tr><td><strong>Model</strong></td><td>${props.model}</td></tr>
-    // <tr><td><strong>Prompt tokens</strong></td><td>${props.tokens}</td></tr>
-
     logger("showTokens", props);
 
+    const doc = new DocumentFragment();
     const summaryEl = document.createElement("div");
+    doc.appendChild(summaryEl);
     summaryEl.classList.add("plug-tg-summary");
-    // summaryEl.innerHTML =  as any;
 
     const provider = createRoot(summaryEl);
 
@@ -154,7 +148,7 @@ export default class TokensScope {
             <div className="plug-tg-flex plug-tg-items-center plug-tg-justify-between plug-tg-space-x-4">
               <div>Estimated Price</div>
               <div className="plug-tg-inline-flex plug-tg-items-center plug-tg-pr-3 plug-tg-text-base plug-tg-font-semibold plug-tg-text-gray-900 dark:plug-tg-text-white">
-                ${props.cost.toLocaleString()}
+                ${props.cost?.toLocaleString()}
               </div>
             </div>
           </li>
@@ -164,6 +158,6 @@ export default class TokensScope {
 
     logger("showTokens", { summaryEl });
     logger(summaryEl);
-    new Notice(summaryEl as any, 5000);
+    new Notice(doc, 5000);
   }
 }

@@ -9,7 +9,10 @@ export class Extractor {
     this.plugin = plugin;
   }
   /** Read content as string */
-  async convert(docPath: string, otherOptions?: any): Promise<string> {
+  async convert(
+    docPath: string,
+    otherOptions?: Record<string, unknown>
+  ): Promise<string> {
     throw Error("Function convert is not implemented");
   }
 

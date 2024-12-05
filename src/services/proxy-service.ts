@@ -1,6 +1,6 @@
 import type net from "net";
 
-import { Platform } from "obsidian"
+import { Platform } from "obsidian";
 import { fetchWithRequestUrl, requestToObject } from "#/lib/fetch";
 
 // Shout out to https://github.com/luixaviles/cors-proxy-server-koa
@@ -13,7 +13,7 @@ export class ProxyService {
   fetchWithRequestUrl = fetchWithRequestUrl;
 
   get isSupported() {
-    return Platform.isDesktop
+    return Platform.isDesktop;
   }
 
   constructor() {
@@ -63,7 +63,7 @@ export class ProxyService {
 
     this.server = app.listen();
 
-    if (!this.server) throw "couldn't create proxy server";
+    if (!this.server) throw new Error("couldn't create proxy server");
 
     return new Promise((s, r) => {
       // Access the dynamically assigned port
@@ -73,7 +73,10 @@ export class ProxyService {
         console.log("address", address);
         s(true);
       });
-
+      this.server?.once("error", (e) => {
+        console.log("error", e);
+        r(e);
+      });
       this.started = true;
     });
   }
@@ -84,10 +87,6 @@ export class ProxyService {
     this.started = false;
   }
 
-
-
-
-
   getFetch(corsBypass = false) {
     return async (urlOrrequest: RequestInfo, init?: RequestInit) => {
       let request = new Request(urlOrrequest, init);
@@ -97,7 +96,7 @@ export class ProxyService {
           const newURL = new URL(await this.getProxiedUrl(request.url));
           console.log({ newURL });
           request = new Request(newURL, await requestToObject(request));
-          console.log("step 2222", request)
+          console.log("step 2222", request);
         } else {
           console.log("fallback to using requestUrl");
           return this.fetchWithRequestUrl(request);
@@ -105,7 +104,7 @@ export class ProxyService {
       }
 
       try {
-        console.log("the request", { request })
+        console.log("the request", { request });
         return await fetch(request);
       } catch (e: any) {
         console.log("FALLBACK: ", this.isSupported ? "proxied" : "requestUrl");

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const should = require('should'),
     { PassThrough } = require('stream'),
     Handlebars = require('handlebars'),
@@ -158,9 +159,7 @@ describe('Test async helpers', () => {
 
         hbs.registerHelper({
             extend: async function(partial, options) {
-                let context = this,
-                    // noinspection JSUnresolvedVariable
-                    template = Handlebars.partials[partial] || options.data?.partials?.partial
+                let template = Handlebars.partials[partial] || options.data?.partials?.partial
 
                 // Partial template required
                 if (typeof template === 'undefined') {

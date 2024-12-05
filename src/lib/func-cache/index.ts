@@ -1,7 +1,7 @@
 import debounce from "debounce";
 import util from "util";
 
-export default function funCache<T extends (...args: any) => any>(
+export default function funCache<T extends (...args: any[]) => void>(
   func: T,
   options: any = { lifeTime: 0, debounceTimer: 1000, async: false }
 ): T & { clearCache: () => void } {
@@ -19,14 +19,14 @@ export default function funCache<T extends (...args: any) => any>(
 
   const updateData = options.onDataUpdate
     ? debounce(() => {
-      try {
-        options.onDataUpdate?.(cached);
-      } catch (err) {
-        if (options.debug) {
-          console.error(err);
+        try {
+          options.onDataUpdate?.(cached);
+        } catch (err) {
+          if (options.debug) {
+            console.error(err);
+          }
         }
-      }
-    }, options.debounceTimer || 1000)
+      }, options.debounceTimer || 1000)
     : undefined;
 
   const checkExpiry = () => {
@@ -34,7 +34,7 @@ export default function funCache<T extends (...args: any) => any>(
       !firstTimeDone ||
       (options.lifeTime !== 0 &&
         Math.round(Date.now() - cached.____timeOfCreation) * 10 >
-        options.lifeTime)
+          options.lifeTime)
     ) {
       cached = { ____timeOfCreation: Date.now() };
     }
@@ -49,7 +49,7 @@ export default function funCache<T extends (...args: any) => any>(
 
     const re = func(...args);
 
-    //async
+    // async
     if (options.async || !util.types.isPromise(re))
       return new Promise(async (s, r) => {
         try {
@@ -58,7 +58,7 @@ export default function funCache<T extends (...args: any) => any>(
             try {
               await getData();
             } catch {
-              /** EMPTY */
+              // TODO: what happens?
             }
           }
 
@@ -93,8 +93,8 @@ export function localStorageCacher(
   const ls = options?.localStorage || window.localStorage;
   return {
     initialCache: JSON.parse(ls.getItem(tmpPath) || "{}"),
-    onDataUpdate: (ndata: any) => {
-      ls.setItem(tmpPath, JSON.stringify(ndata));
+    onDataUpdate: (data: any) => {
+      ls.setItem(tmpPath, JSON.stringify(data));
     },
   };
 }
@@ -108,17 +108,17 @@ export async function fSCacher(tmpPath: string) {
       // @ts-ignore
       fs.existsSync(tmpPath)
         ? fs.readFileSync(tmpPath, {
-          encoding: "utf-8",
-        })
+            encoding: "utf-8",
+          })
         : "{}"
     ),
-    onDataUpdate: async (ndata: any) => {
+    onDataUpdate: async (data: any) => {
       try {
         await fsPromises.unlink(tmpPath);
         // eslint-disable-next-line no-empty
-      } catch { }
+      } catch {}
 
-      await fsPromises.writeFile(tmpPath, JSON.stringify(ndata), {
+      await fsPromises.writeFile(tmpPath, JSON.stringify(data), {
         encoding: "utf-8",
         flag: "w",
       });

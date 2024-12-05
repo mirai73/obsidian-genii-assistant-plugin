@@ -1,13 +1,14 @@
-import { ContentManager, Mode } from "./types";
+import { ContentManager, Item, Mode, Options } from "./types";
 
-type Item = (CanvasNode & { rawText?: string }) | undefined;
 export default class CanvasManager implements ContentManager {
   canvas: Canvas;
   view: View;
+  options: Options;
 
-  constructor(canvas: Canvas, view: View) {
+  constructor(canvas: Canvas, view: View, options: Options) {
     this.canvas = canvas;
     this.view = view;
+    this.options = options;
   }
 
   protected async updateNode(
@@ -43,11 +44,11 @@ export default class CanvasManager implements ContentManager {
       Math.max(
         MIN_HEIGHT,
         parentNode &&
-        calculateNoteHeight({
-          text,
-          width: parentNode.width,
-          parentHeight: parentNode.height,
-        })
+          calculateNoteHeight({
+            text,
+            width: parentNode.width,
+            parentHeight: parentNode.height,
+          })
       );
 
     const siblings =
@@ -132,7 +133,7 @@ export default class CanvasManager implements ContentManager {
     return Promise.all(extractedText);
   }
 
-  protected getParentOfNode(id: string) { }
+  protected getParentOfNode(id: string) {}
 
   async getSelections(): Promise<string[]> {
     // @ts-ignore
@@ -181,7 +182,7 @@ export default class CanvasManager implements ContentManager {
   async getCursor(dir?: "from" | "to" | undefined): Promise<Item> {
     // get first or last item
     const items = await this.getTextSelectedItems();
-    return items[dir == "from" ? 0 : items.length - 1];
+    return items[dir === "from" ? 0 : items.length - 1];
   }
 
   setCursor(pos: Item): void {
@@ -192,18 +193,18 @@ export default class CanvasManager implements ContentManager {
   async insertText(text: string, parent?: Item, mode?: Mode): Promise<Item> {
     const items = await this.getTextSelectedItems();
     let selectedItem = parent || (await this.getCursor());
-
-    //@ts-ignore
+    let width = 0;
+    // @ts-ignore
     if (!text.replaceAll("\n", "").trim().length) return parent;
 
     await this.canvas.requestFrame();
 
     switch (mode) {
       case "replace":
-        if (!selectedItem) throw "no item to replace";
+        if (!selectedItem) throw new Error("no item to replace");
         // remove selected items(text)
         for (const item of [
-          ...items.filter((i) => i?.id != selectedItem?.id),
+          ...items.filter((i) => i?.id !== selectedItem?.id),
         ]) {
           if (item) this.canvas.removeNode(item);
         }
@@ -213,45 +214,47 @@ export default class CanvasManager implements ContentManager {
 
         break;
 
-      case "insert": {
-        selectedItem = this.createNewNode(
-          parent,
-          {
-            text,
-            position: "bottom",
-          },
-          {
-            color: "6",
-            chat_role: "assistant",
-          }
-        );
-
-        const width = selectedItem.width;
-        if (parent)
-          selectedItem.moveAndResize({
-            height: calculateNoteHeight({
-              parentHeight: parent.height,
-              width,
+      case "insert":
+        {
+          selectedItem = this.createNewNode(
+            parent,
+            {
               text,
-            }),
-            width,
-            x: parent.x,
-            y: parent.y + parent.height + NEW_NOTE_MARGIN,
-          });
-      } break;
+              position: "bottom",
+            },
+            {
+              color: "6",
+              chat_role: "assistant",
+            }
+          );
+
+          width = selectedItem.width;
+          if (parent)
+            selectedItem.moveAndResize({
+              height: calculateNoteHeight({
+                parentHeight: parent.height,
+                width,
+                text,
+              }),
+              width,
+              x: parent.x,
+              y: parent.y + parent.height + NEW_NOTE_MARGIN,
+            });
+        }
+        break;
 
       case "stream":
-        if (!selectedItem?.id) throw "no item to update";
+        if (!selectedItem?.id) throw new Error("no item to update");
         await this.canvas.requestFrame();
         await selectedItem.setText(selectedItem.getData().text + text);
 
         selectedItem.moveAndResize({
           height: selectedItem?.height
             ? calculateNoteHeight({
-              parentHeight: selectedItem?.height,
-              width: selectedItem.width,
-              text,
-            })
+                parentHeight: selectedItem?.height,
+                width: selectedItem.width,
+                text,
+              })
             : undefined,
           width: selectedItem.width,
           x: selectedItem.x,
@@ -285,9 +288,9 @@ export default class CanvasManager implements ContentManager {
       const posting = postingContent;
       if (!posting) return;
 
-      const postinglines = posting.split("\n");
+      const postingLines = posting.split("\n");
 
-      for (const postingLine of postinglines) {
+      for (const postingLine of postingLines) {
         if (firstTime)
           cursor = (await this.insertText(postingLine, pos, mode)) || cursor;
         else cursor = await this.insertText(postingLine, cursor, "stream");
@@ -295,9 +298,6 @@ export default class CanvasManager implements ContentManager {
         postingContent = postingContent.substring(postingLine.length);
         firstTime = false;
       }
-
-      // if (!this.plugin.settings.freeCursorOnStreaming)
-      //     this.setCursor(cursor);
     }, 200);
 
     return {
@@ -317,6 +317,14 @@ export default class CanvasManager implements ContentManager {
   getActiveFile(): TFile {
     // @ts-ignore
     return this.view.file;
+  }
+
+  getRange(from?: any, to?: any) {
+    return;
+  }
+
+  getCurrentLine(): string {
+    return "";
   }
 }
 
@@ -349,7 +357,7 @@ const calculateNoteHeight = ({
     parentHeight,
     Math.round(
       TEXT_PADDING_HEIGHT +
-      (PX_PER_LINE * text.length) / ((width || MIN_WIDTH) / PX_PER_CHAR)
+        (PX_PER_LINE * text.length) / ((width || MIN_WIDTH) / PX_PER_CHAR)
     )
   );
 

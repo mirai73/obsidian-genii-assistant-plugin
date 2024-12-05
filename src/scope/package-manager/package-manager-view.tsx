@@ -54,9 +54,9 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   async function getAllPackages(update = true) {
     let packages: any = [];
     if (update)
-      packages = await glob.plugin.packageManager.updatePackagesList();
+      packages = await glob.plugin.packageManager?.updatePackagesList();
 
-    await glob.plugin.packageManager.updatePackagesStats();
+    await glob.plugin.packageManager?.updatePackagesStats();
 
     return packages;
   }
@@ -64,8 +64,8 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   async function updateView() {
     setItems(
       glob.plugin.packageManager
-        .getPackagesList()
-        .filter((p) => !p.desktopOnly || Platform.isDesktop)
+        ?.getPackagesList()
+        .filter((p) => !p.desktopOnly || Platform.isDesktop) ?? []
     );
   }
 
@@ -82,13 +82,15 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   }
 
   async function checkForUpdates() {
-    setPackagesIdsTOUpdate(await glob.plugin.packageManager.checkUpdates());
+    setPackagesIdsTOUpdate(
+      (await glob.plugin.packageManager?.checkUpdates()) ?? []
+    );
   }
 
   async function reload() {
-    await glob.plugin.packageManager.fetch();
+    await glob.plugin.packageManager?.fetch();
     await checkForUpdates();
-    await glob.plugin.packageManager.updatePackagesStats();
+    await glob.plugin.packageManager?.updatePackagesStats();
     await updateView();
   }
 
@@ -102,7 +104,7 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
     (async () => {
       await getAllPackages();
       try {
-        await glob.plugin.packageManager.updateBoughtResources();
+        await glob.plugin.packageManager?.updateBoughtResources();
       } catch (err: any) {
         setError(err.message);
       }
@@ -111,7 +113,7 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
   }, []);
 
   const userApikey = useMemo(
-    () => glob.plugin.packageManager.getApikey(),
+    () => glob.plugin.packageManager?.getApiKey(),
     [glob.trg]
   );
   const isLoggedIn = !!userApikey;
@@ -225,7 +227,8 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                           strokeLinejoin="round"
                           className={clsx("svg-icon lucide-refresh-cw", {
                             // tailwind spin
-                            "plug-tg-animate-spin plug-tg-duration-700": refreshing,
+                            "plug-tg-animate-spin plug-tg-duration-700":
+                              refreshing,
                           })}
                         >
                           <path d="M21 2v6h-6"></path>
@@ -250,8 +253,9 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                   </div>
                   <div className="setting-item-control">
                     <div
-                      className={`checkbox-container mod-small ${justInstalled && "is-enabled"
-                        }`}
+                      className={`checkbox-container mod-small ${
+                        justInstalled && "is-enabled"
+                      }`}
                       onClick={() => toggleJustInstalled()}
                     >
                       <input type="checkbox" tabIndex={0} />
@@ -276,16 +280,16 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                         <div className="plug-tg-flex plug-tg-w-full plug-tg-flex-wrap plug-tg-justify-items-center plug-tg-gap-2">
                           {premiumFeatures.map((item) => {
                             const i = items.findIndex(
-                              (it) => it.packageId == item.packageId
+                              (it) => it.packageId === item.packageId
                             );
                             return (
                               <TemplateItem
                                 key={item.packageId + "premium"}
                                 item={item}
                                 index={i}
-                                selected={selectedIndex == i}
+                                selected={selectedIndex === i}
                                 select={select}
-                                owned={glob.plugin.packageManager.simpleCheckOwnership(
+                                owned={glob.plugin.packageManager?.simpleCheckOwnership(
                                   item.packageId
                                 )}
                                 update={pacakgeIdsToUpdateHash[item.packageId]}
@@ -308,14 +312,14 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                         <div className="community-modal-search-results plug-tg-justify-items-center plug-tg-pl-0">
                           {communityTemplates.map((item) => {
                             const i = items.findIndex(
-                              (it) => it.packageId == item.packageId
+                              (it) => it.packageId === item.packageId
                             );
                             return (
                               <TemplateItem
                                 key={item.packageId + "community"}
                                 item={item}
                                 index={i}
-                                selected={selectedIndex == i}
+                                selected={selectedIndex === i}
                                 select={select}
                                 update={pacakgeIdsToUpdateHash[item.packageId]}
                               />
@@ -355,13 +359,15 @@ export const PackageManagerView = (p: { parent: PackageManagerUI }) => {
                   {loginComponent}
                 </div>
                 <div className="community-modal-info">
-                  <TemplateDetails
-                    key={items[selectedIndex].packageId || selectedIndex}
-                    packageId={items[selectedIndex].packageId}
-                    packageManager={glob.plugin.packageManager}
-                    checkForUpdates={checkForUpdates}
-                    updateView={updateView}
-                  />
+                  {glob.plugin.packageManager && (
+                    <TemplateDetails
+                      key={items[selectedIndex].packageId || selectedIndex}
+                      packageId={items[selectedIndex].packageId}
+                      packageManager={glob.plugin.packageManager}
+                      checkForUpdates={checkForUpdates}
+                      updateView={updateView}
+                    />
+                  )}
                 </div>
               </div>
             )}

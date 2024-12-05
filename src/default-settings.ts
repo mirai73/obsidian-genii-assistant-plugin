@@ -13,7 +13,6 @@ const DEFAULT_SETTINGS: TextGeneratorSettings = {
   frequency_penalty: 0.5,
   showStatusBar: true,
   outputToBlockQuote: false,
-  freeCursorOnStreaming: false,
   allowJavascriptRun: false,
   experiment: false,
   promptsPath: "textgenerator/templates",
@@ -25,36 +24,36 @@ const DEFAULT_SETTINGS: TextGeneratorSettings = {
     customInstructEnabled: true,
     includeClipboard: true,
     customInstruct: `Title: {{title}}
-  
+
 Starred Blocks: {{starredBlocks}}
-	  
+
 {{tg_selection}}`,
 
     contextTemplate: `Title: {{title}}
-	
+
 Starred Blocks: {{starredBlocks}}
-	  
+
 {{tg_selection}}`,
   },
   requestTimeout: 300000,
   options: {
     "generate-text": true,
     "generate-text-with-metadata": true,
-    "insert-generated-text-From-template": true,
-    "create-generated-text-From-template": false,
+    "insert-generated-text-from-template": true,
+    "create-generated-text-from-template": false,
     "search-results-batch-generate-from-template": true,
-    "insert-text-From-template": false,
-    "create-text-From-template": false,
-    "show-modal-From-template": true,
+    "insert-text-from-template": false,
+    "create-text-from-template": false,
+    "show-modal-from-template": true,
     "open-template-as-tool": true,
     "open-playground": true,
-    set_max_tokens: true,
-    "set-llm": true,
+    "set-max-tokens": true,
+    "set-provider": true,
     "set-model": true,
-    packageManager: true,
+    "package-manager": true,
     "create-template": false,
     "get-title": true,
-    "generated-text-to-clipboard-From-template": false,
+    "generated-text-to-clipboard-from-template": false,
     "calculate-tokens": true,
     "calculate-tokens-for-template": true,
     "text-extractor-tool": true,
@@ -77,7 +76,7 @@ Starred Blocks: {{starredBlocks}}
 
   autoSuggestOptions: {
     customInstructEnabled: true,
-    customInstruct: `Continue the follwing text:
+    customInstruct: `Continue the following text:
 Title: {{title}}
 {{query}}`,
     systemPrompt: "",

@@ -1,9 +1,6 @@
 import React from "react";
 import LangchainBase from "./base";
-import type {
-  AzureOpenAIInput,
-  OpenAIChatInput,
-} from "@langchain/openai";
+import type { AzureOpenAIInput, OpenAIChatInput } from "@langchain/openai";
 import { BaseChatModelParams } from "@langchain/core/language_models/chat_models";
 
 import { IconExternalLink } from "@tabler/icons-react";
@@ -14,11 +11,12 @@ import clsx from "clsx";
 import { Input, SettingItem, useGlobal } from "../refs";
 import { HeaderEditor } from "../utils";
 
-const logger = debug("textgenerator:llmProvider:azureopenaiChat");
+const logger = debug("genii:llmProvider:azureopenaiChat");
 
 export default class LangchainAzureOpenAIChatProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "Azure OpenAI Chat (Langchain)" as const;
   static slug = "azureOpenaiChat" as const;
@@ -49,14 +47,14 @@ export default class LangchainAzureOpenAIChatProvider
       temperature: options.temperature,
       frequencyPenalty: +options.frequency_penalty || 0,
       presencePenalty: +options.presence_penalty || 0,
-      ...(options.presence_penalty == null
+      ...(options.presence_penalty === null
         ? {}
         : { presencePenalty: +options.presence_penalty }),
       n: options.n,
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 
@@ -104,6 +102,7 @@ export default class LangchainAzureOpenAIChatProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.azureOpenAIBasePath}
             placeholder="Enter your API BasePath"
             setValue={async (value) => {
@@ -124,6 +123,7 @@ export default class LangchainAzureOpenAIChatProvider
           })}
         >
           <Input
+            type="text"
             value={config.azureOpenAIApiInstanceName}
             placeholder="Enter your Instance name"
             setValue={async (value) => {
@@ -140,6 +140,7 @@ export default class LangchainAzureOpenAIChatProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.azureOpenAIApiDeploymentName}
             placeholder="Enter your Deployment name"
             setValue={async (value) => {
@@ -156,6 +157,7 @@ export default class LangchainAzureOpenAIChatProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.model}
             placeholder="Enter your Model name"
             setValue={async (value) => {
@@ -172,6 +174,7 @@ export default class LangchainAzureOpenAIChatProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.azureOpenAIApiVersion}
             placeholder="Enter your Api version"
             setValue={async (value) => {

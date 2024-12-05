@@ -1,6 +1,6 @@
 import { App, Modal, Setting, Notice } from "obsidian";
 import debug from "debug";
-const logger = debug("textgenerator:SetPath");
+const logger = debug("genii:SetPath");
 export class SetPath extends Modal {
   result: string;
   onSubmit: (result: string) => void;
@@ -55,7 +55,7 @@ export class SetPath extends Modal {
             this.onSubmit(this.result);
             this.close();
           } catch (error) {
-            new Notice("🔴Error: File already exists. Choose another path.");
+            new Notice("🔴 Error: File already exists. Choose another path.");
             console.error(error);
           }
         }

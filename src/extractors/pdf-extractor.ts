@@ -2,7 +2,7 @@ import { loadPdfJs, App } from "obsidian";
 import { Extractor } from "./extractor";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";
-const logger = debug("textgenerator:Extractor:PdfExtractor");
+const logger = debug("genii:Extractor:PdfExtractor");
 
 export default class PDFExtractor extends Extractor {
   constructor(app: App, plugin: TextGeneratorPlugin) {
@@ -43,13 +43,13 @@ export default class PDFExtractor extends Extractor {
     if (!embeds) {
       return [];
     }
-
+    logger("extract", { embeds });
     return embeds
       .map(
         (embed) =>
           this.app.metadataCache.getFirstLinkpathDest(embed.link, filePath)
             ?.path
       )
-      .filter(Boolean) as string[];
+      .filter((e) => e !== undefined);
   }
 }

@@ -12,10 +12,10 @@ import {
 } from "obsidian";
 
 import debug from "debug";
-import ContentManagerCls from "../../scope/content-manager";
+import ContentManagerFactory from "../../scope/content-manager";
 import { InlineSuggest } from "./inlineSuggest";
 import { ListSuggest } from "./listSuggest";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export interface Completion {
   label: string;
@@ -32,11 +32,11 @@ export class AutoSuggest {
     | undefined;
   scope:
     | (Scope & {
-      keys: {
-        key: string;
-        func: any;
-      }[];
-    })
+        keys: {
+          key: string;
+          func: any;
+        }[];
+      })
     | undefined;
   isOpen = false;
   app: App;
@@ -59,7 +59,8 @@ export class AutoSuggest {
   ): Promise<Completion[] | []> {
     logger("getGPTSuggestions", context);
     try {
-      let prompt = this.plugin.defaultSettings.autoSuggestOptions.customInstruct;
+      let prompt =
+        this.plugin.defaultSettings.autoSuggestOptions.customInstruct;
       let system = this.plugin.defaultSettings.autoSuggestOptions.systemPrompt;
 
       if (this.plugin.settings.autoSuggestOptions.customInstructEnabled) {
@@ -71,10 +72,10 @@ export class AutoSuggest {
           if (this.plugin.settings.autoSuggestOptions.systemPrompt)
             system = this.plugin.settings.autoSuggestOptions.systemPrompt;
 
-          const editor = ContentManagerCls.compile(
+          const editor = ContentManagerFactory.createContentManager(
             await this.plugin.getActiveView(),
             this.plugin
-          )
+          );
 
           const templateContext =
             await this.plugin.contextManager.getTemplateContext({
@@ -103,18 +104,19 @@ export class AutoSuggest {
         autoSuggestOptions.customProvider &&
         autoSuggestOptions.selectedProvider
       )
-        await this.plugin.textGenerator.loadllm(
+        await this.plugin.textGenerator.loadLLM(
           autoSuggestOptions.selectedProvider
         );
-      const re = await this.plugin.textGenerator.LLMProvider.generateMultiple(
+      const re = await this.plugin.textGenerator.LLMProvider?.generateMultiple(
         [
-          this.plugin.textGenerator.LLMProvider.makeMessage(system, "system"),
-          this.plugin.textGenerator.LLMProvider.makeMessage(prompt, "user")
+          this.plugin.textGenerator.LLMProvider?.makeMessage(system, "system"),
+          this.plugin.textGenerator.LLMProvider?.makeMessage(prompt, "user"),
         ],
         {
           stream: false,
           n: parseInt(
-            "" + this.plugin.settings.autoSuggestOptions.numberOfSuggestions
+            "" + this.plugin.settings.autoSuggestOptions.numberOfSuggestions,
+            10
           ),
           stop: [this.plugin.settings.autoSuggestOptions.stop],
         }
@@ -135,7 +137,7 @@ export class AutoSuggest {
         }
 
         const suggestionsObj = {
-          label: label,
+          label,
           value: label.toLowerCase().startsWith(context.query.toLowerCase())
             ? label.substring(context.query.length).trim()
             : label.trim(),
@@ -211,7 +213,7 @@ export class AutoSuggest {
 
     if (
       (!this.plugin.settings.autoSuggestOptions.allowInNewLine &&
-        line == triggerPhrase) ||
+        line === triggerPhrase) ||
       !line.endsWith(triggerPhrase)
     ) {
       this.process = false;
@@ -221,7 +223,7 @@ export class AutoSuggest {
     this.process = true;
 
     // @ts-ignore
-    const CM = ContentManagerCls.compile(
+    const CM = ContentManagerFactory.createContentManager(
       this.plugin.app.workspace.activeLeaf?.view as any,
       this.plugin
     );

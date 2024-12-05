@@ -40,6 +40,7 @@ export default function TemplateInputModalView(props: {
           };
           basicUi[l] = {
             "ui:widget": "textarea",
+            "ui:autofocus": true,
             props: {
               className: "w-full",
             },

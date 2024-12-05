@@ -2,6 +2,7 @@ import { Editor, EditorPosition, TFile, View } from "obsidian";
 import { ContentManager, Mode, Options } from "./types";
 import { minPos, maxPos } from "./utils";
 import { removeYAML } from "#/utils";
+
 export default class MarkdownManager implements ContentManager {
   editor: Editor;
   view: View;
@@ -15,6 +16,16 @@ export default class MarkdownManager implements ContentManager {
 
   getCurrentLine(): string {
     return this.editor.getLine(this.editor.getCursor("from").line);
+  }
+
+  getPrecedingLine(): string {
+    let currentLine = this.editor.getCursor("from").line;
+    let text = this.editor.getLine(currentLine);
+    while (currentLine > 0 && text.trim() === "") {
+      currentLine--;
+      text = this.editor.getLine(currentLine);
+    }
+    return text;
   }
 
   async getRange(from?: any, to?: any) {
@@ -55,7 +66,7 @@ export default class MarkdownManager implements ContentManager {
   }
 
   getCursor2(mode?: Mode) {
-    return this.editor.getCursor(mode == "replace" ? "from" : "to");
+    return this.editor.getCursor(mode === "replace" ? "from" : "to");
   }
 
   async getSelection(): Promise<string> {
@@ -113,8 +124,8 @@ export default class MarkdownManager implements ContentManager {
 
     if (
       line.trim().length <= 5 ||
-      line.trim() == "-" ||
-      line.trim() == "- [ ]"
+      line.trim() === "-" ||
+      line.trim() === "- [ ]"
     ) {
       fromTo.from = {
         ch: 0,
@@ -138,7 +149,7 @@ export default class MarkdownManager implements ContentManager {
       .split("\n")
       .findLastIndex((d) => reg.test(d));
 
-    if (lastLimiterIndex != -1) {
+    if (lastLimiterIndex !== -1) {
       fromTo.from = {
         ch: 0,
         line:
@@ -191,12 +202,8 @@ export default class MarkdownManager implements ContentManager {
     return this.editor.setCursor(pos);
   }
 
-  async insertText(text: string, cur: EditorPosition, mode?: Mode) {
-    let cursor = cur || this.getCursor2(mode);
-
-    // if (mode !== "stream") {
-    // 	 text = this.plugin.settings.prefix.replace(/\\n/g, "\n") + text;
-    // }
+  async insertText(text: string, cur: EditorPosition, mode: Mode = "insert") {
+    let cursor = cur ?? this.getCursor2(mode);
 
     if (this.editor.listSelections().length > 0) {
       const anchor = this.editor.listSelections()[0].anchor;
@@ -261,15 +268,12 @@ export default class MarkdownManager implements ContentManager {
         posting = await this.insertText(
           posting,
           cursor,
-          mode == "stream" ? "insert" : mode
+          mode === "stream" ? "insert" : mode
         );
       else posting = await this.insertText(posting, cursor, "stream");
 
       firstTime = false;
       cursor.ch += posting.length;
-
-      // if (!this.plugin.settings.freeCursorOnStreaming)
-      //     this.setCursor(cursor);
     }, 400);
 
     return {

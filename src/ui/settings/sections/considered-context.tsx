@@ -3,11 +3,10 @@ import useGlobal from "../../context/global";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
-import { useMemo } from "react";
 import type { Register } from ".";
 import { Context } from "#/types";
 import AvailableVars from "#/ui/components/availableVars";
-import { contextVariablesObj } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/context-manager";
 
 const extendedInfo: Record<
   string,
@@ -37,7 +36,7 @@ const extendedInfo: Record<
   },
 
   includeMentions: {
-    description: "Include paragraphs from mentions (linked, unliked).",
+    description: "Include paragraphs from mentions (linked, unlinked).",
   },
 
   includeHighlights: {
@@ -78,7 +77,7 @@ export default function ConsideredContextSetting(props: {
             value={"" + global.plugin.settings.context.customInstructEnabled}
             setValue={async (val) => {
               global.plugin.settings.context.customInstructEnabled =
-                val == "true";
+                val === "true";
               await global.plugin.saveSettings();
               global.triggerReload();
             }}
@@ -110,7 +109,7 @@ export default function ConsideredContextSetting(props: {
                 rows={10}
               />
             </SettingItem>
-            <AvailableVars vars={contextVariablesObj} />
+            <AvailableVars vars={ContextVariables} />
           </>
         )}
 
@@ -130,11 +129,11 @@ export default function ConsideredContextSetting(props: {
             setValue={async (val) => {
               if (!global.plugin.settings.advancedOptions)
                 global.plugin.settings.advancedOptions = {
-                  generateTitleInstructEnabled: val == "true",
+                  generateTitleInstructEnabled: val === "true",
                 };
 
               global.plugin.settings.advancedOptions.generateTitleInstructEnabled =
-                val == "true";
+                val === "true";
               await global.plugin.saveSettings();
               global.triggerReload();
             }}
@@ -142,59 +141,60 @@ export default function ConsideredContextSetting(props: {
         </SettingItem>
         {global.plugin.settings.advancedOptions
           ?.generateTitleInstructEnabled && (
-            <>
-              <SettingItem
-                name=""
-                description=""
-                register={props.register}
-                sectionId={sectionId}
-                textArea
-              >
-                <textarea
-                  placeholder="Textarea will autosize to fit the content"
-                  className="plug-tg-input plug-tg-h-fit plug-tg-w-full plug-tg-resize-y plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-outline-none"
-                  value={
-                    global.plugin.settings.advancedOptions
-                      ?.generateTitleInstruct ||
-                    global.plugin.defaultSettings.advancedOptions
-                      ?.generateTitleInstruct
-                  }
-                  onChange={async (e) => {
-                    if (!global.plugin.settings.advancedOptions)
-                      global.plugin.settings.advancedOptions = {
-                        generateTitleInstructEnabled: true,
-                        generateTitleInstruct: e.target.value,
-                      };
+          <>
+            <SettingItem
+              name=""
+              description=""
+              register={props.register}
+              sectionId={sectionId}
+              textArea
+            >
+              <textarea
+                placeholder="Textarea will autosize to fit the content"
+                className="plug-tg-input plug-tg-h-fit plug-tg-w-full plug-tg-resize-y plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-outline-none"
+                value={
+                  global.plugin.settings.advancedOptions
+                    ?.generateTitleInstruct ||
+                  global.plugin.defaultSettings.advancedOptions
+                    ?.generateTitleInstruct
+                }
+                onChange={async (e) => {
+                  if (!global.plugin.settings.advancedOptions)
+                    global.plugin.settings.advancedOptions = {
+                      generateTitleInstructEnabled: true,
+                      generateTitleInstruct: e.target.value,
+                    };
 
-                    global.plugin.settings.advancedOptions.generateTitleInstruct =
-                      e.target.value;
+                  global.plugin.settings.advancedOptions.generateTitleInstruct =
+                    e.target.value;
 
-                    global.triggerReload();
-                    await global.plugin.saveSettings();
-                  }}
-                  spellCheck={false}
-                  rows={10}
-                />
-              </SettingItem>
-              <AvailableVars
-                vars={{
-                  ...contextVariablesObj,
-                  query: {
-                    example: "{{content255}}",
-                    hint: "first 255 letters of trimmed content of the note",
-                  },
+                  global.triggerReload();
+                  await global.plugin.saveSettings();
                 }}
+                spellCheck={false}
+                rows={10}
               />
-            </>
-          )}
+            </SettingItem>
+            <AvailableVars
+              vars={{
+                ...ContextVariables,
+                query: {
+                  example: "{{content255}}",
+                  hint: "first 255 letters of trimmed content of the note",
+                },
+              }}
+            />
+          </>
+        )}
 
         <SettingItem
-          name="TG Selection Limiter(regex)"
+          name="Selection Limiter(regex)"
           description="tg_selection stopping character. Empty means disabled. Default: ^\*\*\*"
           register={props.register}
           sectionId={sectionId}
         >
           <Input
+            type="text"
             value={global.plugin.settings.tgSelectionLimiter}
             setValue={async (val) => {
               global.plugin.settings.tgSelectionLimiter = val;
@@ -234,7 +234,7 @@ export default function ConsideredContextSetting(props: {
             rows={10}
           />
         </SettingItem>
-        <AvailableVars vars={contextVariablesObj} />
+        <AvailableVars vars={ContextVariables} />
 
         {(["includeClipboard"] as (keyof Context)[])
           //   .filter((d) => !contextNotForTemplate.contains(d as any))
@@ -256,13 +256,13 @@ export default function ConsideredContextSetting(props: {
                   value={
                     "" +
                     global.plugin.settings.context[
-                    key as keyof typeof global.plugin.settings.context
+                      key as keyof typeof global.plugin.settings.context
                     ]
                   }
                   setValue={async (val) => {
                     (global.plugin.settings.context[
                       key as keyof typeof global.plugin.settings.context
-                    ] as any) = val == "true";
+                    ] as any) = val === "true";
                     await global.plugin.saveSettings();
                     global.triggerReload();
                   }}
@@ -281,7 +281,7 @@ export default function ConsideredContextSetting(props: {
             type="checkbox"
             value={"" + global.plugin.settings.allowJavascriptRun}
             setValue={async (val) => {
-              global.plugin.settings.allowJavascriptRun = val == "true";
+              global.plugin.settings.allowJavascriptRun = val === "true";
               await global.plugin.saveSettings();
               global.triggerReload();
             }}

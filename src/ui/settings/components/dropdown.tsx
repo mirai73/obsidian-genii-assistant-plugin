@@ -17,7 +17,7 @@ export default function Dropdown<T extends string>(props: {
   const slugs = useMemo(() => {
     return props.values.map((v) => {
       const val = v;
-      return val == "Default" ? "Custom" : val;
+      return val === "Default" ? "Custom" : val;
     });
   }, [props.values]);
 
@@ -38,10 +38,7 @@ export default function Dropdown<T extends string>(props: {
   return (
     <>
       <select
-        className={clsx(
-          "plug-tg-select plug-tg-cursor-pointer plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-px-4",
-          props.className
-        )}
+        className={clsx(props.className)}
         value={props.value || ""}
         onChange={(e) => props.setValue?.(e.target.value as any)}
       >

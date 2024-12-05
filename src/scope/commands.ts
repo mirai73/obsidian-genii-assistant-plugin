@@ -3,80 +3,95 @@ import TextGeneratorPlugin from "../main";
 import { TemplatesModal } from "../models/model";
 
 import { PackageManagerUI } from "#/scope/package-manager/package-manager-ui";
-import ContentManagerCls from "#/scope/content-manager";
+import ContentManagerFactory from "#/scope/content-manager";
 
 import { SetMaxTokens } from "#/ui/settings/components/set-max-tokens";
 import { TextExtractorTool } from "#/ui/text-extractor-tool";
-import { SetLLM } from "#/ui/settings/components/set-llm";
+import { SetLLMProvider } from "#/ui/settings/components/set-llm-provider";
 import { VIEW_Playground_ID } from "#/ui/playground";
 import { VIEW_TOOL_ID } from "#/ui/tool";
 
 import debug from "debug";
 import { SetModel } from "#/ui/settings/components/set-model";
-const logger = debug("textgenerator:main");
+import { InputContext } from "./context-manager";
+const logger = debug("genii:Commands");
 
 export default class Commands {
   plugin: TextGeneratorPlugin;
 
-  static commands: Command[] = [
+  async showTokens(context?: InputContext) {
+    if (!context) {
+      new Notice("No context was detected");
+      return;
+    }
+    const tokenEstimate = await this.plugin.tokensScope?.estimate(context);
+    if (tokenEstimate) this.plugin.tokensScope?.showTokens(tokenEstimate);
+  }
+
+  commands: Command[] = [
     {
       id: "generate-text",
-      name: "Generate Text!",
+      name: "Generate text",
       icon: "GENERATE_ICON",
       hotkeys: [{ modifiers: ["Mod"], key: "j" }],
-      async callback() {
-        const self: Commands = this as any;
+      callback: async () => {
         try {
-          if (self.plugin.processing)
-            return self.plugin.textGenerator.signalController?.abort();
-          const activeView = await self.plugin.getActiveView();
-          const CM = ContentManagerCls.compile(activeView, self.plugin);
-          await self.plugin.textGenerator.generateInEditor({}, false, CM);
+          if (this.plugin.processing)
+            return this.plugin.textGenerator?.signalController?.abort();
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
+          await this.plugin.textGenerator?.generateInEditor({}, false, CM);
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
       id: "generate-text-with-metadata",
-      name: "Generate Text (use Metadata))!",
+      name: "Generate text (use Metadata)",
       icon: "GENERATE_META_ICON",
       hotkeys: [{ modifiers: ["Mod", "Alt"], key: "j" }],
-      async callback() {
-        const self: Commands = this as any;
+      callback: async () => {
         try {
-          const activeView = await self.plugin.getActiveView();
-          const CM = ContentManagerCls.compile(activeView, self.plugin);
-          await self.plugin.textGenerator.generateInEditor({}, true, CM);
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
+          await this.plugin.textGenerator?.generateInEditor({}, true, CM);
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "insert-generated-text-From-template",
+      id: "insert-generated-text-from-template",
       name: "Templates: Generate & Insert",
       icon: "circle",
-      //hotkeys: [{ modifiers: ["Mod"], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              if (!result.path) throw "Nothing was selected";
-
-              const self: Commands = this as any;
+              if (!result.path) throw new Error("Nothing was selected");
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.generateFromTemplate({
+                await this.plugin.textGenerator?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -85,74 +100,80 @@ export default class Commands {
                   activeFile: true,
                 });
               } catch (error) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
             "Generate and Insert Template In The Active Note"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "generated-text-to-clipboard-From-template",
+      id: "generated-text-to-clipboard-from-template",
       name: "Templates: Generate & Copy To Clipboard ",
       icon: "circle",
-      //hotkeys: [{ modifiers: ["Mod"], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.generateToClipboard(
+                await this.plugin.textGenerator?.generateToClipboard(
                   {},
                   result.path || "",
                   true,
                   CM
                 );
               } catch (error: any) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
             "Generate & Copy To Clipboard"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "create-generated-text-From-template",
+      id: "create-generated-text-from-template",
       name: "Templates: Generate & Create Note",
       icon: "plus-circle",
-      //hotkeys: [{ modifiers: ["Mod","Shift"], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              if (!result.path) throw "Nothing was selected";
+              if (!result.path) throw new Error("Nothing was selected");
 
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.generateFromTemplate({
+                await this.plugin.textGenerator?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -161,13 +182,13 @@ export default class Commands {
                   activeFile: false,
                 });
               } catch (error: any) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
             "Generate and Create a New Note From Template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
@@ -176,24 +197,23 @@ export default class Commands {
       id: "search-results-batch-generate-from-template",
       name: "Templates (Batch): From Search Results",
       icon: "plus-circle",
-      //hotkeys: [{ modifiers: ["Mod","Shift"], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              if (!result.path) throw "Nothing was selected";
+              if (!result.path) throw new Error("Nothing was selected");
               const files =
-                await self.plugin.textGenerator.embeddingsScope.getSearchResults();
+                await this.plugin.textGenerator?.embeddingsScope.getSearchResults();
 
-              if (!files.length)
-                return self.plugin.handelError(
+              if (!files?.length)
+                return this.plugin.handelError(
                   "You need at least one search result"
                 );
 
-              await self.plugin.textGenerator.generateBatchFromTemplate(
+              await this.plugin.textGenerator?.generateBatchFromTemplate(
                 files,
                 {},
                 result.path,
@@ -203,32 +223,35 @@ export default class Commands {
             "Generate and create multiple notes from template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "insert-text-From-template",
+      id: "insert-text-from-template",
       name: "Templates: Insert Template",
       icon: "square",
-      //hotkeys: [{ modifiers: ['Alt'], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              if (!result.path) throw "Nothing was selected";
+              if (!result.path) throw new Error("Nothing was selected");
 
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.generateFromTemplate({
+                await this.plugin.textGenerator?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -237,38 +260,41 @@ export default class Commands {
                   activeFile: true,
                 });
               } catch (error: any) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
-            "Insert Template In The Active Note"
+            "Insert template in the active Note"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "create-text-From-template",
+      id: "create-text-from-template",
       name: "Templates: Insert & Create Note",
       icon: "plus-square",
-      //hotkeys: [{ modifiers: ["Shift","Alt"], key: "q"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              if (!result.path) throw "Nothing was selected";
+              if (!result.path) throw new Error("Nothing was selected");
 
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.generateFromTemplate({
+                await this.plugin.textGenerator?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -278,68 +304,73 @@ export default class Commands {
                   insertMode: true,
                 });
               } catch (error) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
-            "Create a New Note From Template"
+            "Create a new Note from Template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "show-modal-From-template",
-      name: "Show modal From Template",
+      id: "show-modal-from-template",
+      name: "Show modal from Template",
       icon: "layout",
-      //hotkeys: [{ modifiers: ["Alt"], key: "4"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                await self.plugin.textGenerator.tempalteToModal({
+                await this.plugin.textGenerator?.templateToModal({
                   params: {},
                   templatePath: result.path,
                   editor: CM,
                   filePath: (await CM.getActiveFile())?.path,
                 });
               } catch (error) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
             "Choose a template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
       id: "open-template-as-tool",
-      name: "Open Template as Tool",
+      name: "Open Template as tool",
       icon: "layout",
-      //hotkeys: [{ modifiers: ["Alt"], key: "4"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
-          const activeView = await self.plugin.getActiveView();
-          const CM = ContentManagerCls.compile(activeView, self.plugin);
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
-              self.plugin.activateView(VIEW_TOOL_ID, {
+              this.plugin.activateView(VIEW_TOOL_ID, {
                 templatePath: result.path,
                 title: result.name,
                 editor: CM,
@@ -349,77 +380,73 @@ export default class Commands {
             "Choose a template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
       id: "open-playground",
-      name: "Open Template Playground",
+      name: "Open Template playground",
       icon: "layout",
-      //hotkeys: [{ modifiers: ["Alt"], key: "4"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
-          self.plugin.activateView(VIEW_Playground_ID, {
-            editor: self.plugin.app.workspace.activeEditor?.editor,
+          this.plugin.activateView(VIEW_Playground_ID, {
+            editor: this.plugin.app.workspace.activeEditor?.editor,
             openInPopout: false,
           });
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
     {
-      id: "set_max_tokens",
-      name: "Set max_tokens",
+      id: "set-max-tokens",
+      name: "Set Max Tokens",
       icon: "separator-horizontal",
-      //hotkeys: [{ modifiers: ["Alt"], key: "1" }],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         new SetMaxTokens(
-          self.plugin.app,
-          self.plugin,
-          self.plugin.settings.max_tokens.toString(),
+          this.plugin.app,
+          this.plugin,
+          this.plugin.settings.max_tokens.toString(),
           async (result: string) => {
-            self.plugin.settings.max_tokens = parseInt(result);
-            await self.plugin.saveSettings();
+            this.plugin.settings.max_tokens = parseInt(result, 10);
+            await this.plugin.saveSettings();
             new Notice(`Set Max Tokens to ${result}!`);
-            self.plugin.updateStatusBar("");
+            this.plugin.updateStatusBar("");
           }
         ).open();
       },
     },
 
     {
-      id: "set-llm",
-      name: "Choose a LLM",
+      id: "set-provider",
+      name: "Choose an LLM Provider",
       icon: "list-start",
-      //hotkeys: [{ modifiers: ["Alt"], key: "2" }],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
-          new SetLLM(
-            self.plugin.app,
-            self.plugin,
+          new SetLLMProvider(
+            this.plugin.app,
+            this.plugin,
             async (selectedLLMName) => {
               console.log(selectedLLMName);
               if (!selectedLLMName) return;
 
               const llm =
-                self.plugin.textGenerator.LLMRegestry.get(selectedLLMName);
+                this.plugin.textGenerator?.LLMRegistry?.get(selectedLLMName);
               if (llm) {
-                self.plugin.settings.selectedProvider = selectedLLMName as any;
+                this.plugin.settings.selectedProvider = selectedLLMName as any;
               }
 
-              self.plugin.textGenerator.load();
-              await self.plugin.saveSettings();
-            },
-            "Choose a LLM"
+              this.plugin.textGenerator?.load();
+              await this.plugin.saveSettings();
+            }
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
@@ -428,40 +455,35 @@ export default class Commands {
       id: "set-model",
       name: "Choose a Model",
       icon: "list-start",
-      //hotkeys: [{ modifiers: ["Alt"], key: "2" }],
-      async callback() {
-        const self: Commands = this as any;
-        try {
-          new SetModel(
-            self.plugin.app,
-            self.plugin,
-            async (selectedModel) => {
-              console.log(selectedModel);
-              const provider = self.plugin.settings.selectedProvider as string;
-              if (!provider || !self.plugin.settings.LLMProviderOptions[provider]) return;
 
-              self.plugin.settings.LLMProviderOptions[provider].model = selectedModel;
-              await self.plugin.saveSettings();
-            },
-            "Choose a LLM"
-          ).open();
+      callback: async () => {
+        try {
+          new SetModel(this.plugin.app, this.plugin, async (selectedModel) => {
+            console.log(selectedModel);
+            const provider = this.plugin.settings.selectedProvider as string;
+            if (!provider || !this.plugin.settings.LLMProviderOptions[provider])
+              return;
+
+            this.plugin.settings.LLMProviderOptions[provider].model =
+              selectedModel;
+            await this.plugin.saveSettings();
+          }).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
     {
-      id: "packageManager",
+      id: "package-manager",
       name: "Template Packages Manager",
       icon: "boxes",
-      //hotkeys: [{ modifiers: ["Alt"], key: "3" }],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         new PackageManagerUI(
-          self.plugin.app,
-          self.plugin,
-          async (result: string) => { }
+          this.plugin.app,
+          this.plugin,
+          async (result: string) => {}
         ).open();
       },
     },
@@ -470,115 +492,115 @@ export default class Commands {
       id: "create-template",
       name: "Create a Template",
       icon: "plus",
-      //hotkeys: [{ modifiers: ["Alt"], key: "c"}],
-      async callback() {
-        const self: Commands = this as any;
 
+      callback: async () => {
         try {
-          const activeView = await self.plugin.getActiveView();
-          const CM = ContentManagerCls.compile(activeView, self.plugin);
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
 
-          await self.plugin.textGenerator.createTemplateFromEditor(CM);
+          await this.plugin.textGenerator?.createTemplateFromEditor(CM);
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
 
-    {
-      id: "get-title",
-      name: "Generate a Title",
-      icon: "heading",
-      //hotkeys: [{ modifiers: ["Alt"], key: "c"}],
-      async callback() {
-        const self: Commands = this as any;
+    // {
+    //   id: "get-title",
+    //   name: "Generate a title",
+    //   icon: "heading",
+    //   callback: async() => {
+    //
 
-        try {
-          const CM = ContentManagerCls.compile(
-            await self.plugin.getActiveView(),
-            self.plugin
-          );
-          const file = await CM.getActiveFile();
+    //     try {
+    //       const CM = ContentManagerCls.compile(
+    //         await this.plugin.getActiveView(),
+    //         this.plugin
+    //       );
+    //       const file = await CM.getActiveFile();
 
-          let prompt = ``;
+    //       let prompt = ``;
 
-          let templateContent =
-            self.plugin.defaultSettings.advancedOptions?.generateTitleInstruct;
+    //       let templateContent =
+    //         this.plugin.defaultSettings.advancedOptions?.generateTitleInstruct;
 
-          try {
-            if (
-              self.plugin.settings.advancedOptions?.generateTitleInstructEnabled
-            ) {
-              templateContent =
-                self.plugin.settings.advancedOptions?.generateTitleInstruct ||
-                self.plugin.defaultSettings.advancedOptions
-                  ?.generateTitleInstruct;
-            }
+    //       try {
+    //         if (
+    //           this.plugin.settings.advancedOptions?.generateTitleInstructEnabled
+    //         ) {
+    //           templateContent =
+    //             this.plugin.settings.advancedOptions?.generateTitleInstruct ||
+    //             this.plugin.defaultSettings.advancedOptions
+    //               ?.generateTitleInstruct;
+    //         }
 
-            const templateContext =
-              await self.plugin.contextManager.getTemplateContext({
-                editor: ContentManagerCls.compile(
-                  await self.plugin.getActiveView(),
-                  self.plugin, {
-                  templateContent
-                }
-                ),
-                templateContent,
-                filePath: file?.path,
-              });
+    //         const templateContext =
+    //           await this.plugin.contextManager?.getTemplateContext({
+    //             editor: ContentManagerCls.compile(
+    //               await this.plugin.getActiveView(),
+    //               this.plugin,
+    //               {
+    //                 templateContent,
+    //               }
+    //             ),
+    //             templateContent,
+    //             filePath: file?.path,
+    //           });
 
-            templateContext.content = (await CM.getValue()).trim();
+    //         templateContext.content = (await CM.getValue()).trim();
 
-            const splittedTemplate = self.plugin.contextManager.splitTemplate(
-              templateContent || ""
-            );
+    //         const splittedTemplate = this.plugin.contextManager?.splitTemplate(
+    //           templateContent || ""
+    //         );
 
-            prompt = await splittedTemplate.inputTemplate?.(templateContext);
-          } catch (err: any) {
-            logger(err);
-          }
+    //         prompt =
+    //           (await splittedTemplate?.inputTemplate?.(templateContext)) ?? "";
+    //       } catch (err: any) {
+    //         logger(err);
+    //       }
 
-          const generatedTitle = await self.plugin.textGenerator.gen(
-            prompt,
-            {}
-          );
+    //       const generatedTitle = await this.plugin.textGenerator?.gen(
+    //         prompt,
+    //         {}
+    //       );
 
-          const sanitizedTitle = generatedTitle
-            .trim()
-            .replaceAll("\\", "")
-            .replace(/[*\\"/<>:|?\.]/g, "")
-            .replace(/^\n*/g, "");
+    //       const sanitizedTitle = generatedTitle
+    //         ?.trim()
+    //         .replaceAll("\\", "")
+    //         .replace(/[*\\"/<>:|?\.]/g, "")
+    //         .replace(/^\n*/g, "");
 
-          if (!file) return logger(`No active file was detected`);
+    //       if (!file) return logger(`No active file was detected`);
 
-          const renamedFilePath = file.path.replace(
-            file.name,
-            `${sanitizedTitle}.${file.extension}`
-          );
+    //       const renamedFilePath = file.path.replace(
+    //         file.name,
+    //         `${sanitizedTitle}.${file.extension}`
+    //       );
 
-          await self.plugin.app.fileManager.renameFile(file, renamedFilePath);
+    //       await this.plugin.app.fileManager.renameFile(file, renamedFilePath);
 
-          logger(`Generated a title: ${sanitizedTitle}`);
-        } catch (error) {
-          self.plugin.handelError(error);
-        }
-      },
-    },
+    //       logger(`Generated a title: ${sanitizedTitle}`);
+    //     } catch (error) {
+    //       this.plugin.handelError(error);
+    //     }
+    //   },
+    // },
 
     {
       id: "auto-suggest",
       name: "Turn on or off the auto suggestion",
       icon: "heading",
-      //hotkeys: [{ modifiers: ["Alt"], key: "c"}],
-      async editorCallback(editor: Editor) {
-        const self: Commands = this as any;
-        self.plugin.settings.autoSuggestOptions.isEnabled =
-          !self.plugin.settings.autoSuggestOptions.isEnabled;
-        await self.plugin.saveSettings();
+      editorCallback: async (editor: Editor) => {
+        this.plugin.settings.autoSuggestOptions.isEnabled =
+          !this.plugin.settings.autoSuggestOptions.isEnabled;
+        await this.plugin.saveSettings();
 
-        self.plugin.autoSuggest?.renderStatusBar();
+        this.plugin.autoSuggest?.renderStatusBar();
 
-        if (self.plugin.settings.autoSuggestOptions.isEnabled) {
+        if (this.plugin.settings.autoSuggestOptions.isEnabled) {
           new Notice(`Auto Suggestion is on!`);
         } else {
           new Notice(`Auto Suggestion is off!`);
@@ -590,27 +612,25 @@ export default class Commands {
       id: "calculate-tokens",
       name: "Estimate tokens for the current document",
       icon: "heading",
-      //hotkeys: [{ modifiers: ["Alt"], key: "c"}],
-      async callback() {
-        const self: Commands = this as any;
-
+      callback: async () => {
         try {
-          const activeView = await self.plugin.getActiveView();
-          const CM = ContentManagerCls.compile(activeView, self.plugin);
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
 
-          const context = await self.plugin.contextManager.getContext({
+          const context = await this.plugin.contextManager?.getContext({
             editor: CM,
             filePath: (await CM.getActiveFile())?.path,
             insertMetadata: true,
-            addtionalOpts: {
+            additionalOpts: {
               estimatingMode: true,
             },
           });
-          self.plugin.tokensScope.showTokens(
-            await self.plugin.tokensScope.estimate(context)
-          );
+          await this.showTokens(context);
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
@@ -619,87 +639,102 @@ export default class Commands {
       id: "calculate-tokens-for-template",
       name: "Estimate tokens for a Template",
       icon: "layout",
-      //hotkeys: [{ modifiers: ["Alt"], key: "4"}],
-      async callback() {
-        const self: Commands = this as any;
+
+      callback: async () => {
         try {
           new TemplatesModal(
-            self.plugin.app,
-            self.plugin,
+            this.plugin.app,
+            this.plugin,
             async (result) => {
               try {
-                const activeView = await self.plugin.getActiveView();
-                const CM = ContentManagerCls.compile(activeView, self.plugin, {
-                  templatePath: result.path
-                });
+                const activeView = await this.plugin.getActiveView();
+                const CM = ContentManagerFactory.createContentManager(
+                  activeView,
+                  this.plugin,
+                  {
+                    templatePath: result.path,
+                  }
+                );
 
-                const context = await self.plugin.contextManager.getContext({
+                const context = await this.plugin.contextManager?.getContext({
                   editor: CM,
                   filePath: (await CM.getActiveFile())?.path,
                   insertMetadata: true,
                   templatePath: result.path,
-                  addtionalOpts: {
+                  additionalOpts: {
                     estimatingMode: true,
                   },
                 });
 
-                self.plugin.tokensScope.showTokens(
-                  await self.plugin.tokensScope.estimate(context)
-                );
+                await this.showTokens(context);
               } catch (error) {
-                self.plugin.handelError(error);
+                this.plugin.handelError(error);
               }
             },
             "Choose a template"
           ).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
-
     {
       id: "text-extractor-tool",
-      name: "Text Extractor Tool",
+      name: "Text extractor tool",
       icon: "layout",
-      async callback() {
-        const self: Commands = this as any;
+      callback: async () => {
         try {
-          new TextExtractorTool(self.plugin.app, self.plugin).open();
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
+          new TextExtractorTool(this.plugin.app, this.plugin, CM).open();
         } catch (error) {
-          self.plugin.handelError(error);
+          this.plugin.handelError(error);
         }
       },
     },
-
+    {
+      id: "text-extractor-tool-inline",
+      name: "Text extractor tool inline",
+      icon: "layout",
+      callback: async () => {
+        try {
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
+          await new TextExtractorTool(
+            this.plugin.app,
+            this.plugin,
+            CM
+          ).headless();
+        } catch (error) {
+          this.plugin.handelError(error);
+        }
+      },
+    },
     {
       id: "stop-stream",
-      name: "Stop Stream",
+      name: "Stop stream",
       icon: "layout",
-      async callback() {
-        const self: Commands = this as any;
-        if (!self.plugin.textGenerator.signalController?.signal.aborted) {
-          self.plugin.textGenerator.endLoading();
+      callback: async () => {
+        if (!this.plugin.textGenerator?.signalController?.signal.aborted) {
+          this.plugin.textGenerator?.endLoading();
         }
       },
     },
     {
       id: "reload",
-      name: "reload Plugin",
+      name: "Reload plugin",
       icon: "layout",
-      async callback() {
-        const self: Commands = this as any;
-
-        self.plugin.reload();
+      callback: async () => {
+        this.plugin.reload();
       },
     },
   ];
-
-  commands: Command[] = Commands.commands.map((cmd) => ({
-    ...cmd,
-    editorCallback: cmd.editorCallback?.bind(this),
-    callback: cmd.callback?.bind(this),
-  }));
 
   constructor(plugin: TextGeneratorPlugin) {
     this.plugin = plugin;
@@ -710,37 +745,39 @@ export default class Commands {
     const cmds = this.commands.filter(
       (cmd) =>
         this.plugin.settings.options[
-        cmd.id as keyof typeof this.plugin.settings.options
-        ] === true
+          cmd.id as keyof typeof this.plugin.settings.options
+        ] !== false
     );
 
-    const templates = await this.plugin.textGenerator.updateTemplatesCache();
+    const templates = await this.plugin.textGenerator?.updateTemplatesCache();
 
-    const templatesWithCommands = templates.filter((t) => t?.commands);
+    const templatesWithCommands = templates?.filter((t) => t?.commands);
     logger("Templates with commands ", { templatesWithCommands });
 
-    templatesWithCommands.forEach((template) => {
-      //
+    templatesWithCommands?.forEach((template) => {
       template.commands?.forEach((command) => {
         logger("Template commands ", { template, command });
         const cmd: Command = {
-          id: `${template.path.split("/").slice(-2, -1)[0]}-${command}-${template.id
-            }`,
-          name: `${template.id || template.name}: ${command.toUpperCase()}`,
+          id: `${template.path.split("/").slice(-2, -1)[0]}-${command}-${
+            template.id
+          }`,
+          name: `${template.name || template.id} (${command})`,
           callback: async () => {
-            const self: Commands = this as any;
+            const activeView = await this.plugin.getActiveView();
 
-            const activeView = await self.plugin.getActiveView();
-
-            const CM = ContentManagerCls.compile(activeView, self.plugin, {
-              templatePath: template.path
-            });
+            const CM = ContentManagerFactory.createContentManager(
+              activeView,
+              this.plugin,
+              {
+                templatePath: template.path,
+              }
+            );
 
             const filePath = (await CM.getActiveFile())?.path;
             try {
               switch (command) {
                 case "generate":
-                  await self.plugin.textGenerator.generateFromTemplate({
+                  await this.plugin.textGenerator?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -749,7 +786,7 @@ export default class Commands {
                   });
                   break;
                 case "insert":
-                  await self.plugin.textGenerator.generateFromTemplate({
+                  await this.plugin.textGenerator?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -759,7 +796,7 @@ export default class Commands {
                   });
                   break;
                 case "generate&create":
-                  await self.plugin.textGenerator.generateFromTemplate({
+                  await this.plugin.textGenerator?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -768,7 +805,7 @@ export default class Commands {
                   });
                   break;
                 case "insert&create":
-                  await self.plugin.textGenerator.generateFromTemplate({
+                  await this.plugin.textGenerator?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -778,7 +815,7 @@ export default class Commands {
                   });
                   break;
                 case "modal":
-                  await self.plugin.textGenerator.tempalteToModal({
+                  await this.plugin.textGenerator?.templateToModal({
                     params: {},
                     templatePath: template.path,
                     editor: CM,
@@ -786,7 +823,7 @@ export default class Commands {
                   });
                   break;
                 case "clipboard":
-                  await self.plugin.textGenerator.generateToClipboard(
+                  await this.plugin.textGenerator?.generateToClipboard(
                     {},
                     template.path,
                     true,
@@ -795,24 +832,21 @@ export default class Commands {
                   break;
                 case "estimate":
                   {
-                    const context = await self.plugin.contextManager.getContext(
-                      {
+                    const context =
+                      await this.plugin.contextManager?.getContext({
                         editor: CM,
                         filePath,
                         insertMetadata: true,
                         templatePath: template.path,
-                        addtionalOpts: {
+                        additionalOpts: {
                           estimatingMode: true,
                         },
-                      }
-                    );
-                    self.plugin.tokensScope.showTokens(
-                      await self.plugin.tokensScope.estimate(context)
-                    );
+                      });
+                    await this.showTokens(context);
                   }
                   break;
                 case "tool":
-                  self.plugin.activateView(VIEW_TOOL_ID, {
+                  this.plugin.activateView(VIEW_TOOL_ID, {
                     templatePath: template.path,
                     title: template.id || template.name,
                     openInPopout: true,
@@ -828,7 +862,7 @@ export default class Commands {
                   break;
               }
             } catch (error) {
-              self.plugin.handelError(error);
+              this.plugin.handelError(error);
             }
           },
         };

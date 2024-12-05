@@ -5,10 +5,10 @@ import SettingsSection from "../components/section";
 import Input from "../components/input";
 import type { Register } from ".";
 import { useToggle } from "usehooks-ts";
-import { useReloder } from "../components/reloadPlugin";
+import { useReloader } from "../components/reloadPlugin";
 
 export default function SlashSuggestSetting(props: { register: Register }) {
-  const [setReloader] = useReloder();
+  const [setReloader] = useReloader();
 
   const global = useGlobal();
   const sectionId = useId();
@@ -40,7 +40,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
           value={"" + global.plugin.settings.slashSuggestOptions.isEnabled}
           setValue={async (val) => {
             global.plugin.settings.slashSuggestOptions.isEnabled =
-              val == "true";
+              val === "true";
             global.plugin.autoSuggest?.renderStatusBar();
             setReloader(true);
             await global.plugin.saveSettings();
@@ -57,6 +57,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
             sectionId={sectionId}
           >
             <Input
+              type="text"
               placeholder="Trigger Phrase"
               value={global.plugin.settings.slashSuggestOptions.triggerPhrase}
               setValue={async (val) => {

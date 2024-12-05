@@ -34,7 +34,7 @@ import { PluginManager } from "../lib/live-plugin-manager";
 
 export default async function runJSInSandbox(
   script: string,
-  self: { plugin: TextGeneratorPlugin } & Record<any, any>
+  options: { plugin: TextGeneratorPlugin } & Record<any, any>
 ) {
   let mainNotice: any;
 
@@ -50,28 +50,31 @@ export default async function runJSInSandbox(
     isMap,
     isSet,
     globalThis: {},
-    ...self,
+    ...options,
 
     notice(context: any, duration: any) {
       if (mainNotice) mainNotice.hide();
       return (mainNotice = new Notice(
         context,
-        typeof duration == "object" ? undefined : +duration
+        typeof duration === "object" ? undefined : +duration
       ));
     },
+
     async deleteFile(path: string) {
-      return await self.plugin.app.vault.adapter.remove(path);
+      return await options.plugin.app.vault.adapter.remove(path);
     },
+
     async error(context: any) {
-      await self.plugin.handelError(context);
+      await options.plugin.handelError(context);
       throw new Error(context);
     },
+
     async extract(id: string, cntn: string, other: any) {
-      const ce = new ContentExtractor(self.app, self.plugin);
+      const ce = new ContentExtractor(options.plugin.app, options.plugin);
 
       ce.setExtractor(
         ExtractorSlug[
-        id as keyof typeof ExtractorSlug
+          id as keyof typeof ExtractorSlug
         ] as keyof typeof Extractors
       );
 
@@ -79,7 +82,7 @@ export default async function runJSInSandbox(
     },
 
     async write(path: string, data: string) {
-      return await createFileWithInput(path, data, self.plugin.app);
+      return await createFileWithInput(path, data, options.plugin.app);
     },
 
     async append(path: string, data: string) {
@@ -87,24 +90,25 @@ export default async function runJSInSandbox(
       let dirName = "";
       if (dirMatch) dirName = dirMatch[1];
 
-      if (!(await self.app.vault.adapter.exists(dirName)))
-        await createFolder(dirName, app);
+      if (!(await options.plugin.app.vault.adapter.exists(dirName)))
+        await createFolder(dirName, options.plugin.app);
 
-      return await self.plugin.app.vault.adapter.append(path, `\n${data}`);
+      return await options.plugin.app.vault.adapter.append(path, `\n${data}`);
     },
 
     async read(path: string) {
-      return await Read(path, self.plugin);
+      return await Read(path, options.plugin);
     },
 
     manager: new PluginManager({
-      npmInstallMode: "useCache"
+      npmInstallMode: "useCache",
     }),
   };
 
   const functions = Object.keys(sandbox).filter((k) =>
     ["function", "object"].includes(typeof sandbox[k])
   );
+
   // Create a function from the code
   const func = new Function(
     ...functions,

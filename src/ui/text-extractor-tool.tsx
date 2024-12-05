@@ -13,6 +13,10 @@ import { App, Modal, TFile } from "obsidian";
 import TextGeneratorPlugin from "../main";
 import { createRoot } from "react-dom/client";
 import CopyButton from "./components/copyButton";
+import { ContentManager } from "#/scope/content-manager/types";
+import debug from "debug";
+
+const logger = debug("genii:text-extractor-tool");
 
 const ContentExtractorComponent = ({
   p,
@@ -47,7 +51,8 @@ const ContentExtractorComponent = ({
       url.substring(url.length - suffixLength);
     return truncatedUrl;
   };
-  const handleExtractClick = async () => {
+
+  const fetchUrls = async () => {
     try {
       const contentExtractor = new ContentExtractor(app, plugin);
       const extractedUrls: {
@@ -59,16 +64,15 @@ const ContentExtractorComponent = ({
       // Iterate through each extractor method and add the extracted URLs to the array.
       const extractorMethods = getExtractorMethods();
 
-      for (let index = 0; index < extractorMethods.length; index++) {
-        const extractorMethod = extractorMethods[index];
+      for (const extractorMethod of extractorMethods) {
         contentExtractor.setExtractor(extractorMethod);
         const files = await contentExtractor.extract(
           app.workspace.getActiveFile().path
         );
-        if (files.length > 0) {
+        if (files && files.length > 0) {
           extractedUrls.push(
-            ...files.map((file: any) => ({
-              url: truncateUrl(file?.path || file, 50),
+            ...files?.map((file: any) => ({
+              url: truncateUrl(file?.path ?? file ?? "", 50),
               file,
               extractorMethod,
             }))
@@ -87,12 +91,11 @@ const ContentExtractorComponent = ({
   ) => {
     const contentExtractor = new ContentExtractor(app, plugin);
     contentExtractor.setExtractor(extractorMethod);
-    const convertedText = await contentExtractor.convert(
-      (file.path || file) as string
-    );
+    const convertedText = await contentExtractor.convert(file.path ?? file);
+
     setConvertedResults((convertedResults) => ({
       ...convertedResults,
-      [(file.path || file) as string]: convertedText,
+      [file.path ?? file]: convertedText,
     }));
   };
 
@@ -114,21 +117,18 @@ const ContentExtractorComponent = ({
   };
 
   useEffect(() => {
-    handleExtractClick();
+    fetchUrls();
   }, []);
 
   return (
     <div className="plug-tg-container plug-tg-mx-auto">
-      <h1 className="plug-tg-mb-4 plug-tg-text-center plug-tg-text-2xl plug-tg-font-bold">
-        Text Extractor Tool
-      </h1>
       <table className="plug-tg-min-w-full plug-tg-divide-y plug-tg-divide-gray-200">
         <thead>
           <tr>
-            <th className="plug-tg-px-6 plug-tg-py-3 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
+            <th className="plug-tg-p-2 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
               File/URL
             </th>
-            <th className="plug-tg-px-6 plug-tg-py-3 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
+            <th className="plug-tg-p-2 plug-tg-text-left plug-tg-text-xs plug-tg-font-medium plug-tg-uppercase plug-tg-tracking-wider">
               Action
             </th>
           </tr>
@@ -136,10 +136,10 @@ const ContentExtractorComponent = ({
         <tbody className="plug-tg-divide-y plug-tg-divide-gray-200">
           {urlResults.map((urlResult, index) => (
             <tr key={index}>
-              <td className="plug-tg-whitespace-nowrap plug-tg-px-6 plug-tg-py-4 plug-tg-text-sm">
+              <td className="plug-tg-whitespace-nowrap plug-tg-p-2 plug-tg-text-sm">
                 {urlResult.url}
               </td>
-              <td className="plug-tg-whitespace-nowrap plug-tg-px-6 plug-tg-py-4 plug-tg-text-sm">
+              <td className="plug-tg-whitespace-nowrap plug-tg-p-2 plug-tg-text-sm">
                 <button
                   onClick={() =>
                     handleConvertClick(
@@ -177,17 +177,56 @@ const ContentExtractorComponent = ({
 export default ContentExtractorComponent;
 
 export class TextExtractorTool extends Modal {
-  result: string;
   plugin: TextGeneratorPlugin;
   root: any;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  editor: ContentManager;
+
+  constructor(app: App, plugin: TextGeneratorPlugin, editor: ContentManager) {
     super(app);
     this.plugin = plugin;
+    this.editor = editor;
+    this.setTitle("Text Extractor Tool");
+  }
+
+  async headless() {
+    let text = await this.editor.getSelection();
+    logger("headless", { text });
+    if (!text || text.length === 0) {
+      text = await this.editor.getPrecedingLine();
+      logger("headless", { text });
+    }
+    if (text && text.length > 0) {
+      const contentExtractor = new ContentExtractor(this.app, this.plugin);
+      for (const extractorMethod of getExtractorMethods()) {
+        contentExtractor.setExtractor(extractorMethod);
+        const url = await contentExtractor.extract("", text);
+        logger("headless", { url });
+        if (url.length > 0) {
+          const extractedText = await contentExtractor.convert(url[0]);
+          if (extractedText) {
+            this.editor.insertText(
+              extractedText,
+              this.editor.getCursor(),
+              "insert"
+            );
+            logger("headless", { extractedText });
+          } else {
+            logger("headless", "No text extracted");
+          }
+          return;
+        }
+      }
+      logger("headless", "No extractor found");
+    } else {
+      logger("headless", "No text selected or found");
+    }
   }
 
   async onOpen() {
-    // this.containerEl.createEl("div", { cls: "plug-tg-packageManager" });
-    this.root = createRoot(this.containerEl.children[1]);
+    console.log("onOpen", this.containerEl);
+    this.root = createRoot(
+      this.containerEl.getElementsByClassName("modal-content")[0]
+    );
     this.root.render(
       <React.StrictMode>
         <ContentExtractorComponent

@@ -9,30 +9,25 @@ import { ChatOpenAI, ClientOptions, OpenAIChatInput } from "@langchain/openai";
 import BaseProvider from "../base";
 import {
   mapMessagesToLangchainMessages,
-  processPromisesSetteledBatch,
+  processPromisesSettledBatch,
 } from "../../utils";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 
 import { PromptTemplate } from "@langchain/core/prompts";
 import type { BaseMessageChunk } from "@langchain/core/messages";
 
-import {
-  chains,
-  splitters,
-  Message,
-  AI_MODELS,
-} from "../refs";
+import { chains, splitters, Message, AI_MODELS } from "../refs";
 import { Callbacks } from "@langchain/core/callbacks/manager";
 import handlebars from "react-syntax-highlighter/dist/esm/languages/hljs/handlebars";
 import JSON5 from "json5";
 import { Handlebars } from "#/helpers/handlebars-helpers";
 
-const logger = debug("textgenerator:LangchainProvider");
-
+const logger = debug("genii:LangchainProvider");
 
 export default class LangchainProvider
   extends BaseProvider
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static id = "default (Langchain)";
   static slug = "default" as any;
   static provider = "Langchain";
@@ -95,16 +90,14 @@ export default class LangchainProvider
       "HTTP-Referer": location.origin,
       "X-Title": "obsidian-text-generator",
       ...this.defaultHeaders,
-      ...nh
+      ...nh,
     };
 
-
-    const Fetch = this.plugin.textGenerator.proxyService.getFetch(
+    const Fetch = this.plugin.textGenerator?.proxyService.getFetch(
       this.corsBypass ||
-      this.default_values.corsBypass ||
-      options.otherOptions.corsBypass
-    )
-
+        this.default_values.corsBypass ||
+        options.otherOptions.corsBypass
+    );
 
     const baseURL = options.basePath?.length
       ? options.basePath.endsWith("/")
@@ -112,30 +105,25 @@ export default class LangchainProvider
         : options.basePath
       : undefined;
 
-
-
     const clientOptions: ClientOptions & OpenAIChatInput = {
       baseURL,
       // @ts-ignore
       basePath: baseURL,
-
-      // @ts-ignore
-      clientOptions: {
-        dangerouslyAllowBrowser: true,
-      },
-
       dangerouslyAllowBrowser: true,
       defaultQuery: options.bodyParams,
       fetch: Fetch,
       defaultHeaders: headers,
-    }
+    };
 
-    console.log({ clientOptions })
-    const llm = new (this.llmClass as typeof ChatOpenAI)({
-      ...this.getConfig(options),
-      // @ts-ignore
+    console.log({ clientOptions });
+    const llm = new (this.llmClass as typeof ChatOpenAI)(
+      {
+        ...this.getConfig(options),
+        // @ts-ignore
+        clientOptions,
+      },
       clientOptions
-    }, clientOptions);
+    );
 
     // @ts-ignore
     llm.clientOptions ??= {};
@@ -150,14 +138,14 @@ export default class LangchainProvider
       ...this.cleanConfig(this.plugin.settings),
       ...this.cleanConfig(
         this.plugin.settings.LLMProviderOptions[
-        this.id as keyof typeof this.plugin.settings
+          this.id as keyof typeof this.plugin.settings
         ]
       ),
       ...this.cleanConfig(options.otherOptions),
       ...this.cleanConfig(options),
       otherOptions: this.cleanConfig(
         this.plugin.settings.LLMProviderOptions[
-        this.id as keyof typeof this.plugin.settings
+          this.id as keyof typeof this.plugin.settings
         ]
       ),
     };
@@ -177,7 +165,7 @@ export default class LangchainProvider
     customConfig?: any
   ): Promise<string> {
     return new Promise(async (s, r) => {
-      let alreadyBegainGenerating = false;
+      let alreadyGenerating = false;
       let result = "";
       try {
         logger("generate", reqParams);
@@ -187,7 +175,7 @@ export default class LangchainProvider
         // if the model is streamable
         params.stream = params.stream && this.streamable;
 
-        const llm = (await this.getLLM(params));
+        const llm = await this.getLLM(params);
 
         let first = true;
         let allText = "";
@@ -196,15 +184,15 @@ export default class LangchainProvider
           {
             ...(!!onToken &&
               !!params.stream && {
-              async handleLLMNewToken(token: string) {
-                const d = first;
-                first = false;
-                alreadyBegainGenerating = true;
-                const tk = (await onToken(token, d)) || token;
-                allText += tk;
-                result += tk;
-              },
-            }),
+                async handleLLMNewToken(token: string) {
+                  const d = first;
+                  first = false;
+                  alreadyGenerating = true;
+                  const tk = (await onToken(token, d)) || token;
+                  allText += tk;
+                  result += tk;
+                },
+              }),
 
             handleLLMEnd() {
               if (params.stream) s(allText);
@@ -239,8 +227,8 @@ export default class LangchainProvider
               configurable: {
                 fetch: this.plugin.textGenerator.proxyService.getFetch(
                   this.corsBypass ||
-                  this.default_values.corsBypass ||
-                  customConfig.corsBypass
+                    this.default_values.corsBypass ||
+                    customConfig.corsBypass
                 ),
               },
             }
@@ -251,11 +239,15 @@ export default class LangchainProvider
           let r: any;
           let res: BaseMessageChunk = {} as any;
 
-          console.log({ messages, k: "invoked", llmpredict: reqParams.llmPredict, llmPredict2: this.llmPredict })
+          console.log({
+            messages,
+            k: "invoked",
+            llmpredict: reqParams.llmPredict,
+            llmPredict2: this.llmPredict,
+          });
           if (reqParams.llmPredict || this.llmPredict)
             r = await (llm as any as ChatOpenAI).invoke(
-              chatToString(messages)
-              ,
+              chatToString(messages),
               {
                 signal: params.requestParams?.signal || undefined,
                 ...this.getReqOptions(params),
@@ -276,14 +268,18 @@ export default class LangchainProvider
               }
             );
 
-          if (typeof r == "string") res.content = r;
+          if (typeof r === "string") res.content = r;
           else res = r;
 
-          if (typeof res.content == "string") result = res.content;
+          if (typeof res.content === "string") result = res.content;
           else
             result = res.content
               .map((c) =>
-                c.type == "image_url" ? `![](${c.image_url})` : c.type == "text" ? c.text : ""
+                c.type === "image_url"
+                  ? `![](${c.image_url})`
+                  : c.type === "text"
+                    ? c.text
+                    : ""
               )
               .join("\n");
         }
@@ -297,7 +293,7 @@ export default class LangchainProvider
       } catch (errorRequest: any) {
         logger("generate error", errorRequest);
 
-        if (alreadyBegainGenerating) {
+        if (alreadyGenerating) {
           return s(result);
         }
 
@@ -318,18 +314,18 @@ export default class LangchainProvider
         const llm = await this.getLLM(params);
         let requestResults: any[] = [];
         if (this.legacyN) {
-          await processPromisesSetteledBatch(
+          await processPromisesSettledBatch(
             Array.from({ length: reqParams.n || 1 }).map(async () => {
               requestResults.push(
                 ...(
-                  await (llm).generate(
+                  await llm.generate(
                     reqParams.llmPredict || this.llmPredict
                       ? [chatToString(messages)]
                       : [
-                        mapMessagesToLangchainMessages(
-                          messages
-                        ) as any as string,
-                      ],
+                          mapMessagesToLangchainMessages(
+                            messages
+                          ) as any as string,
+                        ],
                     {
                       signal: params.requestParams?.signal || undefined,
                       ...this.getReqOptions(params),
@@ -342,7 +338,7 @@ export default class LangchainProvider
           );
         } else
           requestResults = (
-            await (llm).generate(
+            await llm.generate(
               reqParams.llmPredict || this.llmPredict
                 ? [chatToString(messages)]
                 : [mapMessagesToLangchainMessages(messages) as any as string],
@@ -405,7 +401,8 @@ export default class LangchainProvider
     for (const message of messages) {
       numTokens += tokensPerMessage;
       for (const [key, value] of Object.entries(message)) {
-        numTokens += encoder.encode(value as any).length;
+        if (typeof value === "string")
+          numTokens += encoder.encode(value).length;
         if (key === "name") {
           numTokens += tokensPerName;
         }
@@ -425,23 +422,24 @@ export default class LangchainProvider
   }
 }
 
-
-
 function contentToString(content: Message["content"]) {
-  return typeof content == "string" ? content : Object.values(content).join(' ')
+  return typeof content === "string"
+    ? content
+    : Object.values(content).join(" ");
 }
 
 function chatToString(messages: Message[] = []) {
   return messages.length > 1
     ? // user: test1
-    // assistant: test2
-    // ...
-    messages.map((msg) => {
-      return `${msg.role}:${contentToString(msg.content)}`
-    }).join("\n")
+      // assistant: test2
+      // ...
+      messages
+        .map((msg) => {
+          return `${msg.role}:${contentToString(msg.content)}`;
+        })
+        .join("\n")
     : // test1
-    contentToString(messages[0].content)
-    ;
+      contentToString(messages[0].content);
 }
 
 function getChain(chainName: string, llm: any, config: any) {

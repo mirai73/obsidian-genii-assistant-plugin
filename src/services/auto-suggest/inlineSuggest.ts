@@ -21,22 +21,23 @@ import {
 } from "obsidian";
 import debug from "debug";
 import { debounce } from "#/utils";
-const logger = debug("textgenerator:AutoSuggest");
+const logger = debug("genii:AutoSuggest");
 
 export class InlineSuggest {
   plugin: TextGeneratorPlugin;
   autoSuggest: AutoSuggest;
+  app: App;
   delay = 0;
   currentSuggestions: string[] = [];
   viewedSuggestion = 0;
   getSuggestionsDebounced: (() => void) | undefined;
   scope:
     | (Scope & {
-      keys: {
-        key: string;
-        func: any;
-      }[];
-    })
+        keys: {
+          key: string;
+          func: any;
+        }[];
+      })
     | undefined;
   isOpen = false;
   static delay = 200;
@@ -46,6 +47,7 @@ export class InlineSuggest {
     logger("AutoSuggest", app, plugin);
     this.plugin = plugin;
     this.autoSuggest = autoSuggest;
+    this.app = app;
   }
 
   onSelect(all?: boolean) {
@@ -209,10 +211,10 @@ export class InlineSuggest {
           },
           {
             any: (view, evt) => {
-              if (evt.key == "Control") return false;
+              if (evt.key === "Control") return false;
               const d = !!self.currentSuggestions?.length;
 
-              if (d && evt.key == "ArrowRight") {
+              if (d && evt.key === "ArrowRight") {
                 self.onSelect(evt.ctrlKey);
                 return true;
               }
@@ -221,8 +223,8 @@ export class InlineSuggest {
               // ["Backspace", "Tab", "ArrowRight", "Escape"].includes(evt.key) ...etc
               const lastletterOfTrigger =
                 self.plugin.settings.autoSuggestOptions.triggerPhrase[
-                self.plugin.settings.autoSuggestOptions.triggerPhrase.length -
-                1
+                  self.plugin.settings.autoSuggestOptions.triggerPhrase.length -
+                    1
                 ];
               if (
                 evt.key.length > 1 ||
@@ -255,12 +257,13 @@ export class InlineSuggest {
     onSelect: (all?: boolean) => void,
     onExit: () => void
   ) {
+    // eslint-disable-next-line
+    const self = this;
     return Prec.lowest(
       // must be lowest else you get infinite loop with state changes by our plugin
       ViewPlugin.fromClass(
         class RenderPlugin {
           decorations: DecorationSet;
-
           constructor(view: EditorView) {
             this.decorations = Decoration.none;
           }
@@ -277,6 +280,7 @@ export class InlineSuggest {
 
             try {
               const widget = new InlineSuggestionsWidget(
+                self.app,
                 autoSuggest,
                 onSelect,
                 onExit,
@@ -303,18 +307,21 @@ export class InlineSuggest {
 }
 
 class InlineSuggestionsWidget extends WidgetType {
-  onSelect: () => void;
+  app: App;
+  onSelect: (v: boolean) => void;
   onExit: () => void;
   autoSuggest: InlineSuggest;
   renderedSuggestion?: string;
   exitHandler?: () => void;
   constructor(
+    app: App,
     autoSuggest: InlineSuggest,
-    onSelect: () => void,
+    onSelect: (v: boolean) => void,
     onExit: () => void,
     readonly view: EditorView
   ) {
     super();
+    this.app = app;
     this.autoSuggest = autoSuggest;
     this.onSelect = onSelect;
     this.onExit = onExit;
@@ -323,7 +330,7 @@ class InlineSuggestionsWidget extends WidgetType {
 
   eq(widget: WidgetType): boolean {
     return (
-      this.renderedSuggestion ==
+      this.renderedSuggestion ===
       this.autoSuggest.currentSuggestions[this.autoSuggest.viewedSuggestion]
     );
   }
@@ -350,17 +357,24 @@ class InlineSuggestionsWidget extends WidgetType {
 
     span.onselect = span.onclick = () => {
       span.style.display = "hidden";
-      this.onSelect();
+      this.onSelect(false);
       this.onExit();
     };
 
     if (this.autoSuggest.plugin.settings.autoSuggestOptions.showInMarkdown)
-      MarkdownRenderer.render(app, content, span, "", this.autoSuggest.plugin);
+      MarkdownRenderer.render(
+        this.app,
+        content,
+        span,
+        "",
+        this.autoSuggest.plugin
+      );
     else span.textContent = content;
 
     const span2 = spanMAM.createEl("span");
-    span2.textContent = ` (${this.autoSuggest.viewedSuggestion + 1}/${this.autoSuggest.currentSuggestions.length
-      })`;
+    span2.textContent = ` (${this.autoSuggest.viewedSuggestion + 1}/${
+      this.autoSuggest.currentSuggestions.length
+    })`;
     span2.onselect = span2.onclick = () => {
       span.style.display = "hidden";
       this.onSelect(true);

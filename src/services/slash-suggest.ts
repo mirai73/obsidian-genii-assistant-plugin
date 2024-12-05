@@ -5,11 +5,13 @@ import {
   EditorPosition,
   EditorSuggest,
   MarkdownView,
-  Scope,
 } from "obsidian";
 import TextGeneratorPlugin from "../main";
 import { TemplatesModal } from "../models/model";
-import ContentManagerCls from "../scope/content-manager";
+import ContentManagerFactory from "../scope/content-manager";
+import { debug } from "debug";
+
+const logger = debug("genii:slash-suggest");
 
 export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   app: App;
@@ -45,12 +47,9 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   public async getSuggestions(context: PromptTemplate["context"]) {
     const { query } = context;
 
-    const modal = new TemplatesModal(
-      this.app,
-      this.plugin,
-      async (result) => { },
-      "Choose a template"
-    );
+    const modal = new TemplatesModal(this.app, this.plugin, async (result) => {
+      logger("getSuggestions", result);
+    });
 
     const suggestions = modal.getSuggestions(query);
     return suggestions.map((s) => ({
@@ -60,13 +59,19 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   }
 
   renderSuggestion(template: PromptTemplate, el: HTMLElement) {
-    el.createEl("h5", { text: template.name });
-    el.createEl("small", {
+    el.createEl("div", {
+      cls: "plug-tg-text-md plug-tg-font-bold plug-tg-ml-2 plug-tg-mb-2",
+      text: template.name,
+    });
+    el.createEl("div", {
       text: template.description?.substring(0, 150),
-      cls: "plug-tg-text-sm plug-tg-ml-6",
+      cls: "plug-tg-text-sm plug-tg-ml-2",
     });
     el.createEl("div", {});
-    el.createEl("small", { text: template.path, cls: "path" });
+    el.createEl("div", {
+      text: template.path,
+      cls: "plug-tg-text-xs plug-tg-ml-2 plug-tg-italic",
+    });
   }
 
   async selectSuggestion(
@@ -77,13 +82,17 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
 
     if (!activeView) return console.warn("couldn't find activeView");
 
-    const CM = ContentManagerCls.compile(activeView, this.plugin, {
-      templatePath: value.path
-    });
+    const CM = ContentManagerFactory.createContentManager(
+      activeView,
+      this.plugin,
+      {
+        templatePath: value.path,
+      }
+    );
 
     activeView.editor.replaceRange("", value.context.start, value.context.end);
 
-    await this.plugin.textGenerator.tempalteToModal({
+    await this.plugin.textGenerator?.templateToModal({
       params: {},
       templatePath: value.path,
       editor: CM,

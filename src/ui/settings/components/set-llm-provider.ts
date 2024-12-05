@@ -1,48 +1,38 @@
 import { App, Notice, FuzzySuggestModal } from "obsidian";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";
-const logger = debug("textgenerator:setModel");
+const logger = debug("genii:setModel");
 
 interface LLM {
   id: string;
   name: string;
 }
 
-export class SetLLM extends FuzzySuggestModal<LLM> {
+export class SetLLMProvider extends FuzzySuggestModal<LLM> {
   plugin: TextGeneratorPlugin;
-  title: string;
   onChoose: (result: string) => void;
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
-    onChoose: (result: string) => void,
-    title = ""
+    onChoose: (result: string) => void
   ) {
     super(app);
     this.onChoose = onChoose;
     this.plugin = plugin;
-    this.title = title;
-    this.modalEl.insertBefore(
-      createEl("div", {
-        text: title,
-        cls: "plug-tg-text-center plug-tg-text-xl plug-tg-font-bold",
-      }),
-      this.modalEl.children[0]
-    );
+    this.setPlaceholder("Select a LLM Provider");
   }
 
   getItems() {
-    logger("getItems");
-    const llmList = this.plugin.textGenerator.LLMRegestry.getList().map(
+    const llmList = this.plugin.textGenerator?.LLMRegistry?.getList().map(
       (l) => ({
         id: l,
         name:
-          this.plugin.textGenerator.LLMRegestry.UnProviderNames[
-            l as keyof typeof this.plugin.textGenerator.LLMRegestry.ProviderSlugs
+          this.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+            l as keyof typeof this.plugin.textGenerator.LLMRegistry.ProviderSlugs
           ] || "",
       })
     );
-    return llmList;
+    return llmList ?? [];
   }
 
   getItemText(llm: LLM) {

@@ -8,12 +8,13 @@ import debug from "debug";
 
 import { useGlobal, SettingItem, Input } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:palm");
+const logger = debug("genii:llmProvider:palm");
 
 const id = "Google Palm (Langchain)" as const;
 export default class LangchainPalmProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = id;
   static slug = "palm" as const;
@@ -40,12 +41,14 @@ export default class LangchainPalmProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     });
   }
 
   async load() {
-    const { ChatGooglePaLM } = await import("@langchain/community/chat_models/googlepalm");
+    const { ChatGooglePaLM } = await import(
+      "@langchain/community/chat_models/googlepalm"
+    );
     this.llmClass = ChatGooglePaLM;
   }
 
@@ -75,7 +78,7 @@ export default class LangchainPalmProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -86,12 +89,13 @@ export default class LangchainPalmProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.basePath}
             placeholder="Enter your API BasePath"
             setValue={async (value) => {
               config.basePath = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

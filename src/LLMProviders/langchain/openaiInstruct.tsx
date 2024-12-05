@@ -8,7 +8,7 @@ import { HeaderEditor, ModelsHandler } from "../utils";
 
 import { AI_MODELS, Input, Message, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:openaiInstruct");
+const logger = debug("genii:llmProvider:openaiInstruct");
 
 const default_values = {
   basePath: "https://api.openai.com/v1",
@@ -17,7 +17,8 @@ const default_values = {
 
 export default class LangchainOpenAIInstructProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "OpenAI Instruct (Langchain)" as const;
   static slug = "openAIInstruct" as const;
@@ -43,7 +44,7 @@ export default class LangchainOpenAIInstructProvider
       stop: options.stop,
       streaming: options.stream,
       maxRetries: 3,
-      headers: options.headers || undefined as any,
+      headers: options.headers || (undefined as any),
     } as Partial<OpenAIInput>);
   }
 
@@ -64,14 +65,14 @@ export default class LangchainOpenAIInstructProvider
           ...this.cleanConfig(this.plugin.settings),
           ...this.cleanConfig(
             this.plugin.settings.LLMProviderOptions[
-            this.id as keyof typeof this.plugin.settings
+              this.id as keyof typeof this.plugin.settings
             ]
           ),
           ...this.cleanConfig(reqParams.otherOptions),
           ...this.cleanConfig(reqParams),
           otherOptions: this.cleanConfig(
             this.plugin.settings.LLMProviderOptions[
-            this.id as keyof typeof this.plugin.settings
+              this.id as keyof typeof this.plugin.settings
             ]
           ),
         };
@@ -122,7 +123,7 @@ export default class LangchainOpenAIInstructProvider
 
               global.triggerReload();
               global.plugin.encryptAllKeys();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -134,13 +135,14 @@ export default class LangchainOpenAIInstructProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.basePath || default_values.basePath}
             placeholder="Enter your API Base Path"
             setValue={async (value) => {
               config.basePath = value;
               global.plugin.settings.endpoint = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

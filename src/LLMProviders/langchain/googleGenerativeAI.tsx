@@ -9,7 +9,7 @@ import { HeaderEditor, ModelsHandler } from "../utils";
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:gemini");
+const logger = debug("genii:llmProvider:gemini");
 
 const default_values = {
   model: "gemini-1.5-pro",
@@ -17,7 +17,8 @@ const default_values = {
 
 export default class LangchainChatGoogleGenerativeAIProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "Google GenerativeAI (Langchain)" as const;
   static slug = "googleGenerativeAI" as const;

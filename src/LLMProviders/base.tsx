@@ -2,9 +2,8 @@ import React from "react";
 import safeAwait from "safe-await";
 import { Message } from "src/types";
 import TextGeneratorPlugin from "src/main";
-import type { ContextTemplate } from "./refs";
 import LLMProviderInterface, { LLMConfig } from "./interface";
-import { processPromisesSetteledBatch, promiseForceFullfil } from "#/utils";
+import { processPromisesSettledBatch, promiseForceFullfil } from "#/utils";
 import { AI_MODELS } from "#/constants";
 
 export default class ProviderBase implements LLMProviderInterface {
@@ -27,8 +26,9 @@ export default class ProviderBase implements LLMProviderInterface {
   streamable?: boolean | undefined;
   mobileSupport?: boolean | undefined;
 
-  async load() { }
+  async load() {}
 
+  /* eslint-disable */
   async generate(
     messages: Message[],
     reqParams: Partial<Omit<LLMConfig, "n">>,
@@ -38,15 +38,16 @@ export default class ProviderBase implements LLMProviderInterface {
     ) => Promise<string | void | null | undefined>,
     customConfig?: any
   ): Promise<string> {
-    return "";
+    throw new Error("Method not implemented." + this.id);
   }
 
   async generateMultiple(
     messages: Message[],
     reqParams: Partial<LLMConfig>
   ): Promise<string[]> {
-    return [];
+    throw new Error("Method not implemented." + this.id);
   }
+  /* eslint-enable */
 
   cleanConfig<T>(options: T): T {
     const cleanedOptions: any = {}; // Create a new object to store the cleaned properties
@@ -71,9 +72,10 @@ export default class ProviderBase implements LLMProviderInterface {
   async generateBatch(
     batches: { messages: Message[]; reqParams: Partial<LLMConfig> }[],
     customConfig?: any,
+    // eslint-disable-next-line no-unused-vars
     onOneFinishs?: ((content: string, index: number) => void) | undefined
   ): Promise<string[]> {
-    const k = await processPromisesSetteledBatch(
+    const k = await processPromisesSettledBatch(
       batches.map(async (batch, i) => {
         const [err, res] = await safeAwait(
           this.generate(
@@ -98,6 +100,7 @@ export default class ProviderBase implements LLMProviderInterface {
     return k.map(promiseForceFullfil);
   }
 
+  // eslint-disable-next-line no-unused-vars
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     return <></>;
   }
@@ -109,6 +112,7 @@ export default class ProviderBase implements LLMProviderInterface {
     >;
   }
 
+  /* eslint-disable */
   calcTokens(
     messages: Message[],
     reqParams: Partial<LLMConfig>
@@ -120,15 +124,21 @@ export default class ProviderBase implements LLMProviderInterface {
     throw new Error("calcPrice Method not implemented." + this.id);
   }
 
+  /* eslint-enable */
+
   // @ts-ignore
   getModels() {
     const models: any[] = Array.from(Object.entries(AI_MODELS))
-      .filter(k => k[1].llm.includes(this.plugin.textGenerator.LLMProvider?.originalId as any))
-      .map(k => {
+      .filter((k) =>
+        k[1].llm.includes(
+          this.plugin.textGenerator?.LLMProvider?.originalId as any
+        )
+      )
+      .map((k) => {
         // @ts-ignore
         k[1].id = k[0];
         return k[1];
-      })
+      });
 
     return models;
   }
@@ -136,7 +146,7 @@ export default class ProviderBase implements LLMProviderInterface {
   makeMessage(content: any, role: "system" | "user" | "assistant"): Message {
     return {
       role,
-      content
+      content,
     };
   }
 }

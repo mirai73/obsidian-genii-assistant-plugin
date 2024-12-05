@@ -6,13 +6,14 @@ import { IconExternalLink } from "@tabler/icons-react";
 import { BaseLLMParams } from "@langchain/core/language_models/llms";
 import type { HFInput } from "@langchain/community/llms/hf";
 
-const logger = debug("textgenerator:llmProvider:hf");
+const logger = debug("genii:llmProvider:hf");
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
 export default class LangchainHFProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   static provider = "Langchain";
   static id = "Huggingface (Langchain)" as const;
   static slug = "hf" as const;
@@ -46,7 +47,9 @@ export default class LangchainHFProvider
   }
 
   async load() {
-    const { HuggingFaceInference } = await import("@langchain/community/llms/hf");
+    const { HuggingFaceInference } = await import(
+      "@langchain/community/llms/hf"
+    );
     this.llmClass = HuggingFaceInference;
   }
 
@@ -75,7 +78,7 @@ export default class LangchainHFProvider
               config.api_key = value;
               global.plugin.encryptAllKeys();
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -87,11 +90,12 @@ export default class LangchainHFProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.model}
             setValue={async (value) => {
               config.model = value;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />

@@ -12,7 +12,7 @@ import CustomProvider, { default_values as baseDefaultValues } from "./base";
 import JSON5 from "json5";
 import { Platform } from "obsidian";
 
-const logger = debug("textgenerator:CustomProvider");
+const logger = debug("genii:CustomProvider");
 
 const globalVars: Record<string, boolean> = {
   n: true,
@@ -57,7 +57,8 @@ export type CustomConfig = Record<keyof typeof default_values, string>;
 
 export default class DefaultCustomProvider
   extends CustomProvider
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   streamable = true;
   static provider = "Custom";
   static id = "Default (Custom)" as const;
@@ -82,7 +83,7 @@ export default class DefaultCustomProvider
       ...default_values,
     });
 
-    // delete any global variables that would interfer with global context
+    // delete any global variables that would interfere with global context
     useEffect(() => {
       for (const c in globalVars) {
         delete config[c];
@@ -96,9 +97,9 @@ export default class DefaultCustomProvider
       ).filter((d) => !globalVars[d]);
     }, [global.trg]);
 
-    const limitedExperiance = config.CORSBypass && !Platform.isDesktop;
+    const limitedExperience = config.CORSBypass && !Platform.isDesktop;
 
-    const isStreamable = config.streamable && !limitedExperiance;
+    const isStreamable = config.streamable && !limitedExperience;
 
     return (
       <>
@@ -108,6 +109,7 @@ export default class DefaultCustomProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.endpoint || default_values.endpoint}
             placeholder="Enter your API endpoint"
             setValue={async (value) => {
@@ -155,14 +157,13 @@ export default class DefaultCustomProvider
                   global.triggerReload();
                   if (v.toLowerCase().contains("key"))
                     global.plugin.encryptAllKeys();
-                  // TODO: it could use a debounce here
+
                   await global.plugin.saveSettings();
                 }}
               />
             </SettingItem>
           )
         )}
-
 
         <SettingItem
           name="Advance mode"
@@ -174,7 +175,7 @@ export default class DefaultCustomProvider
             value={showAdvanced ? "true" : "false"}
             placeholder="Is it Streamable"
             setValue={async (value) => {
-              setShowAdvanced(value == "true");
+              setShowAdvanced(value === "true");
             }}
           />
         </SettingItem>
@@ -272,19 +273,18 @@ export default class DefaultCustomProvider
               <div className="plug-tg-text-red-300">{bodyValidityError}</div>
             </div>
 
-
             <div className="plug-tg-w-full plug-tg-pb-8"></div>
 
             <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-              <div className="plug-tg-font-bold">Response Sanatization:</div>
+              <div className="plug-tg-font-bold">Response sanitization:</div>
               <textarea
                 placeholder="Textarea will autosize to fit the content"
                 value={
-                  config.sanatization_response ||
-                  default_values.sanatization_response
+                  config.sanitization_response ||
+                  default_values.sanitization_response
                 }
                 onChange={async (e) => {
-                  config.sanatization_response = e.target.value;
+                  config.sanitization_response = e.target.value;
                   global.triggerReload();
                   await global.plugin.saveSettings();
                 }}
@@ -295,7 +295,7 @@ export default class DefaultCustomProvider
             <SettingItem
               name="Streamable"
               description={
-                limitedExperiance
+                limitedExperience
                   ? "Disable CORS Bypass to be able to use this feature"
                   : "If enabled, means this API is streamable"
               }
@@ -303,19 +303,19 @@ export default class DefaultCustomProvider
               sectionId={props.sectionId}
               className={clsx({
                 "plug-tg-pointer-events-none plug-tg-cursor-not-allowed plug-tg-opacity-60":
-                  limitedExperiance,
+                  limitedExperience,
               })}
             >
               <Input
                 type="checkbox"
                 value={
-                  !limitedExperiance && config.streamable ? "true" : "false"
+                  !limitedExperience && config.streamable ? "true" : "false"
                 }
                 placeholder="Is it Streamable"
                 setValue={async (value) => {
-                  config.streamable = value == "true";
+                  config.streamable = value === "true";
                   global.triggerReload();
-                  // TODO: it could use a debounce here
+
                   await global.plugin.saveSettings();
                 }}
               />
@@ -330,7 +330,7 @@ export default class DefaultCustomProvider
                 type="checkbox"
                 value={"" + config.CORSBypass}
                 setValue={async (val) => {
-                  config.CORSBypass = val == "true";
+                  config.CORSBypass = val === "true";
                   await global.plugin.saveSettings();
                   global.triggerReload();
                 }}
@@ -339,15 +339,15 @@ export default class DefaultCustomProvider
             {isStreamable && (
               <>
                 <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-                  <div className="plug-tg-font-bold">Stream Sanatization:</div>
+                  <div className="plug-tg-font-bold">Stream sanitization:</div>
                   <textarea
                     placeholder="Textarea will autosize to fit the content"
                     value={
-                      config.sanatization_streaming ||
-                      default_values.sanatization_streaming
+                      config.sanitization_streaming ||
+                      default_values.sanitization_streaming
                     }
                     onChange={async (e) => {
-                      config.sanatization_streaming = e.target.value;
+                      config.sanitization_streaming = e.target.value;
                       global.triggerReload();
                       await global.plugin.saveSettings();
                     }}

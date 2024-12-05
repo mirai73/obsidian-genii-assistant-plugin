@@ -8,6 +8,9 @@ import CopyButton from "../components/copyButton";
 import useStateView from "../context/useStateView";
 import MarkDownViewer from "../components/Markdown";
 import TemplateInputModalView from "../template-input-modal/view";
+import debug from "debug";
+
+const logger = debug("genii:tool:react-component");
 
 export default function Tool(props: {
   plugin: TextGeneratorPlugin;
@@ -28,7 +31,9 @@ export default function Tool(props: {
   const [answer, setAnswer] = useStateView("", "answer", props.view);
 
   const [loading, setLoading] = useState(false);
-  const [templateContext, setTemplateContext] = useState<any>();
+  const [templateContext, setTemplateContext] = useState<
+    InputContext | undefined
+  >(undefined);
   const [variables, setVariables] = useState<string[]>([]);
 
   const [abortController, setAbortController] = useState(new AbortController());
@@ -104,56 +109,56 @@ export default function Tool(props: {
         type: VIEW_TOOL_ID,
       });
 
-      const metadata = props.plugin.textGenerator.getMetadata(
+      const metadata = props.plugin.textGenerator?.getMetadata(
         selectedTemplatePath || ""
       );
-
-      setMeta(metadata);
+      if (metadata) setMeta(metadata);
 
       const templateFile = props.plugin.app.vault.getAbstractFileByPath(
         selectedTemplatePath || ""
       );
 
-      const [errortemplateContent, templateContent] = templateFile?.path
+      const [error, templateContent] = templateFile?.path
         ? await safeAwait(
             //@ts-ignore
             props.plugin.app.vault.adapter.read(templateFile?.path)
           )
         : ["", ""];
 
-      if (errortemplateContent) {
-        return Promise.reject(errortemplateContent);
+      if (error) {
+        throw error;
       }
 
       if (!templateContent) {
-        return Promise.reject(
+        throw new Error(
           `templateContent is undefined(${selectedTemplatePath}, ${templateFile?.name})`
         );
       }
 
-      const { inputContent, outputContent, preRunnerContent } =
-        props.plugin.contextManager.splitTemplate(templateContent);
+      const context =
+        props.plugin.contextManager?.splitTemplate(templateContent);
+      if (!context) return;
+      const { inputContent, outputContent, preRunnerContent } = context;
 
-      // const variables = this.contextManager
-      //   .extractVariablesFromTemplate(inputContent)
-      //   .filter((variable) => !variable.includes("."));
-
-      const variables = props.plugin.contextManager.getHBVariablesOfTemplate(
+      const variables = props.plugin.contextManager?.getHBVariablesOfTemplate(
         preRunnerContent,
         inputContent,
         outputContent
       );
 
-      const templateContext = await props.plugin.contextManager.getContext({
+      const templateContext = await props.plugin.contextManager?.getContext({
         editor: config.editor as any,
         templatePath: config.templatePath,
         filePath: props.plugin.app.workspace.activeEditor?.file?.path,
       });
-      templateContext.options.templatePath = config.templatePath;
-      console.log({ templateContext, config });
+      if (!templateContext) return;
+      if (templateContext.options)
+        templateContext.options.templatePath = config.templatePath;
 
-      setTemplateContext(templateContext.options);
-      setVariables(variables);
+      ({ templateContext, config });
+
+      setTemplateContext(templateContext?.options);
+      if (variables) setVariables(variables);
     })();
   }, [selectedTemplatePath, config]);
 
@@ -161,14 +166,16 @@ export default function Tool(props: {
     const data = event.formData;
     setLoading(true);
     try {
-      const context = await props.plugin.contextManager.getContext({
+      const context = await props.plugin.contextManager?.getContext({
         insertMetadata: false,
         templatePath: selectedTemplatePath,
         editor: config.editor as any,
-        addtionalOpts: data,
+        additionalOpts: data,
       });
-
-      const strm = await props.plugin.textGenerator.streamGenerate(
+      if (!context) {
+        return;
+      }
+      const stream = await props.plugin.textGenerator?.streamGenerate(
         context,
         false,
         {},
@@ -180,10 +187,8 @@ export default function Tool(props: {
       );
 
       const allText =
-        (await strm?.(
-          async (cntnt, first) => {
-            const content = cntnt;
-            //   console.log({ content, first });
+        (await stream?.(
+          async (content, first) => {
             if (first) setAnswer(content);
             else setAnswer((a) => a + content);
             return content;

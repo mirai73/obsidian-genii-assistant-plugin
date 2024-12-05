@@ -4,7 +4,7 @@ import Tesseract from "tesseract.js";
 import debug from "debug";
 import { Extractor } from "./extractor";
 
-const logger = debug("textgenerator:Extractor:ImageExtractorEmbded");
+const logger = debug("genii:Extractor:ImageExtractorEmbded");
 
 export default class ImageExtractorEmbded extends Extractor {
   constructor(app: App, plugin: TextGeneratorPlugin) {

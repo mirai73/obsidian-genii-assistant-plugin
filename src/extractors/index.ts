@@ -24,8 +24,6 @@ export default async function read(
 
     // image
     case "png":
-      extractor.setExtractor("ImageExtractor");
-      break;
     case "jpeg":
       extractor.setExtractor("ImageExtractor");
       break;

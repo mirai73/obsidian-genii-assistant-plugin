@@ -41,11 +41,11 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={
             "" +
-            (global.plugin.textGenerator.LLMProvider.streamable &&
+            (global.plugin.textGenerator?.LLMProvider?.streamable &&
               global.plugin.settings.stream)
           }
           setValue={async (val) => {
-            global.plugin.settings.stream = val == "true";
+            global.plugin.settings.stream = val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
@@ -61,7 +61,7 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={"" + global.plugin.settings.displayErrorInEditor}
           setValue={async (val) => {
-            global.plugin.settings.displayErrorInEditor = val == "true";
+            global.plugin.settings.displayErrorInEditor = val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
@@ -78,7 +78,7 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={"" + global.plugin.settings.showStatusBar}
           setValue={async (val) => {
-            global.plugin.settings.showStatusBar = val == "true";
+            global.plugin.settings.showStatusBar = val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
@@ -95,29 +95,13 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={"" + global.plugin.settings.outputToBlockQuote}
           setValue={async (val) => {
-            global.plugin.settings.outputToBlockQuote = val == "true";
+            global.plugin.settings.outputToBlockQuote = val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
         />
       </SettingItem>
 
-      <SettingItem
-        name="Free cursor on streaming"
-        description="Note that it might result in weird bugs, the auto-scrolling might not work"
-        register={props.register}
-        sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.freeCursorOnStreaming}
-          setValue={async (val) => {
-            global.plugin.settings.freeCursorOnStreaming = val == "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
       <SettingItem
         name="Experimentation Features"
         description="This adds experiment features, which might not be stable yet"
@@ -128,7 +112,7 @@ export default function AdvancedSetting(props: { register: Register }) {
           type="checkbox"
           value={"" + global.plugin.settings.experiment}
           setValue={async (val) => {
-            global.plugin.settings.experiment = val == "true";
+            global.plugin.settings.experiment = val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
@@ -136,24 +120,28 @@ export default function AdvancedSetting(props: { register: Register }) {
       </SettingItem>
 
       <SettingItem
-        name="include Attachments"
+        name="Include Attachments"
         description="EXPERIMENTAL: adds the images that are referenced in the request, IT MIGHT CONSUME ALOT OF TOKENS"
         register={props.register}
         sectionId={sectionId}
       >
         <Input
           type="checkbox"
-          value={"" + global.plugin.settings.advancedOptions?.includeAttachmentsInRequest}
+          value={
+            "" +
+            global.plugin.settings.advancedOptions?.includeAttachmentsInRequest
+          }
           setValue={async (val) => {
-            if (!global.plugin.settings.advancedOptions) global.plugin.settings.advancedOptions = {};
+            if (!global.plugin.settings.advancedOptions)
+              global.plugin.settings.advancedOptions = {};
 
-            global.plugin.settings.advancedOptions.includeAttachmentsInRequest = val == "true";
+            global.plugin.settings.advancedOptions.includeAttachmentsInRequest =
+              val === "true";
             await global.plugin.saveSettings();
             global.triggerReload();
           }}
         />
       </SettingItem>
-
 
       <SettingItem
         name="Templates Path"
@@ -162,6 +150,7 @@ export default function AdvancedSetting(props: { register: Register }) {
         sectionId={sectionId}
       >
         <Input
+          type="text"
           value={global.plugin.settings.promptsPath}
           setValue={async (val) => {
             global.plugin.settings.promptsPath = val;
@@ -178,6 +167,7 @@ export default function AdvancedSetting(props: { register: Register }) {
         sectionId={sectionId}
       >
         <Input
+          type="text"
           value={global.plugin.settings.textGenPath}
           setValue={async (val) => {
             global.plugin.settings.textGenPath = val;
@@ -205,6 +195,27 @@ export default function AdvancedSetting(props: { register: Register }) {
         <button className="plug-tg-btn-danger" onClick={resetSettings}>
           Reset
         </button>
+      </SettingItem>
+      <SettingItem
+        name="Keys encryption"
+        description="Enable encrypting keys, this could cause incompatibility with mobile devices"
+        register={props.register}
+        sectionId={sectionId}
+      >
+        <Input
+          type="checkbox"
+          value={"" + global.plugin.settings.encrypt_keys}
+          setValue={async (val) => {
+            try {
+              global.plugin.settings.encrypt_keys = val === "true";
+              await global.plugin.encryptAllKeys();
+              await global.plugin.saveSettings();
+              global.triggerReload();
+            } catch (err: any) {
+              global.plugin.handelError(err);
+            }
+          }}
+        />
       </SettingItem>
     </SettingsSection>
   );

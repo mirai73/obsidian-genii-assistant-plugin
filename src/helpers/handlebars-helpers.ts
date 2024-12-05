@@ -36,19 +36,19 @@ import JSON5 from "json5";
 import runJsInSandbox from "./javascript-sandbox";
 import { AvailableContext } from "#/scope/context-manager";
 
-export default function Helpersfn(self: ContextManager) {
-  const extract = async (id: string, cntn: string, other: any) => {
+export default function HelpersFn(self: ContextManager) {
+  const extract = async (id: string, content: string, other: any) => {
     const ce = new ContentExtractor(self.app, self.plugin);
 
     ce.setExtractor(
       ExtractorSlug[id as keyof typeof ExtractorSlug] as keyof typeof Extractors
     );
 
-    return await ce.convert(cntn, other);
+    return await ce.convert(content, other);
   };
 
   const _runTemplate = async (id: string, metadata?: any) => {
-    return await self.plugin.textGenerator.templateGen(id, {
+    return await self.plugin.textGenerator?.templateGen(id, {
       additionalProps: metadata,
     });
   };
@@ -83,14 +83,14 @@ export default function Helpersfn(self: ContextManager) {
       if (!options) {
         throw new Exception("Must pass iterator to #each");
       }
-      const fn = options.fn,
-        inverse = options.inverse;
 
-      let i = 0,
-        ret = "",
-        data: any;
+      const fn = options.fn;
+      const inverse = options.inverse;
+      let i = 0;
+      let ret = "";
+      let data: any;
 
-      if (typeof context == "function") {
+      if (typeof context === "function") {
         // @ts-ignore
         context = await context.call(this);
       }
@@ -115,14 +115,14 @@ export default function Helpersfn(self: ContextManager) {
         ret =
           ret +
           (await fn(value, {
-            data: data,
+            data,
             blockParams: [context[field], field],
           }));
       }
 
       if (context && typeof context === "object") {
         if (Array.isArray(context)) {
-          for (let j = context.length; i < j; i++) {
+          for (const j = context.length; i < j; i++) {
             if (i in context) {
               await execIteration(i, context[i], i, i === context.length - 1);
             }
@@ -144,7 +144,7 @@ export default function Helpersfn(self: ContextManager) {
             newContext.push(it.value);
           }
           context = newContext;
-          for (let j = context.length; i < j; i++) {
+          for (const j = context.length; i < j; i++) {
             await execIteration(i, context[i], i, i === context.length - 1);
           }
         } else {
@@ -177,60 +177,60 @@ export default function Helpersfn(self: ContextManager) {
       return ret;
     },
 
-    length: function (str: string) {
+    length(str: string) {
       return str.length;
     },
 
-    substring: function (string: string, start: number, end: number) {
-      const subString = string.substring(start, end);
+    substring(s: string, start: number, end: number) {
+      const subString = s.substring(start, end);
       return new Handlebars.SafeString(subString);
     },
 
-    replace: function (string: string, search: string, replace: string) {
-      const replacedString = string.replace(new RegExp(search, "g"), replace);
+    replace(s: string, search: string, replace: string) {
+      const replacedString = s.replace(new RegExp(search, "g"), replace);
       return new Handlebars.SafeString(replacedString);
     },
 
-    date: function () {
+    date() {
       const currentDate = new Date().toLocaleString();
       return new Handlebars.SafeString(currentDate);
     },
 
-    truncate: function (string: string, length: number) {
-      if (string.length > length) {
-        return new Handlebars.SafeString(string.substring(0, length) + "...");
+    truncate(s: string, length: number) {
+      if (s.length > length) {
+        return new Handlebars.SafeString(s.substring(0, length) + "...");
       } else {
-        return new Handlebars.SafeString(string);
+        return new Handlebars.SafeString(s);
       }
     },
 
-    tail: function (string: string, length: number) {
-      if (string.length > length) {
+    tail(s: string, length: number) {
+      if (s.length > length) {
         return new Handlebars.SafeString(
-          "..." + string.substring(string.length - length)
+          "..." + s.substring(s.length - length)
         );
       } else {
-        return new Handlebars.SafeString(string);
+        return new Handlebars.SafeString(s);
       }
     },
 
-    split: function (string: string, separator: string) {
-      const splitArray = string.split(separator);
+    split(s: string, separator: string) {
+      const splitArray = s.split(separator);
       return splitArray;
     },
 
-    join: function (array: Array<string>, separator: string) {
+    join(array: string[], separator: string) {
       const joinedString = array.join(separator);
       return new Handlebars.SafeString(joinedString);
     },
 
-    unique: function (array: Array<string>) {
+    unique(array: string[]) {
       const uniqueArray = [...new Set(array)];
       return new Handlebars.SafeString(JSON.stringify(uniqueArray));
     },
 
-    trim: function (string: string) {
-      const trimmedString = string.trim();
+    trim(s: string) {
+      const trimmedString = s.trim();
       return new Handlebars.SafeString(trimmedString);
     },
 
@@ -262,19 +262,19 @@ export default function Helpersfn(self: ContextManager) {
       return output;
     },
 
-    eq: function (value1: any, value2: any) {
+    eq(value1: any, value2: any) {
       return value1 === value2;
     },
 
-    stringify: function (context: any) {
+    stringify(context: any) {
       return JSON.stringify(context);
     },
 
-    parse: function (context: any) {
+    parse(context: any) {
       return JSON5.parse(context);
     },
 
-    escp: async function (context: any) {
+    async escapeSpecialChars(context: any) {
       let t = context?.fn ? await context?.fn(context.data.root) : "" + context;
 
       while (t?.contains("\n")) {
@@ -293,25 +293,25 @@ export default function Helpersfn(self: ContextManager) {
       return k.substring(1, k.length - 1);
     },
 
-    escp2: async function (context: any) {
-      const t = await Helpers.escp(context);
+    async escapeSpecialChars2(context: any) {
+      const t = await Helpers.escapeSpecialChars(context);
 
       return await Helpers.trim(t);
     },
 
-    encodeURI: async function (context: any) {
+    async encodeURI(context: any) {
       const t = context?.fn
         ? await context?.fn(context.data.root)
         : "" + context;
       return encodeURIComponent(t);
     },
 
-    error: async function (context: any) {
+    async error(context: any) {
       await error(context);
     },
 
-    notice: function (context: any, duration: any) {
-      new Notice(context, typeof duration == "object" ? undefined : +duration);
+    notice(context: any, duration: any) {
+      new Notice(context, typeof duration === "object" ? undefined : +duration);
     },
 
     async log(...vars: any[]) {
@@ -336,7 +336,7 @@ export default function Helpersfn(self: ContextManager) {
     },
 
     async package(packageId: string, version?: string) {
-      if (!(await self.plugin.textGenerator.packageExists(packageId)))
+      if (!(await self.plugin.textGenerator?.packageExists(packageId)))
         throw new Error(`package ${packageId} was not found.`);
       return true;
     },
@@ -358,7 +358,7 @@ export default function Helpersfn(self: ContextManager) {
 
       const otherVariables = vars;
 
-      const templatePath = await self.plugin.textGenerator.getTemplatePath(id);
+      const templatePath = await self.plugin.textGenerator?.getTemplatePath(id);
 
       if (!templatePath)
         throw new Error(
@@ -386,8 +386,8 @@ export default function Helpersfn(self: ContextManager) {
           innerResult = innerTxt.trim().startsWith("{")
             ? JSON5.parse(innerTxt)
             : {
-              [param]: innerTxt,
-            };
+                [param]: innerTxt,
+              };
         } catch (err: any) {
           innerResult = {
             [param]: innerTxt,
@@ -440,12 +440,14 @@ export default function Helpersfn(self: ContextManager) {
 
       const id: string = templateId?.contains("/")
         ? // if it has a slash that means it already have the packageId
-        `["${templateId}"]`
+          `["${templateId}"]`
         : // checking for vars
-        Object.keys(additionalOptions.data.root.vars || {}).includes(templateId)
+          Object.keys(additionalOptions.data.root.vars || {}).includes(
+              templateId
+            )
           ? `vars["${templateId}"]`
           : // make packageId/templateId
-          `["${parentPackageId}/${templateId}"]`;
+            `["${parentPackageId}/${templateId}"]`;
 
       const val = lodashGet(additionalOptions.data.root, id);
 
@@ -482,12 +484,10 @@ export default function Helpersfn(self: ContextManager) {
         value = (await additionalOptions.fn(this)).trim();
       }
 
-      self.app.fileManager.processFrontMatter(self2.noteFile,
-        (frontMatter) => {
-          frontMatter[id] = value;
-          return frontMatter;
-        }
-      )
+      self.app.fileManager.processFrontMatter(self2.noteFile, (frontMatter) => {
+        frontMatter[id] = value;
+        return frontMatter;
+      });
 
       // lodashSet(additionalOptions.data.root, id, value);
       return "";
@@ -497,16 +497,16 @@ export default function Helpersfn(self: ContextManager) {
       const self2 = this as any as AvailableContext;
 
       if (!self2.noteFile?.path) return;
-      console.log(vars.length)
+      console.log(vars.length);
       const additionalOptions = vars.pop();
 
       let value = vars[0];
 
       if (additionalOptions?.fn) {
-        value = ("" + await additionalOptions.fn(this))?.trim();
+        value = ("" + (await additionalOptions.fn(this)))?.trim();
       }
-      console.log({ n: self2.noteFile, value })
-      await self.app.fileManager.renameFile(self2.noteFile, value)
+      console.log({ n: self2.noteFile, value });
+      await self.app.fileManager.renameFile(self2.noteFile, value);
       return "";
     },
 
@@ -524,20 +524,20 @@ export default function Helpersfn(self: ContextManager) {
       if (!(firstVar in ExtractorSlug))
         throw new Error(`Extractor ${firstVar} Not found`);
 
-      let cntn = "";
+      let content = "";
       let varname = id;
       let other = "";
       if (options.fn) {
-        cntn = await options.fn?.(this);
+        content = await options.fn?.(this);
         if (otherVariables[0]) varname = `vars["${otherVariables[0]}"]`;
         other = otherVariables[1];
       } else {
-        cntn = otherVariables[0];
+        content = otherVariables[0];
         if (otherVariables[1]) varname = `vars["${otherVariables[1]}"]`;
         other = otherVariables[2];
       }
 
-      const res = await extract(firstVar, cntn, other);
+      const res = await extract(firstVar, content, other);
 
       lodashSet(options.data.root, varname, res);
 
@@ -547,19 +547,20 @@ export default function Helpersfn(self: ContextManager) {
     async regex(...vars: any[]) {
       const options: { data: { root: any }; fn: any } = vars.pop();
 
-      if (!options.fn) throw "you need to provide data to work with";
+      if (!options.fn) throw new Error("you need to provide data to work with");
 
       const firstVar = vars.shift();
 
-      if (!firstVar) throw "You need to set a variable name for regex";
+      if (!firstVar)
+        throw new Error("You need to set a variable name for regex");
 
       const otherVariables = vars;
 
-      const cntn = ((await options.fn?.(this)) + "") as string;
+      const content = ((await options.fn?.(this)) + "") as string;
 
       const reg = new RegExp(otherVariables[0], otherVariables[1]);
 
-      const regexResults = cntn.match(reg);
+      const regexResults = content.match(reg);
 
       lodashSet(options.data.root, `vars["${firstVar}"]`, regexResults);
       return regexResults;
@@ -626,7 +627,7 @@ export default function Helpersfn(self: ContextManager) {
       const parentPackageId = p?.[p?.length - 2] || "default";
 
       const gen = async (templateContent: string, metadata: any) => {
-        return await self.plugin.textGenerator.gen(templateContent, {
+        return await self.plugin.textGenerator?.gen(templateContent, {
           ...options.data.root,
           disableProvider: false,
           ...metadata,
@@ -635,10 +636,10 @@ export default function Helpersfn(self: ContextManager) {
 
       const genJSON = async (templateContent: string, metadata: any) => {
         return JSON5.parse(
-          await gen(templateContent, {
+          (await gen(templateContent, {
             ...metadata,
             modelKwargs: { response_format: { type: "json_object" } },
-          })
+          })) ?? ""
         );
       };
 
@@ -649,21 +650,21 @@ export default function Helpersfn(self: ContextManager) {
           throw new Error("templatePath was not found in run command");
         }
 
-        const p = options.data.root.templatePath?.split("/");
+        const _p = options.data.root.templatePath?.split("/");
 
         if (content.contains("run(")) {
           const [packageId, templateId] = id.contains("/")
             ? id.split("/")
-            : [p[p.length - 2], id];
+            : [_p[_p.length - 2], id];
 
           console.log({
-            paths: self.plugin.textGenerator.templatePaths,
+            paths: self.plugin.textGenerator?.templatePaths,
             packageId,
             templateId,
           });
           const TemplateMetadata = self.getFrontmatter(
             self.getMetaData(
-              self.plugin.textGenerator.templatePaths[packageId][templateId]
+              self.plugin.textGenerator?.templatePaths[packageId][templateId]
             )
           );
           meta = {
@@ -677,11 +678,11 @@ export default function Helpersfn(self: ContextManager) {
 
         return _runTemplate(Id, {
           ...meta,
-          ...(typeof metadata == "object"
+          ...(typeof metadata === "object"
             ? metadata
             : {
-              tg_selection: metadata,
-            }),
+                tg_selection: metadata,
+              }),
         });
       };
 
@@ -723,12 +724,15 @@ export default function Helpersfn(self: ContextManager) {
 
     async dataview(...vars: any[]) {
       const options: { data: { root: any }; fn: any } = vars.pop();
-      if (!options.fn) throw new Error("this helper only works in block form ex: {{#dataview}} your dataview {{/dataview}}")
-      const content = await options.fn(options.data.root)
+      if (!options.fn)
+        throw new Error(
+          "this helper only works in block form ex: {{#dataview}} your dataview {{/dataview}}"
+        );
+      const content = await options.fn(options.data.root);
       const api = await getDataviewApi(self.app);
       const res = await api?.queryMarkdown(content);
 
-      if (!res) throw new Error("Couln't find DataViewApi");
+      if (!res) throw new Error("Couldn't find DataViewApi");
 
       if (res?.successful) {
         return res.value;
@@ -736,7 +740,6 @@ export default function Helpersfn(self: ContextManager) {
 
       throw new Error(res.error);
     },
-
 
     // get time now
     async timeNow() {
@@ -747,7 +750,6 @@ export default function Helpersfn(self: ContextManager) {
     async dateNow() {
       return moment().format("YYYY-MM-DD");
     },
-
   } as const;
 
   return Helpers;
@@ -768,21 +770,21 @@ export async function langPull(rep: string) {
     };
   };
 
-  if (k.kwargs.template_format && k.kwargs.template_format != "f-string")
+  if (k.kwargs.template_format && k.kwargs.template_format !== "f-string")
     throw new Error("only accepts templates with format f-string for now.");
 
   const data = compileLangMessages(
     k.kwargs.messages ||
-    (k.kwargs.template
-      ? [
-        {
-          prompt: {
-            template: k.kwargs.template,
-            inputVariables: k.kwargs.input_variables,
-          },
-        },
-      ]
-      : [])
+      (k.kwargs.template
+        ? [
+            {
+              prompt: {
+                template: k.kwargs.template,
+                inputVariables: k.kwargs.input_variables,
+              },
+            },
+          ]
+        : [])
   );
 
   return data;

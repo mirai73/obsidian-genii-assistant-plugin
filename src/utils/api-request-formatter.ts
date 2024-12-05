@@ -6,7 +6,9 @@ import debug from "debug";
 import { transformStringsToChatFormat } from ".";
 import { LLMConfig } from "../LLMProviders/interface";
 import { AI_MODELS } from "#/constants";
-const logger = debug("textgenerator:ReqFormatter");
+
+const logger = debug("genii:ReqFormatter");
+
 export default class ReqFormatter {
   plugin: TextGeneratorPlugin;
   app: App;
@@ -14,15 +16,18 @@ export default class ReqFormatter {
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
-    contextManager: ContextManager
+    contextManager?: ContextManager
   ) {
     this.app = app;
     this.plugin = plugin;
+    if (contextManager === undefined) {
+      throw new Error("contextManager is undefined");
+    }
     this.contextManager = contextManager;
   }
 
   getFrontmatter(templatePath: string, insertMetadata?: boolean) {
-    const activefileFrontmatter: any = insertMetadata
+    const activeFileFrontmatter: any = insertMetadata
       ? this.contextManager.getMetaData()?.frontmatter
       : {};
 
@@ -32,7 +37,7 @@ export default class ReqFormatter {
 
     return {
       ...templateFrontmatter,
-      ...activefileFrontmatter,
+      ...activeFileFrontmatter,
     };
   }
 
@@ -40,42 +45,59 @@ export default class ReqFormatter {
     _params: Partial<TextGeneratorSettings & { prompt: string }>,
     insertMetadata: boolean,
     templatePath = "",
-    additionnalParams: {
+    additionalParams: {
       reqParams?: RequestInit;
       bodyParams?: any;
     } = {}
   ) {
-    logger("prepareReqParameters", _params, insertMetadata, templatePath);
+    logger("getRequestParameters start", _params, insertMetadata, templatePath);
 
     const frontmatter: any = this.getFrontmatter(templatePath, insertMetadata);
-    const providerId = this.plugin.textGenerator.LLMRegestry.get(frontmatter?.config?.provider)?.id as string
-
+    const providerId = this.plugin.textGenerator?.LLMRegistry?.get(
+      frontmatter?.config?.provider
+    )?.id as string;
+    logger("frontmatter", frontmatter);
     const params = {
       ...this.plugin.settings,
       ...this.plugin.defaultSettings.LLMProviderOptions[
-      providerId ||
-      (this.plugin.settings.selectedProvider as any)],
-      ...this.plugin.settings.LLMProviderOptions[
-      providerId ||
-      (this.plugin.settings.selectedProvider as any)
+        providerId || (this.plugin.settings.selectedProvider as any)
       ],
-      ...this.getFrontmatter(templatePath, insertMetadata),
+      ...this.plugin.settings.LLMProviderOptions[
+        providerId || (this.plugin.settings.selectedProvider as any)
+      ],
+      ...frontmatter,
       ..._params,
     };
 
+    params.model = params.model?.toLowerCase();
+
     if (
-      !this.plugin.textGenerator.LLMProvider ||
-      frontmatter.config?.provider !== this.plugin.textGenerator.LLMProvider.id
-    )
+      !this.plugin.textGenerator?.LLMProvider ||
+      (frontmatter.config?.model &&
+        frontmatter.config.model.toLowerCase() !== params.model)
+    ) {
       // load the provider
-      await this.plugin.textGenerator.loadllm(frontmatter.config?.provider);
+      logger("Setting the model", frontmatter.config?.model);
+      const _provider = AI_MODELS[frontmatter.config?.model].llm[0];
+      params.model = frontmatter.config?.model.toLowerCase();
 
+      await this.plugin.textGenerator?.loadLLM(_provider);
+    }
 
+    if (!this.plugin.textGenerator?.LLMProvider)
+      throw new Error("LLM Provider not initialized");
 
-    if (!this.plugin.textGenerator.LLMProvider) throw "LLM Provider not intialized";
-
-    if (params.includeAttachmentsInRequest ?? params.advancedOptions?.includeAttachmentsInRequest)
-      params.prompt = await this.plugin.contextManager.splitContent(params.prompt, params.noteFile, (AI_MODELS[params.model?.toLowerCase()] || AI_MODELS["models/" + params.model?.toLowerCase()])?.inputOptions || {})
+    if (
+      params.includeAttachmentsInRequest ??
+      params.advancedOptions?.includeAttachmentsInRequest
+    ) {
+      params.prompt = await this.contextManager.getEmbeddedContent(
+        params.prompt,
+        params.noteFile,
+        (AI_MODELS[params.model] || AI_MODELS["models/" + params.model])
+          ?.inputOptions || {}
+      );
+    }
 
     let bodyParams: Partial<LLMConfig & { prompt: string }> & {
       messages: Message[];
@@ -91,18 +113,21 @@ export default class ReqFormatter {
 
     if (
       !params.messages?.length &&
-      (typeof params.prompt == "object" ||
+      (typeof params.prompt === "object" ||
         params.prompt?.replaceAll?.("\n", "").trim().length)
     ) {
-      bodyParams.messages.push(this.plugin.textGenerator.LLMProvider.makeMessage(params.prompt || "", "user"));
+      const m = this.plugin.textGenerator?.LLMProvider?.makeMessage(
+        params.prompt || "",
+        "user"
+      );
+      if (m) bodyParams.messages.push(m);
     }
-
 
     let reqParams: RequestInit & {
       // url: string,
       extractResult?: any;
     } = {
-      ...additionnalParams?.reqParams,
+      ...additionalParams?.reqParams,
     };
 
     // if (!insertMetadata) {
@@ -124,7 +149,6 @@ export default class ReqFormatter {
       providerOptions?: any;
     } = {};
 
-
     // on insertMetadata
     if (frontmatter) {
       // -- provider options
@@ -143,14 +167,16 @@ export default class ReqFormatter {
         }
 
         if (params.system || params.config?.system) {
-          bodyParams.messages.unshift(this.plugin.textGenerator.LLMProvider.makeMessage(params.system || params.config.system, "system"));
+          const systemMessage =
+            this.plugin.textGenerator?.LLMProvider?.makeMessage(
+              params.system || params.config.system,
+              "system"
+            );
+          if (systemMessage) bodyParams.messages.unshift(systemMessage);
         }
       }
 
-      if (
-        frontmatter.bodyParams &&
-        frontmatter.config?.append?.bodyParams == false
-      ) {
+      if (frontmatter.bodyParams && !frontmatter.config?.append?.bodyParams) {
         bodyParams = {
           prompt: params.prompt,
           ...frontmatter.bodyParams,
@@ -180,19 +206,16 @@ export default class ReqFormatter {
 
       reqParams.body = JSON.stringify(bodyParams);
 
-      if (
-        frontmatter["reqParams"] &&
-        frontmatter.config?.append?.reqParams == false
-      ) {
-        reqParams = frontmatter["reqParams"];
-      } else if (frontmatter["reqParams"]) {
-        reqParams = { ...reqParams, ...frontmatter["reqParams"] };
+      if (frontmatter.reqParams && !frontmatter.config?.append?.reqParams) {
+        reqParams = frontmatter.reqParams;
+      } else if (frontmatter.reqParams) {
+        reqParams = { ...reqParams, ...frontmatter.reqParams };
       }
     } else {
       this.plugin.handelError("No valid Metadata (YAML front matter) found!");
     }
 
-    logger("prepareReqParameters", { bodyParams, reqParams });
+    logger("getRequestParameters end", { bodyParams, reqParams });
 
     return {
       bodyParams,

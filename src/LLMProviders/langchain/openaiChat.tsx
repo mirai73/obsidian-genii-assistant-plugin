@@ -8,7 +8,7 @@ import debug from "debug";
 
 import { AI_MODELS, Input, Message, SettingItem, useGlobal } from "../refs";
 
-const logger = debug("textgenerator:llmProvider:openaiChat");
+const logger = debug("genii:llmProvider:openaiChat");
 
 const default_values = {
   basePath: "https://api.openai.com/v1",
@@ -16,7 +16,8 @@ const default_values = {
 
 export default class LangchainOpenAIChatProvider
   extends LangchainBase
-  implements LLMProviderInterface {
+  implements LLMProviderInterface
+{
   /** for models to know what provider is that, for example if this class is being extended. and the id changes. */
 
   static provider = "Langchain";
@@ -57,13 +58,13 @@ export default class LangchainOpenAIChatProvider
             type="password"
             value={config.api_key || ""}
             setValue={async (value) => {
-              if (props.self.originalId == id)
+              if (props.self.originalId === id)
                 global.plugin.settings.api_key = value;
               config.api_key = value;
 
               global.triggerReload();
               global.plugin.encryptAllKeys();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -75,6 +76,7 @@ export default class LangchainOpenAIChatProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.basePath || default_values.basePath}
             placeholder="Enter your API Base Path"
             setValue={async (value) => {
@@ -82,7 +84,7 @@ export default class LangchainOpenAIChatProvider
               global.plugin.settings.endpoint =
                 value || default_values.basePath;
               global.triggerReload();
-              // TODO: it could use a debounce here
+
               await global.plugin.saveSettings();
             }}
           />
@@ -188,9 +190,16 @@ export default class LangchainOpenAIChatProvider
         tokens: 0,
         maxTokens: 0,
       };
-    const encoder = this.plugin.tokensScope.getEncoderFromEncoding(
+    const encoder = this.plugin.tokensScope?.getEncoderFromEncoding(
       modelInfo.encoding
     );
+    if (!encoder) {
+      logger("No encoder for", modelInfo.encoding);
+      return {
+        tokens: 0,
+        maxTokens: 0,
+      };
+    }
 
     let tokensPerMessage, tokensPerName;
     if (model && ["gpt-3.5-turbo", "gpt-3.5-turbo-0301"].includes(model)) {
