@@ -1,4 +1,4 @@
-import MODELS from "#/lib/models";
+import MODELS from "./LLMProviders/models";
 
 export const AI_MODELS = MODELS;
 
