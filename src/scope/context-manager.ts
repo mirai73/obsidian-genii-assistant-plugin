@@ -1,5 +1,5 @@
 import { App, Notice, Component, TFile, HeadingCache } from "obsidian";
-import { AsyncReturnType, Context, Message } from "../types";
+import { AsyncReturnType, Context } from "../types";
 import TextGeneratorPlugin from "../main";
 import { IGNORE_IN_YAML } from "../constants";
 
@@ -29,7 +29,7 @@ import type { ContentManager } from "./content-manager/types";
 import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";
 
 import mime from "mime-types";
-import { ContentOptions } from "#/lib/models";
+import { ContentOptions } from "#/LLMProviders/models";
 import {
   MessageContent,
   MessageContentComplex,
@@ -436,7 +436,7 @@ export default class ContextManager {
       context.headings = await this.getHeadingContent(activeDocCache);
 
     if (vars.children && activeDocCache)
-      context.children = await this.getChildrenContent(activeDocCache, vars);
+      context.children = await this.getChildrenContent(activeDocCache);
 
     if (vars.mentions && title)
       context.mentions = await this.getMentions(title);
@@ -711,8 +711,6 @@ export default class ContextManager {
 
     const templates = this.splitTemplate(templateContent);
 
-    templates.preRunnerContent;
-
     // Define a regular expression to match JSON code blocks
     const jsonRegex = /```json:form([\s\S]+?)```/;
 
@@ -789,15 +787,12 @@ export default class ContextManager {
     return headingsContent;
   }
 
-  async getChildrenContent(
-    fileCache: {
-      links?: {
-        original: string;
-        link: string;
-      }[];
-    },
-    vars: any
-  ) {
+  async getChildrenContent(fileCache: {
+    links?: {
+      original: string;
+      link: string;
+    }[];
+  }) {
     // const contextOptions: Context = this.plugin.settings.context;
     const children: (TFile & {
       content: string;

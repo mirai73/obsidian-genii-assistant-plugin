@@ -334,7 +334,7 @@ export default function HelpersFn(self: ContextManager) {
       return "";
     },
 
-    async package(packageId: string, version?: string) {
+    async package(packageId: string) {
       if (!(await self.plugin.textGenerator?.packageExists(packageId)))
         throw new Error(`package ${packageId} was not found.`);
       return true;
@@ -368,11 +368,9 @@ export default function HelpersFn(self: ContextManager) {
         self.getMetaData(templatePath)
       );
 
-      let varname = id;
       let innerResult = {};
 
       if (options.fn) {
-        varname = otherVariables[0];
         const param = otherVariables[1] || "tg_selection";
 
         const innerTxt =
@@ -401,8 +399,6 @@ export default function HelpersFn(self: ContextManager) {
           );
         }
       } else {
-        if (otherVariables[0]) varname = otherVariables[0];
-
         const param = otherVariables[2] || "tg_selection";
 
         const innerTxt = otherVariables[1];

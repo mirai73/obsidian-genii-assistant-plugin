@@ -1,6 +1,6 @@
-import { App, TFile, MarkdownView } from "obsidian";
+import { TFile, MarkdownView, App } from "obsidian";
 
-import { parseLinktext, resolveSubpath } from "obsidian";
+import { parseLinktext } from "obsidian";
 import { removeRepetitiveObjects } from "src/utils";
 
 type NumberTuple = [number, number];
@@ -27,8 +27,10 @@ export interface SearchDetails {
 
 export default class EmbeddingScope {
   private delay: number;
-  constructor(options?: { delay: number }) {
+  private app: App;
+  constructor(app: App, options?: { delay: number }) {
     this.delay = options?.delay ?? 1000;
+    this.app = app;
   }
 
   async getSearchResults(): Promise<TFile[]> {
@@ -39,10 +41,10 @@ export default class EmbeddingScope {
 
   getActiveNote(): TFile | null {
     // try {
-    //     return app.workspace.getActiveFile() || null;
+    //     return this.app.workspace.getActiveFile() || null;
     // } catch { }
 
-    const activeLeaf = app.workspace.getMostRecentLeaf();
+    const activeLeaf = this.app.workspace.getMostRecentLeaf();
 
     if (activeLeaf) {
       // Check if current active view is MarkdownView
@@ -56,14 +58,16 @@ export default class EmbeddingScope {
   }
 
   async getChildrenOfActiveNote(): Promise<TFile[]> {
-    const activeLeaf = app.workspace.getLeaf();
+    const activeLeaf = this.app.workspace.getLeaf();
 
     if (
       activeLeaf &&
       activeLeaf.view instanceof MarkdownView &&
       activeLeaf.view.file
     ) {
-      const fileCache = app.metadataCache.getFileCache(activeLeaf.view.file);
+      const fileCache = this.app.metadataCache.getFileCache(
+        activeLeaf.view.file
+      );
       // Get links from cache
       const links = fileCache?.links;
 
@@ -72,7 +76,7 @@ export default class EmbeddingScope {
         links?.map(async (link) => {
           const { path } = parseLinktext(link.original);
           return (
-            app.metadataCache.getFirstLinkpathDest(link.link, path) || null
+            this.app.metadataCache.getFirstLinkpathDest(link.link, path) || null
           );
         }) || []
       );
@@ -88,7 +92,7 @@ export default class EmbeddingScope {
   }
 
   getAllNotes(): TFile[] {
-    const results = app.vault.getMarkdownFiles();
+    const results = this.app.vault.getMarkdownFiles();
     const paths = results;
     return paths;
   }
@@ -96,7 +100,7 @@ export default class EmbeddingScope {
   private async getFoundAfterDelay(
     immediate: boolean
   ): Promise<Map<TFile, SearchDetails>> {
-    const searchLeaf = app.workspace.getLeavesOfType("search")[0];
+    const searchLeaf = this.app.workspace.getLeavesOfType("search")[0];
     const view = await searchLeaf.open(searchLeaf.view);
     if (immediate) {
       return Promise.resolve(

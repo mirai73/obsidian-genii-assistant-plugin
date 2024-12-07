@@ -1,14 +1,12 @@
-import React from "react";
+import React, { ReactElement } from "react";
 import debug from "debug";
 import JSON5 from "json5";
-import get from "lodash.get";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 import { Handlebars } from "../../helpers/handlebars-helpers";
 import BaseProvider from "../base";
-import { AsyncReturnType, cleanConfig } from "../utils";
-import { requestWithoutCORS, requestWithoutCORSParam, Message } from "../refs";
+import { cleanConfig } from "../utils";
+import { requestWithoutCORSParam, Message } from "../refs";
 import { Platform } from "obsidian";
-import runJSInSandbox from "#/helpers/javascript-sandbox";
 
 const logger = debug("genii:CustomProvider");
 
@@ -84,7 +82,7 @@ return choices;`,
 
 export type CustomConfig = Record<keyof typeof default_values, string>;
 
-export default class CustomProvider
+export default abstract class CustomProvider
   extends BaseProvider
   implements LLMProviderInterface
 {
@@ -122,7 +120,7 @@ export default class CustomProvider
     let k;
 
     try {
-      k = await this.plugin.textGenerator.proxyService.getFetch(
+      k = await this.plugin.textGenerator?.proxyService.getFetch(
         params.CORSBypass
       )(params.url, requestOptions);
     } catch (e: any) {
@@ -135,7 +133,7 @@ export default class CustomProvider
 
       try {
         resJson = JSON5.parse(resText as any);
-      } catch (err: any) {
+      } catch {
         resJson = resText;
       }
       throw JSON5.stringify(resJson);
@@ -171,13 +169,13 @@ export default class CustomProvider
           n.pop();
         }
 
-        const chunkValue = await runJSInSandbox(n.join("\n"), {
-          plugin: this.plugin,
-          chunk: decodedVal,
-          data: decodedVal,
-          res: k,
-        });
-
+        // const chunkValue = await runJSInSandbox(n.join("\n"), {
+        //   plugin: this.plugin,
+        //   chunk: decodedVal,
+        //   data: decodedVal,
+        //   res: k,
+        // });
+        const chunkValue = decodedVal;
         text += chunkValue || "";
         await params.onToken?.(chunkValue, isFirst);
         isFirst = false;
@@ -203,22 +201,27 @@ export default class CustomProvider
         n.pop();
       }
 
-      const rs = await runJSInSandbox(n.join("\n"), {
-        plugin: this.plugin,
-        res: k,
-        data: resJson,
-      });
+      // TODO: Fix this
+      // const rs = await runJSInSandbox(n.join("\n"), {
+      //   plugin: this.plugin,
+      //   res: k,
+      //   data: resJson,
+      // });
 
+      const rs: { content: string }[] = [];
       console.log(rs);
 
-      return rs?.map((c: Message) =>
-        c.type === "image_url"
-          ? {
-              ...c,
-              content: `![](${c.image_url})\n${c.content || ""}`,
-            }
-          : c
-      );
+      // TODO: fix this
+      // return rs?.map((c: Message) =>
+      //   c.type === "image_url"
+      //     ? {
+      //         ...c,
+      //         content: `![](${c.image_url})\n${c.content || ""}`,
+      //       }
+      //     : c
+      // );
+
+      return rs;
     }
   }
 
@@ -228,98 +231,93 @@ export default class CustomProvider
     onToken?: (token: string, first: boolean) => void,
     customConfig?: CustomConfig
   ): Promise<string> {
-    return new Promise(async (s, r) => {
-      try {
-        logger("generate", reqParams);
+    try {
+      logger("generate", reqParams);
 
-        let first = true;
-        let allText = "";
+      let first = true;
 
-        const config = (this.plugin.settings.LLMProviderOptions[this.id] ??=
-          {});
+      const config = (this.plugin.settings.LLMProviderOptions[this.id] ??= {});
 
-        let resultContent = "";
+      let resultContent = "";
 
-        const useRequest = config.CORSBypass && !Platform.isDesktop;
+      const useRequest = config.CORSBypass && !Platform.isDesktop;
 
-        const handlebarData = {
-          ...this.plugin.settings,
-          ...cleanConfig(this.default_values),
-          ...cleanConfig(config),
-          ...cleanConfig(reqParams.otherOptions),
-          ...cleanConfig(reqParams),
-          ...cleanConfig(customConfig),
-          keys: this.plugin.getApiKeys(),
-          // if the model is streamable
-          stream:
-            (reqParams.stream &&
-              this.streamable &&
-              config.streamable &&
-              !useRequest) ||
-            false,
-          n: 1,
-          messages,
-        };
+      const handlebarData = {
+        ...this.plugin.settings,
+        ...cleanConfig(this.default_values),
+        ...cleanConfig(config),
+        ...cleanConfig(reqParams.otherOptions),
+        ...cleanConfig(reqParams),
+        ...cleanConfig(customConfig),
+        keys: this.plugin.getApiKeys(),
+        // if the model is streamable
+        stream:
+          (reqParams.stream &&
+            this.streamable &&
+            config.streamable &&
+            !useRequest) ||
+          false,
+        n: 1,
+        messages,
+      };
 
-        const res = await this.request({
-          method: handlebarData.method,
-          url: await Handlebars.compile(
-            handlebarData.endpoint || this.default_values.endpoint
-          )(handlebarData),
-          headers: cleanConfig(
+      const res = await this.request({
+        method: handlebarData.method,
+        url: await Handlebars.compile(
+          handlebarData.endpoint || this.default_values.endpoint
+        )(handlebarData),
+        headers: cleanConfig(
+          JSON5.parse(
+            "" +
+              (await Handlebars.compile(
+                handlebarData.custom_header || this.default_values.custom_header
+              )(handlebarData))
+          ) as any
+        ),
+
+        body: JSON.stringify(
+          cleanConfig(
             JSON5.parse(
               "" +
                 (await Handlebars.compile(
-                  handlebarData.custom_header ||
-                    this.default_values.custom_header
+                  handlebarData.custom_body || this.default_values.custom_body
                 )(handlebarData))
-            ) as any
-          ),
+            )
+          ) as any
+        ),
 
-          body: JSON.stringify(
-            cleanConfig(
-              JSON5.parse(
-                "" +
-                  (await Handlebars.compile(
-                    handlebarData.custom_body || this.default_values.custom_body
-                  )(handlebarData))
-              )
-            ) as any
-          ),
+        signal: handlebarData.requestParams?.signal || undefined,
+        stream: handlebarData.stream,
+        sanitization_streaming:
+          handlebarData.sanitization_streaming ||
+          this.default_values.sanitization_streaming,
+        sanitization_response:
+          handlebarData.sanitization_response ||
+          this.default_values.sanitization_response,
+        CORSBypass: handlebarData.CORSBypass,
+        async onToken(token: string) {
+          onToken?.(token, first);
 
-          signal: handlebarData.requestParams?.signal || undefined,
-          stream: handlebarData.stream,
-          sanitization_streaming:
-            handlebarData.sanitization_streaming ||
-            this.default_values.sanitization_streaming,
-          sanitization_response:
-            handlebarData.sanitization_response ||
-            this.default_values.sanitization_response,
-          CORSBypass: handlebarData.CORSBypass,
-          async onToken(token: string) {
-            onToken?.(token, first);
-            allText += token;
-            first = false;
-          },
-        });
+          first = false;
+        },
+      });
 
-        if (typeof res != "object") resultContent = res as string;
-        else {
-          const choices = res as any;
-          if (typeof choices === "string") resultContent = choices;
-          else resultContent = choices.map((c: any) => c.content).join("\n");
-        }
-
-        logger("generate end", {
-          resultContent,
-        });
-
-        s(resultContent);
-      } catch (errorRequest: any) {
-        logger("generate error", errorRequest);
-        return r(errorRequest);
+      if (typeof res != "object") resultContent = res as string;
+      else {
+        const choices = res as any;
+        if (typeof choices === "string") resultContent = choices;
+        else resultContent = choices.map((c: any) => c.content).join("\n");
       }
-    });
+
+      logger("generate end", {
+        resultContent,
+      });
+
+      return resultContent;
+    } catch (errorRequest: any) {
+      logger("generate error", errorRequest);
+      throw errorRequest;
+    }
   }
 
   async generateMultiple(
@@ -327,72 +325,70 @@ export default class CustomProvider
     reqParams: Partial<LLMConfig>,
     customConfig?: CustomConfig
   ): Promise<string[]> {
-    return new Promise(async (s, r) => {
-      try {
-        logger("generateMultiple", reqParams);
+    try {
+      logger("generateMultiple", reqParams);
 
-        const config = (this.plugin.settings.LLMProviderOptions[this.id] ??=
-          {});
+      const config = (this.plugin.settings.LLMProviderOptions[this.id] ??= {});
 
-        const handlebarData = {
-          ...this.plugin.settings,
-          ...cleanConfig(config),
-          ...cleanConfig(reqParams.otherOptions),
-          ...cleanConfig(reqParams),
-          ...customConfig,
-          // if the model is streamable
-          stream: false,
-          messages,
-        };
+      const handlebarData = {
+        ...this.plugin.settings,
+        ...cleanConfig(config),
+        ...cleanConfig(reqParams.otherOptions),
+        ...cleanConfig(reqParams),
+        ...customConfig,
+        // if the model is streamable
+        stream: false,
+        messages,
+      };
 
-        const res = await this.request({
-          method: handlebarData.method,
-          url: await Handlebars.compile(
-            config.endpoint || this.default_values.endpoint
-          )(handlebarData),
-          signal: handlebarData.requestParams?.signal || undefined,
-          stream: handlebarData.stream,
-          headers: JSON5.parse(
-            await Handlebars.compile(
-              handlebarData.custom_header || this.default_values.custom_header
-            )(handlebarData)
-          ) as any,
+      const res = await this.request({
+        method: handlebarData.method,
+        url: await Handlebars.compile(
+          config.endpoint || this.default_values.endpoint
+        )(handlebarData),
+        signal: handlebarData.requestParams?.signal || undefined,
+        stream: handlebarData.stream,
+        headers: JSON5.parse(
+          await Handlebars.compile(
+            handlebarData.custom_header || this.default_values.custom_header
+          )(handlebarData)
+        ) as any,
 
-          body: JSON.stringify(
-            this.cleanConfig(
-              JSON5.parse(
-                await Handlebars.compile(
-                  handlebarData.custom_body || this.default_values.custom_body
-                )(handlebarData)
-              )
+        body: JSON.stringify(
+          this.cleanConfig(
+            JSON5.parse(
+              await Handlebars.compile(
+                handlebarData.custom_body || this.default_values.custom_body
+              )(handlebarData)
             )
-          ) as any,
+          )
+        ) as any,
 
-          sanitization_response: handlebarData.sanitization_response,
-          sanitization_streaming:
-            handlebarData.sanitization_streaming ||
-            this.default_values.sanitization_streaming,
-        });
+        sanitization_response: handlebarData.sanitization_response,
+        sanitization_streaming:
+          handlebarData.sanitization_streaming ||
+          this.default_values.sanitization_streaming,
+      });
 
-        const choices = res
-          ? (res as object[])?.map((o) => get(o, "content"))
-          : get(res, "content");
+      if (typeof res === "string") throw new Error(res);
+      const choices = res?.map((o) => o.content) ?? [];
 
-        logger("generateMultiple end", {
-          choices,
-        });
+      logger("generateMultiple end", {
+        choices,
+      });
 
-        if (!handlebarData.stream) {
-          s(choices);
-        } else r("streaming with multiple choices is not implemented");
-      } catch (errorRequest: any) {
-        logger("generateMultiple error", errorRequest);
-        return r(errorRequest);
+      if (!handlebarData.stream) {
+        return choices;
+      } else {
+        throw new Error("streaming with multiple choices is not implemented");
       }
-    });
+    } catch (errorRequest: any) {
+      logger("generateMultiple error", errorRequest);
+      throw new Error(errorRequest);
+    }
   }
 
-  RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
-    return <>Default unuseable</>;
-  }
+  abstract RenderSettings(
+    props: Parameters<LLMProviderInterface["RenderSettings"]>[0]
+  ): ReactElement;
 }

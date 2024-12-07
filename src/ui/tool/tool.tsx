@@ -8,9 +8,6 @@ import CopyButton from "../components/copyButton";
 import useStateView from "../context/useStateView";
 import MarkDownViewer from "../components/Markdown";
 import TemplateInputModalView from "../template-input-modal/view";
-import debug from "debug";
-
-const logger = debug("genii:tool:react-component");
 
 export default function Tool(props: {
   plugin: TextGeneratorPlugin;
@@ -155,7 +152,7 @@ export default function Tool(props: {
       if (templateContext.options)
         templateContext.options.templatePath = config.templatePath;
 
-      ({ templateContext, config });
+      //({ templateContext, config });
 
       setTemplateContext(templateContext?.options);
       if (variables) setVariables(variables);

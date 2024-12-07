@@ -2,7 +2,6 @@ import { App, Notice, FuzzySuggestModal } from "obsidian";
 import TextGeneratorPlugin from "src/main";
 import { Model } from "src/types";
 import debug from "debug";
-import { log } from "console";
 const logger = debug("genii:setModel");
 
 export class SetModel extends FuzzySuggestModal<Model> {
@@ -36,7 +35,7 @@ export class SetModel extends FuzzySuggestModal<Model> {
     return model.id;
   }
 
-  onChooseItem(model: Model, evt: MouseEvent | KeyboardEvent) {
+  onChooseItem(model: Model) {
     logger("onChooseItem", model);
     new Notice(`Selected ${model.id}`);
     this.onChoose(model.id);

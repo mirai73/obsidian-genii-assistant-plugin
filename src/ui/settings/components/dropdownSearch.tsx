@@ -12,7 +12,7 @@ export default function DropdownSearch<T extends string>(props: {
   placeHolder?: string;
   aliases?: Record<any, any>;
 }) {
-  const { value: isOpen, toggle, setFalse: close } = useBoolean(false);
+  const { value: isOpen, setFalse: close } = useBoolean(false);
 
   useEffect(() => {
     if (!isOpen) return;

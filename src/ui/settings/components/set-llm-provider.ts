@@ -39,7 +39,7 @@ export class SetLLMProvider extends FuzzySuggestModal<LLM> {
     return llm.name || llm.id;
   }
 
-  onChooseItem(llm: LLM, evt: MouseEvent | KeyboardEvent) {
+  onChooseItem(llm: LLM) {
     logger("onChooseItem", llm);
     new Notice(`Selected ${llm.name}`);
     this.onChoose(llm.id);

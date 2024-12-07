@@ -57,46 +57,44 @@ export default class LangchainOpenAIInstructProvider
     messages: Message[],
     reqParams: Partial<LLMConfig>
   ): Promise<string[]> {
-    return new Promise(async (s, r) => {
-      try {
-        logger("generateMultiple", reqParams);
+    try {
+      logger("generateMultiple", reqParams);
 
-        const params = {
-          ...this.cleanConfig(this.plugin.settings),
-          ...this.cleanConfig(
-            this.plugin.settings.LLMProviderOptions[
-              this.id as keyof typeof this.plugin.settings
-            ]
-          ),
-          ...this.cleanConfig(reqParams.otherOptions),
-          ...this.cleanConfig(reqParams),
-          otherOptions: this.cleanConfig(
-            this.plugin.settings.LLMProviderOptions[
-              this.id as keyof typeof this.plugin.settings
-            ]
-          ),
-        };
+      const params = {
+        ...this.cleanConfig(this.plugin.settings),
+        ...this.cleanConfig(
+          this.plugin.settings.LLMProviderOptions[
+            this.id as keyof typeof this.plugin.settings
+          ]
+        ),
+        ...this.cleanConfig(reqParams.otherOptions),
+        ...this.cleanConfig(reqParams),
+        otherOptions: this.cleanConfig(
+          this.plugin.settings.LLMProviderOptions[
+            this.id as keyof typeof this.plugin.settings
+          ]
+        ),
+      };
 
-        const llm = await this.getLLM(params);
+      const llm = await this.getLLM(params);
 
-        const requestResults = await (llm as OpenAI).generate(
-          messages.map((m) => m.content as any),
-          {
-            signal: params.requestParams?.signal || undefined,
-            ...this.getReqOptions(params),
-          }
-        );
+      const requestResults = await (llm as OpenAI).generate(
+        messages.map((m) => m.content as any),
+        {
+          signal: params.requestParams?.signal || undefined,
+          ...this.getReqOptions(params),
+        }
+      );
 
-        logger("generateMultiple end", {
-          requestResults,
-        });
+      logger("generateMultiple end", {
+        requestResults,
+      });
 
-        s(requestResults.generations[0].map((a: any) => a.text));
-      } catch (errorRequest: any) {
-        logger("generateMultiple error", errorRequest);
-        return r(errorRequest);
-      }
-    });
+      return requestResults.generations[0].map((a: any) => a.text);
+    } catch (errorRequest: any) {
+      logger("generateMultiple error", errorRequest);
+      throw new Error(errorRequest);
+    }
   }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
@@ -225,6 +223,14 @@ export default class LangchainOpenAIInstructProvider
       AI_MODELS[model as keyof typeof AI_MODELS] || AI_MODELS["gpt-3.5-turbo"];
 
     console.log(reqParams.max_tokens, modelInfo.prices.completion);
+    if (
+      !modelInfo ||
+      !modelInfo.prices ||
+      !modelInfo.prices.prompt ||
+      !modelInfo.prices.completion
+    ) {
+      return -1;
+    }
     return (
       (tokens * modelInfo.prices.prompt +
         (reqParams.max_tokens || 100) * modelInfo.prices.completion) /
@@ -245,9 +251,15 @@ export default class LangchainOpenAIInstructProvider
         tokens: 0,
         maxTokens: 0,
       };
-    const encoder = this.plugin.tokensScope.getEncoderFromEncoding(
+    if (!modelInfo || !modelInfo.encoding) {
+      throw new Error("Encoding not found for this model");
+    }
+    const encoder = this.plugin.tokensScope?.getEncoderFromEncoding(
       modelInfo.encoding
     );
+    if (!encoder) {
+      throw new Error("Encoding not found for this model");
+    }
 
     let tokensPerMessage, tokensPerName;
     if (model && ["gpt-3.5-turbo", "gpt-3.5-turbo-0301"].includes(model)) {

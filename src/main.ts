@@ -55,6 +55,7 @@ let safeStorage: Electron.SafeStorage;
 
 if (Platform.isDesktop) {
   // @ts-ignore
+  // eslint-disable-next-line
   safeStorage = require("electron")?.remote?.safeStorage;
 }
 debug.enable("genii:*"); // TODO: have a setting for this
@@ -136,39 +137,36 @@ export default class TextGeneratorPlugin extends Plugin {
 
     if (this.settings.options["batch-generate-in-right-click-files-menu"])
       this.registerEvent(
-        this.app.workspace.on(
-          "files-menu",
-          async (menu, files, source, leaf) => {
-            menu.addItem((item) => {
-              item.setIcon("GENERATE_META_ICON");
-              item.setTitle("Generate");
-              item.onClick(() => {
-                try {
-                  new TemplatesModal(
-                    this.app,
-                    this,
-                    async (result) => {
-                      if (!result.path)
-                        return this.handelError("couldn't find path");
-                      await this.textGenerator?.generateBatchFromTemplate(
-                        files.filter(
-                          // @ts-ignore
-                          (f) => !f.children && f.path.endsWith(".md")
-                        ) as TFile[],
-                        {},
-                        result.path,
-                        true
-                      );
-                    },
-                    "Generate and Create a New Note From Template"
-                  ).open();
-                } catch (error) {
-                  this.handelError(error);
-                }
-              });
+        this.app.workspace.on("files-menu", async (menu, files) => {
+          menu.addItem((item) => {
+            item.setIcon("GENERATE_META_ICON");
+            item.setTitle("Generate");
+            item.onClick(() => {
+              try {
+                new TemplatesModal(
+                  this.app,
+                  this,
+                  async (result) => {
+                    if (!result.path)
+                      return this.handelError("couldn't find path");
+                    await this.textGenerator?.generateBatchFromTemplate(
+                      files.filter(
+                        // @ts-ignore
+                        (f) => !f.children && f.path.endsWith(".md")
+                      ) as TFile[],
+                      {},
+                      result.path,
+                      true
+                    );
+                  },
+                  "Generate and Create a New Note From Template"
+                ).open();
+              } catch (error) {
+                this.handelError(error);
+              }
             });
-          }
-        )
+          });
+        })
       );
 
     // tg codeblock
@@ -179,43 +177,33 @@ export default class TextGeneratorPlugin extends Plugin {
 
     // This creates an icon in the left ribbon.
     if (!this.settings.options["disable-ribbon-icons"]) {
-      this.addRibbonIcon(
-        "GENERATE_ICON",
-        "Generate Text",
-        async (evt: MouseEvent) => {
-          // Called when the user clicks the icon.
-          // const activeFile = this.app.workspace.getActiveFile();
-          const activeView = this.getActiveViewMD();
-          if (activeView !== null) {
-            const CM = ContentManagerFactory.createContentManager(
-              activeView,
-              this
-            );
-            try {
-              await this.textGenerator?.generateInEditor({}, false, CM);
-            } catch (error) {
-              this.handelError(error);
-            }
+      this.addRibbonIcon("GENERATE_ICON", "Generate Text", async () => {
+        // Called when the user clicks the icon.
+        // const activeFile = this.app.workspace.getActiveFile();
+        const activeView = this.getActiveViewMD();
+        if (activeView !== null) {
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this
+          );
+          try {
+            await this.textGenerator?.generateInEditor({}, false, CM);
+          } catch (error) {
+            this.handelError(error);
           }
         }
-      );
+      });
 
       this.addRibbonIcon(
         "boxes",
         "Text Generator: Templates Packages Manager",
-        async (evt: MouseEvent) => {
-          new PackageManagerUI(
-            this.app,
-            this,
-            async (result: string) => {}
-          ).open();
+        async () => {
+          new PackageManagerUI(this.app, this).open();
         }
       );
     }
 
     this.pluginAPIService = new PluginServiceAPI(this);
-
-    //registerAPI("tg", this.pluginAPIService, this as any);
 
     this.app.workspace.onLayoutReady(async () => {
       try {
@@ -351,10 +339,6 @@ export default class TextGeneratorPlugin extends Plugin {
   }
 
   updateStatusBar(text: string, processing = false) {
-    let text2 = "";
-    if (text.length > 0) {
-      text2 = `: ${text}`;
-    }
     if (this.settings.showStatusBar) {
       this.textGeneratorIconItem.innerHTML = "";
       this.statusBarTokens.innerHTML = "";
@@ -525,7 +509,7 @@ export default class TextGeneratorPlugin extends Plugin {
   }
 
   getFilesOnLoad(): Promise<TFile[]> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.app.workspace.onLayoutReady(() => {
         const filesAfterLayout = this.app.vault.getFiles();
         resolve(filesAfterLayout);
@@ -549,8 +533,7 @@ export default class TextGeneratorPlugin extends Plugin {
 
     if (this.settings.api_key_encrypted)
       this.settings.api_key = this.getDecryptedKey(
-        this.settings.api_key_encrypted,
-        this.settings.api_key
+        this.settings.api_key_encrypted
       );
 
     Object.entries(this.settings?.LLMProviderOptionsKeysHashed).forEach(
@@ -558,10 +541,7 @@ export default class TextGeneratorPlugin extends Plugin {
         set(
           this.settings.LLMProviderOptions,
           pth,
-          this.getDecryptedKey(
-            hashed,
-            get(this.settings.LLMProviderOptions, pth) as any
-          )
+          this.getDecryptedKey(hashed)
         );
       }
     );
@@ -618,7 +598,7 @@ export default class TextGeneratorPlugin extends Plugin {
     };
   }
 
-  getDecryptedKey(keyBuffer: any, oldVal: string) {
+  getDecryptedKey(keyBuffer: any) {
     try {
       if (
         (keyBuffer as string)?.startsWith?.(DecryptKeyPrefix) ||
@@ -635,7 +615,7 @@ export default class TextGeneratorPlugin extends Plugin {
       return containsInvalidCharacter(decrypted)
         ? "**FAILED TO DECRYPT KEYS**"
         : decrypted;
-    } catch (err: any) {
+    } catch {
       // console.log(err);
       const [inCaseDecryptionFails, key] =
         keyBuffer?.split?.(DecryptKeyPrefix) || [];

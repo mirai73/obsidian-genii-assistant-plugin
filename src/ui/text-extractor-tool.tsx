@@ -19,7 +19,6 @@ import debug from "debug";
 const logger = debug("genii:text-extractor-tool");
 
 const ContentExtractorComponent = ({
-  p,
   app,
   plugin,
 }: {

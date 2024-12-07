@@ -3,8 +3,6 @@ import { YoutubeTranscript } from "./youtube-extractor/youtube-transcript";
 import { Extractor } from "./extractor";
 import debug from "debug";
 import TextGeneratorPlugin from "src/main";
-import { orderProperties } from "@rjsf/utils";
-import { number } from "zod";
 
 const logger = debug("genii:Extractor:YoutubeTranscriptionExtractor");
 
@@ -15,7 +13,7 @@ export default class YoutubeExtractor extends Extractor {
 
   decodeHtmlEntities(str?: string): string {
     if (!str) return "";
-    return str.replace(/&amp;(#\d+);/g, function (match, dec) {
+    return str.replace(/&amp;(#\d+);/g, function (_, dec) {
       return String.fromCharCode(parseInt(dec.replace(/^#/, ""), 10));
     });
   }

@@ -74,10 +74,7 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
     });
   }
 
-  async selectSuggestion(
-    value: PromptTemplate,
-    evt: MouseEvent | KeyboardEvent
-  ) {
+  async selectSuggestion(value: PromptTemplate) {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
     if (!activeView) return console.warn("couldn't find activeView");

@@ -13,18 +13,23 @@ import Contexts from "../context";
 import { trimBy } from "../../utils";
 export const VIEW_TOOL_ID = "tool-view";
 
+import debug from "debug";
+
+const logger = debug("genii:toolview");
+
 // @ts-ignore
 let electron: Electron;
 
 if (Platform.isDesktop) {
   // @ts-ignore
+  // eslint-disable-next-line
   electron = require("electron")?.remote;
 }
 
 export class ToolView extends ItemView {
-  root: Root;
+  root?: Root;
   plugin: TextGeneratorPlugin;
-  title: string;
+  title?: string;
   constructor(leaf: WorkspaceLeaf, plugin: TextGeneratorPlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -45,7 +50,6 @@ export class ToolView extends ItemView {
 
     if (viewContainer.style) viewContainer.style.overflowY = "hidden";
 
-    const self = this;
     this.root.render(
       <React.StrictMode>
         <Contexts plugin={this.plugin}>
@@ -53,18 +57,19 @@ export class ToolView extends ItemView {
             plugin={this.plugin}
             view={this}
             onEvent={(cb: (name: string) => void) => {
-              self.onEvent = (name: string) => {
+              this.onEvent = (name: string) => {
                 cb(name);
               };
             }}
             setCommands={async (commands) => {
               console.log(this.plugin.commands?.commands, commands);
-              this.plugin.commands.commands = trimBy(
-                [...this.plugin.commands?.commands, ...commands],
-                "id"
-              );
+              if (this.plugin.commands)
+                this.plugin.commands.commands = trimBy(
+                  [...this.plugin.commands?.commands, ...commands],
+                  "id"
+                );
               console.log(this.plugin.commands?.commands, commands);
-              await this.plugin.packageManager.load();
+              await this.plugin.packageManager?.load();
             }}
           />
         </Contexts>
@@ -113,7 +118,9 @@ export class ToolView extends ItemView {
   }
 
   // this is just a placeholder for the, do not put code here. edit the tool.tsx file to add more events
-  onEvent(name: string) {}
+  onEvent(name: string) {
+    logger("onEvent", name);
+  }
 
   id?: string;
   async setState(state: any, result: ViewStateResult): Promise<void> {
@@ -157,6 +164,6 @@ export class ToolView extends ItemView {
   }
 
   async onClose() {
-    this.root.unmount();
+    this.root?.unmount();
   }
 }

@@ -4,12 +4,10 @@ import { GoogleGenerativeAIChatInput } from "@langchain/google-genai";
 import React from "react";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 import { IconExternalLink } from "@tabler/icons-react";
-import debug from "debug";
+
 import { HeaderEditor, ModelsHandler } from "../utils";
 
 import { Input, SettingItem, useGlobal } from "../refs";
-
-const logger = debug("genii:llmProvider:gemini");
 
 const default_values = {
   model: "gemini-1.5-pro",
@@ -56,6 +54,10 @@ export default class LangchainChatGoogleGenerativeAIProvider
   async load() {
     const { ChatGoogleGenerativeAI } = await import("@langchain/google-genai");
     this.llmClass = ChatGoogleGenerativeAI;
+  }
+
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
   }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {

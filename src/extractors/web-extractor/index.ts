@@ -7,10 +7,12 @@ import JSON5 from "json5";
 let remote: typeof import("electron");
 
 if (!Platform.isMobile) {
+  // eslint-disable-next-line
   remote = (require("electron") as any)?.remote;
 }
 
 const logger = debug("genii:Extractor:WebPageExtractor");
+
 export default class WebPageExtractor extends Extractor {
   constructor(app: App, plugin: TextGeneratorPlugin) {
     super(app, plugin);
@@ -36,7 +38,7 @@ export default class WebPageExtractor extends Extractor {
       };
       await win.webContents.session.cookies.set(cookie);
 
-      response = await new Promise(async (s) => {
+      response = await new Promise((s) => {
         win.webContents.on("dom-ready", async () => {
           // in seconds
           const maxTotal = 10;
@@ -57,12 +59,13 @@ export default class WebPageExtractor extends Extractor {
           }, fac * 1000);
         });
 
-        await win.loadURL(url, {
-          userAgent:
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.4.16 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36",
-        });
+        win
+          .loadURL(url, {
+            userAgent:
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.4.16 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36",
+          })
+          .then(() => win.destroy());
       });
-      win.destroy();
     }
 
     const parser = new DOMParser();

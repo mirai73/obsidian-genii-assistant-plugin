@@ -3,11 +3,8 @@ import React from "react";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 import { IconExternalLink } from "@tabler/icons-react";
 
-import debug from "debug";
 import { ModelsHandler } from "../utils";
 import { OpenAIChatInput } from "@langchain/openai";
-
-const logger = debug("genii:llmProvider:mistralChat");
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
@@ -47,6 +44,10 @@ export default class LangchainMistralAIChatProvider
   //       ...this.getConfig(options),
   //     } as any);
   //   }
+
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
 
   getConfig(options: LLMConfig) {
     return this.cleanConfig({

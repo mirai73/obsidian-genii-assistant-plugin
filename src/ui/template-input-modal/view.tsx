@@ -1,9 +1,8 @@
-import clsx from "clsx";
 import React, { useState, useEffect } from "react";
 
 import validator from "@rjsf/validator-ajv8";
 import { Theme } from "./rjsf";
-import { getDefaultRegistry, FormProps, withTheme } from "@rjsf/core";
+import { FormProps, withTheme } from "@rjsf/core";
 import TextGeneratorPlugin from "#/main";
 
 const Form = withTheme(Theme);
@@ -64,7 +63,7 @@ export default function TemplateInputModalView(props: {
 
       if (props.templateContext.templatePath) {
         const cschema =
-          await props.p.plugin.contextManager.getTemplateCustomInputConfig(
+          await props.p.plugin.contextManager?.getTemplateCustomInputConfig(
             props.templateContext.templatePath
           );
         console.log({ cschema });

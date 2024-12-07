@@ -1,5 +1,5 @@
 import React from "react";
-import debug from "debug";
+
 import LangchainBase from "./base";
 
 import LLMProviderInterface, { LLMConfig } from "../interface";
@@ -10,8 +10,6 @@ import { Input, Message, SettingItem, useGlobal } from "../refs";
 
 import type { AnthropicInput } from "@langchain/anthropic";
 import { HeaderEditor, ModelsHandler } from "../utils";
-
-const logger = debug("genii:llmProvider:chatanthropic");
 
 const default_values = {
   basePath: "https://api.anthropic.com/",
@@ -73,6 +71,10 @@ export default class LangchainChatAnthropicProvider
   //     });
   //   }
 
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
+
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
 
@@ -108,6 +110,7 @@ export default class LangchainChatAnthropicProvider
           sectionId={props.sectionId}
         >
           <Input
+            type="text"
             value={config.basePath}
             placeholder="Enter your API BasePath"
             setValue={async (value) => {

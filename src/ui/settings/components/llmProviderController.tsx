@@ -5,13 +5,10 @@ import SettingItem from "./item";
 import LLMProviderInterface from "../../../LLMProviders/interface";
 import useGlobal from "../../context/global";
 import Input from "./input";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
-import clsx from "clsx";
-import Confirm from "#/ui/components/confirm";
-import ExportImportHandler from "#/ui/components/exportImport";
+
 import { z } from "zod";
 
-const profileFileSchema = z.object({
+export const profileFileSchema = z.object({
   id: z.string(),
   profile: z.object({
     extends: z.string(),
@@ -29,7 +26,7 @@ export default function LLMProviderController(props: {
   mini?: boolean;
 }) {
   const global = useGlobal();
-  let llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
+  const llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
   const sectionId = useId();
   const [selectedLLM, setSelectedLLM] = useState<
     LLMProviderInterface | undefined
@@ -61,58 +58,13 @@ export default function LLMProviderController(props: {
 
   const isDefaultProvider = selectedLLM ? !selectedLLM.cloned : false;
 
-  const clone = async () => {
-    // pick a name and id
-    const name = selectedLLM?.slug || selectedLLMId?.split("(")[0].trim() || "";
-    const newId =
-      selectedLLM?.id + " " + llmList?.filter((l) => l.startsWith(name)).length;
-
-    if (!(isDefaultProvider ? selectedLLMId : selectedLLM?.originalId))
-      throw "can't be cloned";
-    // add the llm clone
-    await global.plugin.textGenerator?.addLLMCloneInRegistry({
-      id: newId,
-      name: name + " " + llmList?.filter((l) => l.startsWith(name)).length,
-      extends: isDefaultProvider
-        ? selectedLLMId
-        : (selectedLLM?.originalId as any),
-      extendsDataFrom: selectedLLMId,
-    });
-
-    llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
-
-    setSelectedLLMId(newId);
-    updateLLm(newId);
-  };
-
-  const del = async () => {
-    if (
-      !(await Confirm(
-        `Are you sure you want to delete ${selectedLLMId}`,
-        "Delete Confirmation"
-      ))
-    )
-      return;
-    const parentId = selectedLLM?.originalId;
-    if (!selectedLLMId) return;
-    // delete the llm clone
-    await global.plugin.textGenerator?.deleteLLMCloneFromRegistry(
-      selectedLLMId
-    );
-
-    llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
-
-    setSelectedLLMId(parentId);
-    updateLLm(parentId);
-  };
-
   useEffect(() => updateLLm(selectedLLMId), []);
 
   const selectLLM = (selectedLLMId: string) => {
     setSelectedLLMId(selectedLLMId);
     updateLLm(selectedLLMId);
     global.plugin.saveSettings();
-    global.triggerReload();
+    if (global.triggerReload) global.triggerReload();
     props.triggerResize();
   };
 
@@ -180,51 +132,12 @@ export default function LLMProviderController(props: {
                     ].name = val;
 
                     await global.plugin.saveSettings();
-                    global.triggerReload();
+                    if (global.triggerReload) global.triggerReload();
                   }
                 }}
               />
             </SettingItem>
           )}
-
-          {/* <ExportImportHandler
-            name={
-              global.plugin.settings.LLMProviderProfiles[selectedLLMId]?.name
-            }
-            title={"ID: " + selectedLLMId}
-            // defaultConfig={default_values}
-            id="llm"
-            getConfig={() => {
-              return {
-                id: selectedLLMId,
-                profile:
-                  global.plugin.settings.LLMProviderProfiles[selectedLLMId],
-                config: global.plugin.removeApikeys(global.plugin.settings)
-                  .LLMProviderOptions[selectedLLMId],
-              };
-            }}
-            onImport={async (data) => {
-              const d = await profileFileSchema.parseAsync(data);
-
-              let id = d.id;
-
-              if (!id) {
-                id =
-                  selectedLLM?.id +
-                  " " +
-                  llmList?.filter((l) => l.startsWith(d.profile.extends)).length;
-              }
-
-              // if the apikey is empty, in the attempt of updating profile, it will not override the existing one
-              if (d.config && "api_key" in d.config && !d.config["api_key"])
-                d.config["api_key"] =
-                  global.plugin.settings.LLMProviderOptions?.[id]?.api_key;
-
-              global.plugin.settings.LLMProviderProfiles[id] = d.profile;
-              global.plugin.settings.LLMProviderOptions[id] = d.config;
-              selectLLM(id);
-            }}
-          /> */}
         </>
       )}
     </>

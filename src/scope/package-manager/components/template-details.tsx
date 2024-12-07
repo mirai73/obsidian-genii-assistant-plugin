@@ -11,7 +11,7 @@ import JSON5 from "json5";
 import useGlobal from "#/ui/context/global";
 import MarkDownViewer from "#/ui/components/Markdown";
 
-export default function TemplateDetails(inProps: {
+export default function TemplateDetails(props: {
   packageId: any;
   packageManager: PackageManager;
   updateView: any;
@@ -20,7 +20,7 @@ export default function TemplateDetails(inProps: {
 }) {
   const glob = useGlobal();
 
-  const { packageId, packageManager, updateView, checkForUpdates } = inProps;
+  const { packageId, packageManager, updateView, checkForUpdates } = props;
 
   const [installing, setInstalling] = useState(false);
   const [progress, setProgress] = useState("0/0");
@@ -30,7 +30,7 @@ export default function TemplateDetails(inProps: {
   const [htmlVar, setHtmlVar] = useState("");
   const [serviceUnavailable, setServiceUnavailable] = useState(false);
 
-  const [props, setProps] = useState<{
+  const [stateProps, setStateProps] = useState<{
     package?: PackageTemplate | null;
     installed?: any;
     ownedOrReq?: {
@@ -54,7 +54,7 @@ export default function TemplateDetails(inProps: {
             : await packageManager.validateOwnership(pkg?.packageId),
       });
 
-      setProps({
+      setStateProps({
         package: pkg,
         installed: false,
         ownedOrReq:
@@ -71,31 +71,31 @@ export default function TemplateDetails(inProps: {
 
       packageManager.getInstalledPackageById(packageId).then((installed) => {
         console.log({ installed });
-        setProps((p) => ({ ...p, installed }));
+        setStateProps((p) => ({ ...p, installed }));
       });
 
       if (!(pkg?.price || !pkg?.packageId))
         packageManager.validateOwnership(packageId).then((ownedOrReq) => {
-          setProps((p) => ({ ...p, ownedOrReq }));
+          setStateProps((p) => ({ ...p, ownedOrReq }));
         });
     })();
   }, [packageId, installing, enabling, _]);
 
   const validateOwnership = async () => {
     try {
-      const ownedOrReq = props.installed
+      const ownedOrReq = stateProps.installed
         ? {
             allowed: true,
           }
         : await packageManager.validateOwnership(packageId);
 
-      setProps((props) => ({
-        ...props,
+      setStateProps((stateProps) => ({
+        ...stateProps,
         ownedOrReq,
       }));
     } catch (err: any) {
-      setProps((props) => ({
-        ...props,
+      setStateProps((stateProps) => ({
+        ...stateProps,
         ownedOrReq: {
           allowed: false,
           oneRequired: [],
@@ -108,7 +108,7 @@ export default function TemplateDetails(inProps: {
 
   useEffect(() => {
     validateOwnership();
-  }, [packageId, props.installed]);
+  }, [packageId, stateProps.installed]);
 
   useEffect(() => {
     packageManager.getReadme(packageId).then((html: any) => {
@@ -139,8 +139,8 @@ export default function TemplateDetails(inProps: {
     setInstalling(true);
     try {
       try {
-        if (props.package?.type === "feature") await disable();
-      } catch (err: any) {
+        if (stateProps.package?.type === "feature") await disable();
+      } catch {
         console.warn("couldn't disable the feature");
       }
       await packageManager.uninstallPackage(packageId);
@@ -155,10 +155,14 @@ export default function TemplateDetails(inProps: {
   }
 
   async function getFeatureId() {
-    if (!props.installed || !props.package || props.package.type != "feature")
+    if (
+      !stateProps.installed ||
+      !stateProps.package ||
+      stateProps.package.type != "feature"
+    )
       throw "getFeatureId wont work here";
 
-    const manifestJson = `.obsidian/plugins/${props.package.packageId}/manifest.json`;
+    const manifestJson = `.obsidian/plugins/${stateProps.package.packageId}/manifest.json`;
 
     if (!(await packageManager.app.vault.adapter.exists(manifestJson)))
       throw "manifest.json doesn't exist to read the packageid";
@@ -206,7 +210,7 @@ export default function TemplateDetails(inProps: {
   }
 
   async function updateLocalView() {
-    setProps({
+    setStateProps({
       package: packageManager.getPackageTemplateById(packageId),
       installed: await packageManager.getInstalledPackageById(packageId),
     });
@@ -214,9 +218,9 @@ export default function TemplateDetails(inProps: {
 
   async function buy() {
     try {
-      if (!props.package?.packageId) throw "no package selected";
+      if (!stateProps.package?.packageId) throw "no package selected";
       const pkgOwn = await packageManager.validateOwnership(
-        props.package?.packageId
+        stateProps.package?.packageId
       );
 
       if (!pkgOwn.oneRequired) throw new Error("Not buyable");
@@ -227,7 +231,7 @@ export default function TemplateDetails(inProps: {
           `/dashboard/subscriptions/checkout?type=${encodeURIComponent(
             pkgOwn.oneRequired.join(",")
           )}&callback=${encodeURIComponent(
-            `obsidian://text-gen?intent=bought-package&packageId=${props.package?.packageId}`
+            `obsidian://text-gen?intent=bought-package&packageId=${stateProps.package?.packageId}`
           )}`,
           ProviderServer
         ).href
@@ -286,12 +290,14 @@ export default function TemplateDetails(inProps: {
     <>
       <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-2">
         <div className="community-modal-info-name">
-          {props.package?.name}
+          {stateProps.package?.name}
 
-          {props.installed && <span className="flair mod-pop">Installed</span>}
+          {stateProps.installed && (
+            <span className="flair mod-pop">Installed</span>
+          )}
         </div>
         <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-          {props.package?.core ? (
+          {stateProps.package?.core ? (
             <>
               <div className="plug-tg-flex plug-tg-items-center plug-tg-gap-2">
                 <BadgeCheckSVG />
@@ -304,62 +310,69 @@ export default function TemplateDetails(inProps: {
                 <DownloadSVG />
               </span>
               <span className="community-modal-info-downloads-text">
-                {nFormatter(props.package?.downloads)}
+                {nFormatter(stateProps.package?.downloads)}
               </span>
             </div>
           )}
 
           <div className="community-modal-info-version plug-tg-flex plug-tg-items-center plug-tg-gap-2">
             <span>Version:</span>
-            <span> {props.package?.version} </span>
+            <span> {stateProps.package?.version} </span>
             <span>
-              {props.installed &&
-                `(currently installed: ${props.installed.version})`}
+              {stateProps.installed &&
+                `(currently installed: ${stateProps.installed.version})`}
             </span>
           </div>
           <div className="community-modal-info-repo plug-tg-flex plug-tg-items-center plug-tg-gap-2">
             <span>Platforms:</span>
-            <span>{props.package?.desktopOnly ? "Only Desktop" : "All"}</span>
+            <span>
+              {stateProps.package?.desktopOnly ? "Only Desktop" : "All"}
+            </span>
           </div>
-          {!props.package?.price && (
+          {!stateProps.package?.price && (
             <div className="community-modal-info-repo plug-tg-flex plug-tg-items-center plug-tg-gap-2">
               <span>Repository:</span>
               <a
                 target="_blank"
-                href={`https://github.com/${props.package?.repo}`}
+                href={`https://github.com/${stateProps.package?.repo}`}
+                rel="noreferrer"
               >
-                {props.package?.repo}
+                {stateProps.package?.repo}
               </a>
             </div>
           )}
 
           <div className="community-modal-info-author plug-tg-flex plug-tg-items-center plug-tg-gap-2">
             <span>By</span>
-            <a target="_blank" href={`${props.package?.authorUrl}`}>
-              {props.package?.author}
+            <a
+              target="_blank"
+              href={`${stateProps.package?.authorUrl}`}
+              rel="noreferrer"
+            >
+              {stateProps.package?.author}
             </a>
           </div>
 
           <div className="community-modal-info-desc plug-tg-select-text">
-            {props.package?.description}
+            {stateProps.package?.description}
           </div>
         </div>
       </div>
       {/* Controls */}
       <div className="community-modal-button-container">
-        {!props.package?.price ? (
+        {!stateProps.package?.price ? (
           <>
-            {!(props.ownedOrReq?.allowed && !props.package?.price) ? (
+            {!(stateProps.ownedOrReq?.allowed && !stateProps.package?.price) ? (
               <button
                 className="mod-cta plug-tg-cursor-pointer"
                 onClick={() => buy()}
               >
                 Buy
               </button>
-            ) : props.installed ? (
+            ) : stateProps.installed ? (
               <>
                 {/* feature controls */}
-                {props.package?.type === "feature" &&
+                {stateProps.package?.type === "feature" &&
                   (!enabledFeature ? (
                     <button
                       className="plug-tg-cursor-pointer plug-tg-bg-red-300"
@@ -382,7 +395,8 @@ export default function TemplateDetails(inProps: {
                 >
                   Uninstall{installing ? "ing..." : ""}
                 </button>
-                {props.installed.version !== props.package?.version && (
+                {stateProps.installed.version !==
+                  stateProps.package?.version && (
                   <button
                     className="mod-cta plug-tg-cursor-pointer"
                     onClick={() => !installing && update()}
@@ -410,17 +424,17 @@ export default function TemplateDetails(inProps: {
             className="mod-cta plug-tg-cursor-pointer"
             onClick={async () => {
               await attemptLogin(packageManager.plugin);
-              glob.triggerReload();
+              if (glob.triggerReload) glob.triggerReload();
             }}
           >
             Login
           </button>
         )}
-        {!props.package?.core && (
+        {!stateProps.package?.core && (
           <button
             className="mod-cta plug-tg-cursor-pointer"
             onClick={() =>
-              (window.location.href = `${props.package?.authorUrl}`)
+              (window.location.href = `${stateProps.package?.authorUrl}`)
             }
           >
             Support
@@ -440,7 +454,7 @@ export default function TemplateDetails(inProps: {
         </div>
       )}
 
-      {!inProps.mini && (
+      {!props.mini && (
         <MarkDownViewer>
           {/* @ts-ignore */}
           {htmlVar.innerHTML || htmlVar || ""}

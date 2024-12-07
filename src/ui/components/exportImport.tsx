@@ -17,24 +17,20 @@ export default function ExportImportHandler(props: {
   const [backups, setBackups] = useState<string[]>([]);
   const [selectedBackup, setSelectedBackup] = useState("");
   const [exporting, setExporting] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [error, setError] = useState("");
 
   const backupsDirectory = global.plugin.getTextGenPath(`configs/${props.id}`);
 
   useEffect(() => {
     (async () => {
-      if (!(await app.vault.adapter.exists(backupsDirectory)))
+      if (!(await global.plugin.app.vault.adapter.exists(backupsDirectory)))
         return setBackups([]);
-      const list = await app.vault.adapter.list(backupsDirectory);
+      const list = await global.plugin.app.vault.adapter.list(backupsDirectory);
       setBackups(
         list.files.map((f) => f.substring(backupsDirectory.length + 1))
       );
     })();
   }, [global.trg, backupsDirectory]);
-
-  const exportButtonDisabled =
-    !selectedBackup?.length || !backups.includes(selectedBackup);
 
   return (
     <>
@@ -43,50 +39,13 @@ export default function ExportImportHandler(props: {
           <option key={bu} value={bu} />
         ))}
       </datalist>
-
-      {/* <SettingItem
-            name="Profiles"
-            description="Select Config file to be used"
-        >
-            <Input
-                value={selectedBackup}
-                datalistId={backupsDatasetId}
-                placeholder="config.json.md"
-                setValue={async (value) => {
-                    setSelectedBackup(value);
-                }}
-            />
-        </SettingItem> */}
       <div className="plug-tg-flex plug-tg-w-full plug-tg-items-center plug-tg-justify-between">
         <div className="plug-tg-text-xs plug-tg-font-thin">
           {/* <Input type="checkbox" value={false} setValue={() => { }} /> */}
           {props.title}
         </div>
         <div className="plug-tg-flex plug-tg-gap-2">
-          {/* <button
-                    className={clsx({
-                        "plug-tg-btn-disabled plug-tg-opacity-70": exportButtonDisabled,
-                        "plug-tg-cursor-pointer": !exportButtonDisabled,
-                    })}
-                    disabled={importing || exportButtonDisabled}
 
-                    onClick={async () => {
-                        setError("");
-                        setImporting(true);
-                        try {
-                            const path = (`${backupsDirectory}/${selectedBackup}`)
-                            const file = await global.plugin.app.vault.getAbstractFileByPath(path);
-                            if (!file) return setError(`file ${path} not found`)
-                            const txt = await global.plugin.app.vault.read(file as any);
-                            const newData = extractJsonFromText(txt);
-
-                            await props.onImport(newData)
-                        } catch (err) {
-                            setError(err?.message || err)
-                        }
-                        setImporting(false);
-                    }}
-                ><IconDatabaseImport /></button> */}
           <button
             onClick={async () => {
               setError("");
@@ -129,7 +88,8 @@ ${JSON5.stringify(config, null, 2)}
                 setError(err?.message || err);
               }
               setExporting(false);
-              global.triggerReload();
+              if (global.triggerReload)
+                global.triggerReload();
             }}
             className={clsx("plug-tg-tooltip plug-tg-tooltip-top", {
               "plug-tg-btn-disabled plug-tg-loading": exporting,

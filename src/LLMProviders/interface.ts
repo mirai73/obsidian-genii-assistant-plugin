@@ -1,8 +1,7 @@
-import type { LLMChain } from "langchain/chains";
 import type { Message } from "src/types";
-import type { ContextTemplate, Register } from "./refs";
-import { AI_MODELS } from "#/constants";
-import { ModelType } from "#/lib/models";
+import type { Register } from "./refs";
+import { ModelType } from "../LLMProviders/models";
+import { ReactElement } from "react";
 
 export default interface LLMProviderInterface {
   streamable?: boolean;
@@ -42,7 +41,7 @@ export default interface LLMProviderInterface {
     sectionId: string;
     register: Register;
     self: any;
-  }): any;
+  }): ReactElement;
 
   calcTokens(
     messages: Message[],

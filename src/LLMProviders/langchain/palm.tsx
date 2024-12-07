@@ -1,14 +1,8 @@
 import LangchainBase from "./base";
-
 import { GooglePaLMChatInput } from "@langchain/community/chat_models/googlepalm";
 import React from "react";
 import LLMProviderInterface, { LLMConfig } from "../interface";
-import { IconExternalLink } from "@tabler/icons-react";
-import debug from "debug";
-
 import { useGlobal, SettingItem, Input } from "../refs";
-
-const logger = debug("genii:llmProvider:palm");
 
 const id = "Google Palm (Langchain)" as const;
 export default class LangchainPalmProvider
@@ -52,6 +46,9 @@ export default class LangchainPalmProvider
     this.llmClass = ChatGooglePaLM;
   }
 
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
   //   async getLLM(options: LLMConfig) {
   //     return new ChatGooglePaLM({
   //       ...this.getConfig(options),

@@ -8,13 +8,13 @@ import { GlobalProvider } from "#/ui/context/global";
 export class PackageManagerUI extends Modal {
   result: string | undefined;
   plugin: TextGeneratorPlugin;
-  onSubmit: (result: string) => void;
+  onSubmit?: (result: string) => void;
   root: any;
 
   constructor(
     app: App,
     plugin: TextGeneratorPlugin,
-    onSubmit: (result: string) => void
+    onSubmit?: (result: string) => void
   ) {
     super(app);
     this.plugin = plugin;

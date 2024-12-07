@@ -115,7 +115,6 @@ export async function fSCacher(tmpPath: string) {
     onDataUpdate: async (data: any) => {
       try {
         await fsPromises.unlink(tmpPath);
-        // eslint-disable-next-line no-empty
       } catch {}
 
       await fsPromises.writeFile(tmpPath, JSON.stringify(data), {

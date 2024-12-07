@@ -1,4 +1,4 @@
-import { App, TAbstractFile } from "obsidian";
+import { App } from "obsidian";
 import { Extractor } from "./content-extractor";
 import TextGeneratorPlugin from "src/main";
 import debug from "debug";

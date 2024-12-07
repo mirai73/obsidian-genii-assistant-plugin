@@ -133,7 +133,11 @@ export default class CanvasManager implements ContentManager {
     return Promise.all(extractedText);
   }
 
-  protected getParentOfNode(id: string) {}
+  getPrecedingLine(): string {
+    return "";
+  }
+
+  protected getParentOfNode() {}
 
   async getSelections(): Promise<string[]> {
     // @ts-ignore
@@ -167,11 +171,11 @@ export default class CanvasManager implements ContentManager {
     return (await this.getSelections())[0];
   }
 
-  async getTgSelection(tgSelectionLimiter?: string) {
+  async getTgSelection() {
     return (await this.getSelections()).join("\n");
   }
 
-  selectTgSelection(tgSelectionLimiter?: string) {
+  selectTgSelection() {
     return;
   }
 
@@ -185,7 +189,7 @@ export default class CanvasManager implements ContentManager {
     return items[dir === "from" ? 0 : items.length - 1];
   }
 
-  setCursor(pos: Item): void {
+  setCursor(): void {
     // this.ea.viewZoomToElements([pos], [pos])
     return;
   }
@@ -285,7 +289,6 @@ export default class CanvasManager implements ContentManager {
     let postingContent = "";
     let stillPlaying = true;
     let firstTime = true;
-    const previewsLevel = -1;
 
     const writerTimer: any = setInterval(async () => {
       if (!stillPlaying) return clearInterval(writerTimer);
@@ -323,7 +326,7 @@ export default class CanvasManager implements ContentManager {
     return this.view.file;
   }
 
-  getRange(from?: any, to?: any) {
+  getRange() {
     return;
   }
 

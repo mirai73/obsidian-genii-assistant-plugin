@@ -1,4 +1,4 @@
-import { App, TAbstractFile } from "obsidian";
+import { App } from "obsidian";
 import PDFExtractor from "./pdf-extractor";
 import WebPageExtractorHTML from "./web-extractor";
 import WebPageExtractor from "./web-extractor/markdown";

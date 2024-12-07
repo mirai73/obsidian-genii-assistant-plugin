@@ -1,5 +1,4 @@
 import React from "react";
-import debug from "debug";
 import LangchainBase from "./base";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 import { IconExternalLink } from "@tabler/icons-react";
@@ -8,8 +7,6 @@ import { BaseLLMParams } from "@langchain/core/language_models/llms";
 import { OllamaInput } from "@langchain/community/llms/ollama";
 
 import { Input, SettingItem, useGlobal } from "../refs";
-
-const logger = debug("genii:llmProvider:ollama");
 
 export default class LangchainOllamaProvider
   extends LangchainBase
@@ -48,6 +45,10 @@ export default class LangchainOllamaProvider
       maxRetries: 3,
       headers: options.headers || (undefined as any),
     });
+  }
+
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
   }
 
   async load() {

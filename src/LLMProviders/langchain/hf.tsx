@@ -1,12 +1,10 @@
 import React from "react";
-import debug from "debug";
+
 import LangchainBase from "./base";
 import LLMProviderInterface, { LLMConfig } from "../interface";
 import { IconExternalLink } from "@tabler/icons-react";
 import { BaseLLMParams } from "@langchain/core/language_models/llms";
 import type { HFInput } from "@langchain/community/llms/hf";
-
-const logger = debug("genii:llmProvider:hf");
 
 import { Input, SettingItem, useGlobal } from "../refs";
 
@@ -58,6 +56,10 @@ export default class LangchainHFProvider
   //       ...this.getConfig(options),
   //     } as any);
   //   }
+
+  calcPrice(): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();

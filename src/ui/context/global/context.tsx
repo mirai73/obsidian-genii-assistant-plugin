@@ -4,7 +4,7 @@ import TextGeneratorPlugin from "../../../main";
 
 export interface GlobalType {
   loading: boolean;
-  setLoading: (nloading: boolean) => void;
+  setLoading?: (nloading: boolean) => void;
   plugin: TextGeneratorPlugin;
   triggerReload: () => void;
   /** listen for triggerReload */
@@ -13,9 +13,8 @@ export interface GlobalType {
 
 export const defaultValues: GlobalType = {
   loading: true,
-  setLoading() {},
   plugin: {} as any,
-  triggerReload() {},
+  triggerReload: () => {},
   trg: false,
 };
 

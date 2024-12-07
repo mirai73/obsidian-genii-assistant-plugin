@@ -6,11 +6,14 @@ import TextGeneratorPlugin from "../../main";
 import Contexts from "../context";
 import { trimBy } from "../../utils";
 export const VIEW_Playground_ID = "playground-view";
+import debug from "debug";
+
+const logger = debug("genii:playgroundview");
 
 export class PlaygroundView extends ItemView {
-  root: Root;
+  root?: Root;
   plugin: TextGeneratorPlugin;
-  title: string;
+  title?: string;
   constructor(leaf: WorkspaceLeaf, plugin: TextGeneratorPlugin) {
     super(leaf);
     this.plugin = plugin;
@@ -31,7 +34,6 @@ export class PlaygroundView extends ItemView {
 
     if (viewContainer.style) viewContainer.style.overflowY = "hidden";
 
-    const self = this;
     this.root.render(
       <React.StrictMode>
         <Contexts plugin={this.plugin}>
@@ -39,18 +41,20 @@ export class PlaygroundView extends ItemView {
             plugin={this.plugin}
             view={this}
             onEvent={(cb: (name: string) => void) => {
-              self.onEvent = (name: string) => {
+              this.onEvent = (name: string) => {
                 cb(name);
               };
             }}
             setCommands={async (commands) => {
               console.log(this.plugin.commands?.commands, commands);
-              this.plugin.commands.commands = trimBy(
-                [...this.plugin.commands?.commands, ...commands],
-                "id"
-              );
+              if (this.plugin.commands) {
+                this.plugin.commands.commands = trimBy(
+                  [...this.plugin.commands?.commands, ...commands],
+                  "id"
+                );
+              }
               console.log(this.plugin.commands?.commands, commands);
-              await this.plugin.packageManager.load();
+              await this.plugin.packageManager?.load();
             }}
           />
         </Contexts>
@@ -108,7 +112,9 @@ export class PlaygroundView extends ItemView {
   }
 
   // this is just a placeholder for the, do not put code here. edit the tool.tsx file to add more events
-  onEvent(name: string) {}
+  onEvent(event: string) {
+    logger("onEvent", event);
+  }
 
   id?: string;
   async setState(state: any, result: ViewStateResult): Promise<void> {
@@ -144,21 +150,19 @@ export class PlaygroundView extends ItemView {
   }
 
   toggleAlwaysOnTop(bool?: boolean) {
-    const win = (
-      require("electron") as any
-    ).remote.BrowserWindow.getFocusedWindow();
+    const win = // eslint-disable-next-line
+      (require("electron") as any).remote.BrowserWindow.getFocusedWindow();
     win.setAlwaysOnTop(bool ?? !win.isAlwaysOnTop());
     return win.isAlwaysOnTop();
   }
 
   isAlwaysOnTop() {
-    const win = (
-      require("electron") as any
-    ).remote.BrowserWindow.getFocusedWindow();
+    const win = // eslint-disable-next-line
+      (require("electron") as any).remote.BrowserWindow.getFocusedWindow();
     return win.isAlwaysOnTop();
   }
 
   async onClose() {
-    this.root.unmount();
+    this.root?.unmount();
   }
 }

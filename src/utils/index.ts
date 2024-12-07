@@ -1,4 +1,3 @@
-/* eslint-disable no-control-regex */
 import { App, ViewState, WorkspaceLeaf, TFile } from "obsidian";
 import {
   AsyncReturnType,

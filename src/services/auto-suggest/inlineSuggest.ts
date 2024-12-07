@@ -264,7 +264,7 @@ export class InlineSuggest {
       ViewPlugin.fromClass(
         class RenderPlugin {
           decorations: DecorationSet;
-          constructor(view: EditorView) {
+          constructor() {
             this.decorations = Decoration.none;
           }
 
@@ -293,7 +293,7 @@ export class InlineSuggest {
               });
 
               return Decoration.set([decoration.range(post)]);
-            } catch (e) {
+            } catch {
               return Decoration.none;
             }
           }
@@ -328,6 +328,7 @@ class InlineSuggestionsWidget extends WidgetType {
     this.view = view;
   }
 
+  // TODO: this is strange!
   eq(widget: WidgetType): boolean {
     return (
       this.renderedSuggestion ===

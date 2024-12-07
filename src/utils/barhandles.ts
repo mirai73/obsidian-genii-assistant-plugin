@@ -115,7 +115,7 @@ export const getHBValues = (text: string) => {
   return Object.keys(root) as string[];
 };
 
-function extractVariableNames(inputString: string) {
+export function extractVariableNames(inputString: string) {
   const pattern = /'([^']*)'|"([^"]*)"/g;
   const quotedParts = inputString.match(pattern) || [];
 

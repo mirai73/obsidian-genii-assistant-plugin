@@ -43,7 +43,7 @@ export default class TextGenerator extends RequestHandler {
     }
     this.plugin = plugin;
     this.contextManager = plugin.contextManager;
-    this.embeddingsScope = new EmbeddingScope();
+    this.embeddingsScope = new EmbeddingScope(this.plugin.app);
     this.reqFormatter = new ReqFormatter(app, plugin, this.contextManager);
   }
 

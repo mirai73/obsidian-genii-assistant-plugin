@@ -1,4 +1,4 @@
-import React from "react";
+import { ReactElement } from "react";
 import safeAwait from "safe-await";
 import { Message } from "src/types";
 import TextGeneratorPlugin from "src/main";
@@ -6,7 +6,7 @@ import LLMProviderInterface, { LLMConfig } from "./interface";
 import { processPromisesSettledBatch, promiseForceFullfil } from "#/utils";
 import { AI_MODELS } from "#/constants";
 
-export default class ProviderBase implements LLMProviderInterface {
+export default abstract class ProviderBase implements LLMProviderInterface {
   id = "default";
   static slug = "default";
   provider = "default";
@@ -72,7 +72,7 @@ export default class ProviderBase implements LLMProviderInterface {
   async generateBatch(
     batches: { messages: Message[]; reqParams: Partial<LLMConfig> }[],
     customConfig?: any,
-    // eslint-disable-next-line no-unused-vars
+
     onOneFinishs?: ((content: string, index: number) => void) | undefined
   ): Promise<string[]> {
     const k = await processPromisesSettledBatch(
@@ -100,10 +100,9 @@ export default class ProviderBase implements LLMProviderInterface {
     return k.map(promiseForceFullfil);
   }
 
-  // eslint-disable-next-line no-unused-vars
-  RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
-    return <></>;
-  }
+  abstract RenderSettings(
+    props: Parameters<LLMProviderInterface["RenderSettings"]>[0]
+  ): ReactElement;
 
   getSettings() {
     return this.plugin.settings.LLMProviderOptions[this.id] as Record<

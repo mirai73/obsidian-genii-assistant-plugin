@@ -12,7 +12,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
 
   const global = useGlobal();
   const sectionId = useId();
-  const [resized, triggerResize] = useToggle();
+  const [resized] = useToggle();
 
   useEffect(() => {
     global.plugin.settings.slashSuggestOptions = {
@@ -44,7 +44,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
             global.plugin.autoSuggest?.renderStatusBar();
             setReloader(true);
             await global.plugin.saveSettings();
-            global.triggerReload();
+            if (global.triggerReload) global.triggerReload();
           }}
         />
       </SettingItem>
@@ -63,7 +63,7 @@ export default function SlashSuggestSetting(props: { register: Register }) {
               setValue={async (val) => {
                 global.plugin.settings.slashSuggestOptions.triggerPhrase = val;
                 await global.plugin.saveSettings();
-                global.triggerReload();
+                if (global.triggerReload) global.triggerReload();
               }}
             />
           </SettingItem>

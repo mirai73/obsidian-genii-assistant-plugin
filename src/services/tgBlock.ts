@@ -26,13 +26,8 @@ export default class TGBlock {
       if (!this.plugin.contextManager) {
         throw new Error("Context manager wasn't initialized");
       }
-      const {
-        inputTemplate,
-        outputTemplate,
-        inputContent,
-        outputContent,
-        preRunnerContent,
-      } = this.plugin.contextManager.splitTemplate(source);
+      const { inputTemplate, outputTemplate, inputContent } =
+        this.plugin.contextManager.splitTemplate(source);
 
       const activeView = this.plugin.getActiveViewMD();
 

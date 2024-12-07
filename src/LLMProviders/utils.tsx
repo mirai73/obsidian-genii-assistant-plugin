@@ -1,26 +1,11 @@
-import {
-  IconList,
-  IconPencil,
-  IconReload,
-  IconScreenshot,
-  IconVideo,
-  IconWaveSine,
-} from "@tabler/icons-react";
-import clsx from "clsx";
-import React, { useState, useEffect, useId } from "react";
+import { IconScreenshot, IconVideo, IconWaveSine } from "@tabler/icons-react";
+
+import React, { useState, useEffect } from "react";
 import LLMProviderInterface from "./interface";
 import JSON5 from "json5";
 import { currentDate } from "#/utils";
 
-import {
-  AI_MODELS,
-  Dropdown,
-  DropdownSearch,
-  Input,
-  SettingItem,
-  fetchWithoutCORS,
-  useGlobal,
-} from "./refs";
+import { AI_MODELS, Dropdown, Input, SettingItem, useGlobal } from "./refs";
 import { arrayBufferToBase64 } from "obsidian";
 import { default_values } from "./custom/custom";
 import { LLMProviderType } from "#/lib/types";
@@ -37,50 +22,12 @@ export function ModelsHandler(props: {
 
   const global = useGlobal();
   const [models, setModels] = useState<string[]>([]);
-  const [loadingUpdate, setLoadingUpdate] = useState(false);
-  const [edit, setEdit] = useState(false);
 
   const config =
     props.config ||
     (global.plugin.settings.LLMProviderOptions[id] ??= {
       ...default_values,
     });
-
-  const updateModels = async () => {
-    if (!config.api_key && !global.plugin.settings?.api_key)
-      throw "Please provide a valid api key.";
-    setLoadingUpdate(true);
-    try {
-      const reqParams = {
-        url: `${config.basePath || default_values.basePath}/models`,
-        method: "GET",
-        body: "",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            config.api_key || global.plugin.settings.api_key
-          }`,
-        },
-      };
-
-      const requestResults: {
-        data: {
-          id: string;
-        }[];
-      } = JSON5.parse(await fetchWithoutCORS(reqParams));
-
-      const postingModels: string[] = [];
-
-      requestResults.data.forEach(async (model) => {
-        if (!models.includes(model.id)) postingModels.push(model.id);
-      });
-
-      setModels([...models, ...postingModels.sort()]);
-    } catch (err: any) {
-      global.plugin.handelError(err);
-    }
-    setLoadingUpdate(false);
-  };
 
   useEffect(() => {
     Object.entries(AI_MODELS).forEach(
@@ -118,7 +65,7 @@ export function ModelsHandler(props: {
             setValue={async (selectedModel) => {
               config.model = selectedModel;
               await global.plugin.saveSettings();
-              global.triggerReload();
+              if (global.triggerReload) global.triggerReload();
             }}
             values={models}
           />
@@ -216,7 +163,7 @@ export function HeaderEditor({
       }
 
       // Verify all values are strings
-      for (const [key, val] of Object.entries(parsed)) {
+      for (const val of Object.values(parsed)) {
         if (typeof val !== "string") {
           throw new Error("Header values must be strings");
         }

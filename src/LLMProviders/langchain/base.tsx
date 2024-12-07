@@ -1,10 +1,7 @@
-/* eslint-disable no-debugger */
 import debug from "debug";
 import React from "react";
 
 import { ChatOpenAI, ClientOptions, OpenAIChatInput } from "@langchain/openai";
-
-// import { HuggingFaceInference } from "@langchain/community/llms/hf";
 
 import BaseProvider from "../base";
 import {
@@ -18,13 +15,12 @@ import type { BaseMessageChunk } from "@langchain/core/messages";
 
 import { chains, splitters, Message, AI_MODELS } from "../refs";
 import { Callbacks } from "@langchain/core/callbacks/manager";
-import handlebars from "react-syntax-highlighter/dist/esm/languages/hljs/handlebars";
 import JSON5 from "json5";
 import { Handlebars } from "#/helpers/handlebars-helpers";
 
 const logger = debug("genii:LangchainProvider");
 
-export default class LangchainProvider
+export default abstract class LangchainProvider
   extends BaseProvider
   implements LLMProviderInterface
 {
@@ -164,209 +160,200 @@ export default class LangchainProvider
     ) => Promise<string | void | null | undefined>,
     customConfig?: any
   ): Promise<string> {
-    return new Promise(async (s, r) => {
-      let alreadyGenerating = false;
-      let result = "";
-      try {
-        logger("generate", reqParams);
+    let alreadyGenerating = false;
+    let result = "";
+    try {
+      logger("generate", reqParams);
 
-        const params = this.configMerger(reqParams);
+      const params = this.configMerger(reqParams);
 
-        // if the model is streamable
-        params.stream = params.stream && this.streamable;
+      // if the model is streamable
+      params.stream = params.stream && this.streamable;
 
-        const llm = await this.getLLM(params);
+      const llm = await this.getLLM(params);
 
-        let first = true;
-        let allText = "";
+      let first = true;
+      let allText = "";
 
-        const llmFuncs: Callbacks = [
-          {
-            ...(!!onToken &&
-              !!params.stream && {
-                async handleLLMNewToken(token: string) {
-                  const d = first;
-                  first = false;
-                  alreadyGenerating = true;
-                  const tk = (await onToken(token, d)) || token;
-                  allText += tk;
-                  result += tk;
-                },
-              }),
-
-            handleLLMEnd() {
-              if (params.stream) s(allText);
-            },
-          },
-        ];
-
-        if (customConfig?.chain?.type) {
-          const textSplitter = new splitters.RecursiveCharacterTextSplitter({
-            chunkSize: 1000,
-            ...customConfig?.splitter,
-          });
-
-          const docs = await textSplitter.createDocuments([
-            chatToString(messages),
-          ]);
-
-          // This convenience function creates a document chain prompted to summarize a set of documents.
-          const chain = getChain(
-            customConfig?.chain.loader,
-            llm,
-            customConfig.chain
-          );
-
-          const res = await chain.invoke(
-            {
-              input_documents: docs,
-              signal: reqParams.requestParams?.signal || undefined,
-            },
-            {
-              callbacks: llmFuncs,
-              configurable: {
-                fetch: this.plugin.textGenerator.proxyService.getFetch(
-                  this.corsBypass ||
-                    this.default_values.corsBypass ||
-                    customConfig.corsBypass
-                ),
+      const llmFuncs: Callbacks = [
+        {
+          ...(!!onToken &&
+            !!params.stream && {
+              async handleLLMNewToken(token: string) {
+                const d = first;
+                first = false;
+                alreadyGenerating = true;
+                const tk = (await onToken(token, d)) || token;
+                allText += tk;
+                result += tk;
               },
+            }),
+
+          handleLLMEnd() {
+            if (params.stream) return allText;
+          },
+        },
+      ];
+
+      if (customConfig?.chain?.type) {
+        const textSplitter = new splitters.RecursiveCharacterTextSplitter({
+          chunkSize: 1000,
+          ...customConfig?.splitter,
+        });
+
+        const docs = await textSplitter.createDocuments([
+          chatToString(messages),
+        ]);
+
+        // This convenience function creates a document chain prompted to summarize a set of documents.
+        const chain = getChain(
+          customConfig?.chain.loader,
+          llm,
+          customConfig.chain
+        );
+
+        const res = await chain.invoke(
+          {
+            input_documents: docs,
+            signal: reqParams.requestParams?.signal || undefined,
+          },
+          {
+            callbacks: llmFuncs,
+            configurable: {
+              fetch: this.plugin.textGenerator?.proxyService.getFetch(
+                this.corsBypass ||
+                  this.default_values.corsBypass ||
+                  customConfig.corsBypass
+              ),
+            },
+          }
+        );
+
+        result = res.text;
+      } else {
+        let r: any;
+        let res: BaseMessageChunk = {} as any;
+
+        console.log({
+          messages,
+          k: "invoked",
+          llmpredict: reqParams.llmPredict,
+          llmPredict2: this.llmPredict,
+        });
+        if (reqParams.llmPredict || this.llmPredict)
+          r = await (llm as any as ChatOpenAI).invoke(chatToString(messages), {
+            signal: params.requestParams?.signal || undefined,
+            ...this.getReqOptions(params),
+
+            callbacks: llmFuncs,
+            // options: {
+            //   body: params.bodyParams,
+            // },
+          });
+        else
+          r = await (llm as any as ChatOpenAI).invoke(
+            mapMessagesToLangchainMessages(messages),
+            {
+              signal: params.requestParams?.signal || undefined,
+              ...this.getReqOptions(params),
+              callbacks: llmFuncs,
             }
           );
 
-          result = res.text;
-        } else {
-          let r: any;
-          let res: BaseMessageChunk = {} as any;
+        if (typeof r === "string") res.content = r;
+        else res = r;
 
-          console.log({
-            messages,
-            k: "invoked",
-            llmpredict: reqParams.llmPredict,
-            llmPredict2: this.llmPredict,
-          });
-          if (reqParams.llmPredict || this.llmPredict)
-            r = await (llm as any as ChatOpenAI).invoke(
-              chatToString(messages),
-              {
-                signal: params.requestParams?.signal || undefined,
-                ...this.getReqOptions(params),
-
-                callbacks: llmFuncs,
-                // options: {
-                //   body: params.bodyParams,
-                // },
-              }
-            );
-          else
-            r = await (llm as any as ChatOpenAI).invoke(
-              mapMessagesToLangchainMessages(messages),
-              {
-                signal: params.requestParams?.signal || undefined,
-                ...this.getReqOptions(params),
-                callbacks: llmFuncs,
-              }
-            );
-
-          if (typeof r === "string") res.content = r;
-          else res = r;
-
-          if (typeof res.content === "string") result = res.content;
-          else
-            result = res.content
-              .map((c) =>
-                c.type === "image_url"
-                  ? `![](${c.image_url})`
-                  : c.type === "text"
-                    ? c.text
-                    : ""
-              )
-              .join("\n");
-        }
-
-        // console.log("used Tokens: ", { allTokens });
-        logger("generate end", {
-          result,
-        });
-
-        s(result);
-      } catch (errorRequest: any) {
-        logger("generate error", errorRequest);
-
-        if (alreadyGenerating) {
-          return s(result);
-        }
-
-        r(errorRequest);
+        if (typeof res.content === "string") result = res.content;
+        else
+          result = res.content
+            .map((c) =>
+              c.type === "image_url"
+                ? `![](${c.image_url})`
+                : c.type === "text"
+                  ? c.text
+                  : ""
+            )
+            .join("\n");
       }
-    });
+
+      // console.log("used Tokens: ", { allTokens });
+      logger("generate end", {
+        result,
+      });
+
+      return result;
+    } catch (errorRequest: any) {
+      logger("generate error", errorRequest);
+
+      if (alreadyGenerating) {
+        return result;
+      }
+
+      throw new Error(errorRequest);
+    }
   }
 
   async generateMultiple(
     messages: Message[],
     reqParams: Partial<LLMConfig>
   ): Promise<string[]> {
-    return new Promise(async (s, r) => {
-      try {
-        logger("generateMultiple", reqParams);
+    try {
+      logger("generateMultiple", reqParams);
 
-        const params = this.configMerger(reqParams);
-        const llm = await this.getLLM(params);
-        let requestResults: any[] = [];
-        if (this.legacyN) {
-          await processPromisesSettledBatch(
-            Array.from({ length: reqParams.n || 1 }).map(async () => {
-              requestResults.push(
-                ...(
-                  await llm.generate(
-                    reqParams.llmPredict || this.llmPredict
-                      ? [chatToString(messages)]
-                      : [
-                          mapMessagesToLangchainMessages(
-                            messages
-                          ) as any as string,
-                        ],
-                    {
-                      signal: params.requestParams?.signal || undefined,
-                      ...this.getReqOptions(params),
-                    }
-                  )
-                ).generations[0]
-              );
-            }),
-            2
-          );
-        } else
-          requestResults = (
-            await llm.generate(
-              reqParams.llmPredict || this.llmPredict
-                ? [chatToString(messages)]
-                : [mapMessagesToLangchainMessages(messages) as any as string],
-              {
-                signal: params.requestParams?.signal || undefined,
-                ...this.getReqOptions(params),
-              }
-            )
-          ).generations[0];
+      const params = this.configMerger(reqParams);
+      const llm = await this.getLLM(params);
+      let requestResults: any[] = [];
+      if (this.legacyN) {
+        await processPromisesSettledBatch(
+          Array.from({ length: reqParams.n || 1 }).map(async () => {
+            requestResults.push(
+              ...(
+                await llm.generate(
+                  reqParams.llmPredict || this.llmPredict
+                    ? [chatToString(messages)]
+                    : [
+                        mapMessagesToLangchainMessages(
+                          messages
+                        ) as any as string,
+                      ],
+                  {
+                    signal: params.requestParams?.signal || undefined,
+                    ...this.getReqOptions(params),
+                  }
+                )
+              ).generations[0]
+            );
+          }),
+          2
+        );
+      } else
+        requestResults = (
+          await llm.generate(
+            reqParams.llmPredict || this.llmPredict
+              ? [chatToString(messages)]
+              : [mapMessagesToLangchainMessages(messages) as any as string],
+            {
+              signal: params.requestParams?.signal || undefined,
+              ...this.getReqOptions(params),
+            }
+          )
+        ).generations[0];
 
-        logger("generateMultiple end", {
-          requestResults,
-        });
+      logger("generateMultiple end", {
+        requestResults,
+      });
 
-        s(requestResults.map((a: any) => a.text));
-      } catch (errorRequest: any) {
-        logger("generateMultiple error", errorRequest);
-        return r(errorRequest);
-      }
-    });
+      return requestResults.map((a: any) => a.text);
+    } catch (errorRequest: any) {
+      logger("generateMultiple error", errorRequest);
+      throw errorRequest;
+    }
   }
 
-  async calcPrice(
+  abstract calcPrice(
     tokens: number,
     reqParams: Partial<LLMConfig>
-  ): Promise<number> {
-    throw new Error("calcPrice Not implemented for " + this.id);
-  }
+  ): Promise<number>;
 
   async calcTokens(
     messages: Message[],
@@ -381,9 +368,15 @@ export default class LangchainProvider
         tokens: 0,
         maxTokens: 0,
       };
-    const encoder = this.plugin.tokensScope.getEncoderFromEncoding(
+    if (!modelInfo.encoding) {
+      throw new Error("No encoding found for model " + model);
+    }
+    const encoder = this.plugin.tokensScope?.getEncoderFromEncoding(
       modelInfo.encoding
     );
+    if (!encoder) {
+      throw new Error("No encoder found for encoding " + modelInfo.encoding);
+    }
 
     let tokensPerMessage, tokensPerName;
     if (model && ["gpt-3.5-turbo", "gpt-3.5-turbo-0301"].includes(model)) {

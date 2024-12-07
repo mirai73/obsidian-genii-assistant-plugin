@@ -260,7 +260,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
 
     this.renderStatusBar();
 
-    this.autoSuggestItem.addEventListener("click", (event) => {
+    this.autoSuggestItem.addEventListener("click", () => {
       this.plugin.settings.autoSuggestOptions.isEnabled =
         !this.plugin.settings.autoSuggestOptions.isEnabled;
       this.plugin.saveSettings();

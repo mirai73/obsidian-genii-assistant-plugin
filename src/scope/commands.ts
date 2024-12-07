@@ -483,7 +483,7 @@ export default class Commands {
         new PackageManagerUI(
           this.plugin.app,
           this.plugin,
-          async (result: string) => {}
+          async () => {}
         ).open();
       },
     },
@@ -593,7 +593,7 @@ export default class Commands {
       id: "auto-suggest",
       name: "Turn on or off the auto suggestion",
       icon: "heading",
-      editorCallback: async (editor: Editor) => {
+      editorCallback: async () => {
         this.plugin.settings.autoSuggestOptions.isEnabled =
           !this.plugin.settings.autoSuggestOptions.isEnabled;
         await this.plugin.saveSettings();

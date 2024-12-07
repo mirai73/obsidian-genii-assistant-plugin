@@ -12,16 +12,13 @@ import {
   fromModelId,
   ChatMessage,
   fromImageModelId,
-  ImageModels,
   fromVideoModelId,
 } from "@mirai73/bedrock-fm";
 import { AwsCredentialsWrapper } from "./awsCredentialsWrapper";
 import { ModelsHandler } from "../utils";
 import { MessageContentComplex } from "@langchain/core/messages";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { AI_MODELS } from "../refs";
-import { rawListeners } from "process";
 
 const logger = debug("genii:BedrockProvider");
 
@@ -359,7 +356,7 @@ export default class BedrockProvider
       untangableVars.forEach((v) => {
         config[v] = default_values[v as keyof typeof default_values];
       });
-      global.triggerReload();
+      if (global.triggerReload) global.triggerReload();
       global.plugin.saveSettings();
     }, []);
 
@@ -376,7 +373,7 @@ export default class BedrockProvider
             type="text"
             setValue={async (value) => {
               config.region = value;
-              global.triggerReload();
+              if (global.triggerReload) global.triggerReload();
               await global.plugin.saveSettings();
             }}
           />
@@ -397,7 +394,7 @@ export default class BedrockProvider
             type="checkbox"
             setValue={async (value) => {
               config.waitForVideo = value;
-              global.triggerReload();
+              if (global.triggerReload) global.triggerReload();
               await global.plugin.saveSettings();
             }}
           />

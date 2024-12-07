@@ -13,7 +13,7 @@ export default function Dropdown<T extends string>(props: {
   className?: any;
   aliases?: Record<any, string>;
 }) {
-  const { value: isOpen, toggle, setFalse: close } = useBoolean(false);
+  const { value: isOpen, setFalse: close } = useBoolean(false);
   const slugs = useMemo(() => {
     return props.values.map((v) => {
       const val = v;

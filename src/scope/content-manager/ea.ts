@@ -16,7 +16,11 @@ export default class ExcalidrawManager implements ContentManager {
     wrapInBlockQuote: false,
   };
 
-  getRange(from?: any, to?: any) {
+  getPrecedingLine(): string {
+    throw new Error("Method not implemented.");
+  }
+
+  getRange() {
     throw new Error("Method not implemented.");
   }
   getCurrentLine(): string {
@@ -90,7 +94,7 @@ export default class ExcalidrawManager implements ContentManager {
     return (await this.getSelections())[0];
   }
 
-  async getTgSelection(tgSelectionLimiter?: string) {
+  async getTgSelection() {
     let txt = (await this.getTextSelectedItems())
       .filter(Boolean)
       .join("\n")
@@ -103,7 +107,9 @@ export default class ExcalidrawManager implements ContentManager {
     return txt;
   }
 
-  selectTgSelection(tgSelectionLimiter?: string) {}
+  selectTgSelection() {
+    throw new Error("Method not implemented.");
+  }
 
   getLastLetterBeforeCursor(): string {
     return "";
@@ -249,21 +255,6 @@ export default class ExcalidrawManager implements ContentManager {
     end(): void;
     replaceAllWith(newData: string): void;
   }> {
-    const items = await this.getTextSelectedItems();
-    const selectedItem = (
-      items.length
-        ? items
-        : this.ea
-            .getViewElements()
-            .map((e: Item) => e.rawText)
-            .filter(Boolean)
-    )[items.length - 1];
-
-    // create a new item
-    const startingCursor = pos;
-
-    let cursor: any;
-
     let postingContent = "";
     let stillPlaying = true;
 

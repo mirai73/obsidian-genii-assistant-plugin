@@ -1,23 +1,16 @@
 import { App } from "obsidian";
 import TextGeneratorPlugin from "../main";
 
-export class Extractor {
+export abstract class Extractor {
   protected app: App;
   protected plugin: TextGeneratorPlugin;
   constructor(app: App, plugin: TextGeneratorPlugin) {
     this.app = app;
     this.plugin = plugin;
   }
-  /** Read content as string */
-  async convert(
+  abstract convert(
     docPath: string,
-    otherOptions?: Record<string, unknown>
-  ): Promise<string> {
-    throw Error("Function convert is not implemented");
-  }
-
-  /** extract embedded files in a file as documents */
-  async extract(filePath: string, fileContent: string): Promise<string[]> {
-    throw Error("Function extract is not implemented");
-  }
+    otherOptions?: Record<string, unknown> | string[] | string
+  ): Promise<string>;
+  abstract extract(filePath: string, fileContent: string): Promise<string[]>;
 }

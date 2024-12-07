@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 // ---------- sections ----------
 import AdvancedSetting from "./advanced";
 import AccountSettings from "./account";
@@ -41,7 +41,8 @@ export default function SectionsMain() {
     () =>
       !searchTerm.length
         ? Object.entries(items)
-        : Object.entries(items).filter(([key, val]) =>
+        : // eslint-disable-next-line
+          Object.entries(items).filter(([key, val]) =>
             `${val.term} ${items[val.sectionId]?.term}`
               .toLocaleLowerCase()
               .includes(searchTerm.toLocaleLowerCase())

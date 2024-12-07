@@ -3,6 +3,7 @@
   "parser": "@typescript-eslint/parser",
   "env": { "node": true },
   "plugins": ["@typescript-eslint"],
+  "ignorePatterns": ["node_modules/", "dist/", "build/", "coverage/", "main.js"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
@@ -24,6 +25,7 @@
     "no-cond-assign": "error",
     "no-async-promise-executor": "warn",
     "@typescript-eslint/no-var-requires": "error",
+    "@typescript-eslint/no-require-imports": "off",
     "no-useless-escape": "warn",
     "no-unsafe-optional-chaining": "off",
     "tailwindcss/no-custom-classname": "off",

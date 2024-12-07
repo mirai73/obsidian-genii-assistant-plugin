@@ -12,9 +12,10 @@ export default function AccountSetting(props: { register: Register }) {
   const global = useGlobal();
   const sectionId = useId();
 
-  const [_, triggerReload] = useToggle();
+  // eslint-disable-next-line
+  const [reload, triggerReload] = useToggle();
 
-  const apiKey = global.plugin.packageManager.getApikey();
+  const apiKey = global.plugin.packageManager?.getApiKey();
   const loggedIn = !!apiKey;
 
   return (
@@ -74,7 +75,7 @@ export default function AccountSetting(props: { register: Register }) {
           <>
             <div className="plug-tg-flex plug-tg-w-full plug-tg-flex-col plug-tg-gap-2">
               <h3>Subscriptions:</h3>
-              {global.plugin.packageManager.configuration.subscriptions?.map(
+              {global.plugin.packageManager?.configuration.subscriptions?.map(
                 (s) => (
                   <div key={s.id}>
                     {s.name} ({s.type})

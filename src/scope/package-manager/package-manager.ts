@@ -64,7 +64,7 @@ export default class PackageManager {
     if (await adapter.exists(configPath)) {
       try {
         this.configuration = JSON5.parse(await adapter.read(configPath));
-      } catch (err: any) {
+      } catch {
         console.warn(
           "packageManager: couldn't parse the config file ",
           configPath
@@ -107,8 +107,6 @@ export default class PackageManager {
     // test
     // showGratitude(this.plugin, this.configuration.packagesHash[Object.keys(this.configuration.packagesHash)[0]])
 
-    const self = this;
-
     try {
       this.plugin.registerAction<{ apiKey?: string }>(
         "login",
@@ -117,7 +115,7 @@ export default class PackageManager {
 
           if (!apiKey) return "";
 
-          await self.plugin.packageManager.setApiKey(apiKey);
+          await this.plugin.packageManager?.setApiKey(apiKey);
         }
       );
     } catch {
@@ -133,14 +131,14 @@ export default class PackageManager {
             "doing something cool",
             props,
             props.packageId
-              ? self.configuration.packagesHash[props.packageId]
+              ? this.configuration.packagesHash[props.packageId]
               : ""
           );
           // do something cool
           if (props.packageId)
             await showGratitude(
-              self.plugin,
-              self.configuration.packagesHash[props.packageId]
+              this.plugin,
+              this.configuration.packagesHash[props.packageId]
             );
         }
       );
@@ -180,7 +178,7 @@ export default class PackageManager {
     const packagesIdsToUpdate: string[] = [];
     await Promise.all(
       Object.entries(this.configuration.installedPackagesHash).map(
-        async ([promptId, installedPackage], i: number) => {
+        async ([promptId, installedPackage]) => {
           try {
             const pkg = this.getPackageTemplateById(installedPackage.packageId);
             if (
@@ -212,7 +210,7 @@ export default class PackageManager {
     logger("fetch updatePackagesInfo OK");
     try {
       await this.updateBoughtResources();
-    } catch (err: any) {
+    } catch {
       console.warn("couldn't updateBoughtResources");
     }
   }
@@ -336,11 +334,11 @@ export default class PackageManager {
           await new Promise((s) => setTimeout(s, 1000));
           await processPromisesSettledBatch(
             data.prompts.map(async (promptId) => {
-              p.price
-                ? await this.installPromptExternal(packageId, promptId, true)
-                : await this.installPrompt(packageId, promptId, true);
+              if (p.price)
+                await this.installPromptExternal(packageId, promptId, true);
+              else await this.installPrompt(packageId, promptId, true);
               finished++;
-              progress?.({
+              return progress?.({
                 installed: finished,
                 total: data?.prompts.length || 0,
               });

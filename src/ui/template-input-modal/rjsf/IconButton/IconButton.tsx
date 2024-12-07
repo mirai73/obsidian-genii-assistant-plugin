@@ -20,8 +20,6 @@ export default function IconButton<
     icon,
     iconType,
     className,
-    uiSchema,
-    registry,
     disabled,
     ...otherProps
   } = props;

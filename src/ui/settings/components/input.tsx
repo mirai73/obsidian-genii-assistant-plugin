@@ -26,7 +26,7 @@ export default function Input(props: {
       })}
       onClick={
         props.type === "checkbox"
-          ? (e) => {
+          ? () => {
               props.setValue(props.value != "true" ? "true" : "false");
             }
           : undefined

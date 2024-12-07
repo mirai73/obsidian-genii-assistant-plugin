@@ -84,7 +84,7 @@ ${template.description || ""}`;
     return template.path?.split("/").reverse()[1] || template.id;
   }
 
-  onChooseItem(template: PromptTemplate, evt: MouseEvent | KeyboardEvent) {
+  onChooseItem(template: PromptTemplate) {
     logger("onChooseItem", template);
     new Notice(`Selected ${template.name}`);
     this.onChoose(template);

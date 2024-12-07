@@ -27,13 +27,13 @@ export default function MarkDownViewer(props: {
     ref.current.innerHTML = "";
     try {
       MarkdownRenderer.render(
-        Global?.plugin.app || app,
+        Global?.plugin.app,
         "" + props.children,
         ref.current,
         "",
         props.plugin || Global.plugin
       );
-    } catch (err: any) {
+    } catch {
       Global.plugin.handelError(
         `failed to render "${"" + props.children}" it should be a string`
       );

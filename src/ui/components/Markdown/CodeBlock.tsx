@@ -1,7 +1,7 @@
 import React from "react";
 import { generateRandomString, programmingLanguages } from "./utils";
 import { IconCheck, IconClipboard, IconDownload } from "@tabler/icons-react";
-import { FC, memo, useState } from "react";
+import { memo, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
@@ -10,7 +10,7 @@ interface Props {
   value: string;
 }
 
-export const CodeBlock: FC<Props> = memo(({ language, value }) => {
+export const CodeBlock = memo(({ language, value }: Props) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const copyToClipboard = () => {
@@ -32,7 +32,7 @@ export const CodeBlock: FC<Props> = memo(({ language, value }) => {
       3,
       true
     )}${fileExtension}`;
-    const fileName = window.prompt("Enter file name" || "", suggestedFileName);
+    const fileName = window.prompt("Enter file name", suggestedFileName);
 
     if (!fileName) {
       // user pressed cancel on prompt

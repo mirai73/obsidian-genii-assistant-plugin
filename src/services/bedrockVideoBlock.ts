@@ -1,12 +1,12 @@
 import ContentManagerFactory from "#/scope/content-manager";
 import TextGeneratorPlugin from "#/main";
-import { MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian";
+import { MarkdownPostProcessorContext } from "obsidian";
 import debug from "debug";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { NovaReel, VideoModels } from "@mirai73/bedrock-fm";
 import { AwsCredentialsWrapper } from "#/LLMProviders/custom/awsCredentialsWrapper";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
-import { ContentInsertMode } from "#/scope/content-manager/types";
+
 const logger = debug("genii:bedrockVideoBlock");
 
 export default class BedrockVideoBlock {

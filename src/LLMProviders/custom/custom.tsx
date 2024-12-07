@@ -1,5 +1,4 @@
 import { cleanConfig } from "../../utils";
-import debug from "debug";
 import React, { useEffect, useMemo, useState } from "react";
 import LLMProviderInterface from "../interface";
 import useGlobal from "#/ui/context/global";
@@ -11,8 +10,6 @@ import clsx from "clsx";
 import CustomProvider, { default_values as baseDefaultValues } from "./base";
 import JSON5 from "json5";
 import { Platform } from "obsidian";
-
-const logger = debug("genii:CustomProvider");
 
 const globalVars: Record<string, boolean> = {
   n: true,
@@ -114,7 +111,7 @@ export default class DefaultCustomProvider
             placeholder="Enter your API endpoint"
             setValue={async (value) => {
               config.endpoint = value;
-              global.triggerReload();
+              if (global.triggerReload) global.triggerReload();
               await global.plugin.saveSettings();
             }}
           />
@@ -133,7 +130,8 @@ export default class DefaultCustomProvider
               setValue={async (value) => {
                 config.api_key = value;
                 global.plugin.encryptAllKeys();
-                global.triggerReload();
+                if (global.triggerReload) global.triggerReload();
+
                 await global.plugin.saveSettings();
               }}
             />
@@ -154,7 +152,7 @@ export default class DefaultCustomProvider
                 type={v.toLowerCase().contains("key") ? "password" : "text"}
                 setValue={async (value) => {
                   config[v] = value;
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
                   if (v.toLowerCase().contains("key"))
                     global.plugin.encryptAllKeys();
 
@@ -218,7 +216,7 @@ export default class DefaultCustomProvider
                     console.warn(err);
                   }
 
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
                   await global.plugin.saveSettings();
                 }}
                 spellCheck={false}
@@ -263,8 +261,7 @@ export default class DefaultCustomProvider
                       err
                     );
                   }
-
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
                   await global.plugin.saveSettings();
                 }}
                 spellCheck={false}
@@ -285,7 +282,7 @@ export default class DefaultCustomProvider
                 }
                 onChange={async (e) => {
                   config.sanitization_response = e.target.value;
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
                   await global.plugin.saveSettings();
                 }}
                 spellCheck={false}
@@ -314,7 +311,7 @@ export default class DefaultCustomProvider
                 placeholder="Is it Streamable"
                 setValue={async (value) => {
                   config.streamable = value === "true";
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
 
                   await global.plugin.saveSettings();
                 }}
@@ -332,7 +329,7 @@ export default class DefaultCustomProvider
                 setValue={async (val) => {
                   config.CORSBypass = val === "true";
                   await global.plugin.saveSettings();
-                  global.triggerReload();
+                  if (global.triggerReload) global.triggerReload();
                 }}
               />
             </SettingItem>
@@ -348,7 +345,7 @@ export default class DefaultCustomProvider
                     }
                     onChange={async (e) => {
                       config.sanitization_streaming = e.target.value;
-                      global.triggerReload();
+                      if (global.triggerReload) global.triggerReload();
                       await global.plugin.saveSettings();
                     }}
                     spellCheck={false}
