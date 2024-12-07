@@ -318,8 +318,6 @@ export default class PackageManager {
         total: data?.prompts.length || 0,
       });
 
-      // this.configuration.installedPackages {packageId,prompts,installedPrompts=empty}
-      const installedPrompts: string[] = [];
       if (!this.configuration.installedPackagesHash[packageId] && p) {
         const obj = {
           packageId,

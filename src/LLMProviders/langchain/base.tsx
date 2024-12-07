@@ -1,5 +1,5 @@
 import debug from "debug";
-import React from "react";
+import { ReactElement } from "react";
 
 import { ChatOpenAI, ClientOptions, OpenAIChatInput } from "@langchain/openai";
 
@@ -410,9 +410,9 @@ export default abstract class LangchainProvider
     };
   }
 
-  RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
-    return <></>;
-  }
+  abstract RenderSettings(
+    props: Parameters<LLMProviderInterface["RenderSettings"]>[0]
+  ): ReactElement;
 }
 
 function contentToString(content: Message["content"]) {

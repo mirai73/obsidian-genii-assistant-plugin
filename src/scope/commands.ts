@@ -1,4 +1,4 @@
-import { Command, Editor, Notice } from "obsidian";
+import { Command, Notice } from "obsidian";
 import TextGeneratorPlugin from "../main";
 import { TemplatesModal } from "../models/model";
 

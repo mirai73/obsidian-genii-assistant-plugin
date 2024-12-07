@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react";
+import { ReactElement } from "react";
 import debug from "debug";
 import JSON5 from "json5";
 import LLMProviderInterface, { LLMConfig } from "../interface";
@@ -188,7 +188,7 @@ export default abstract class CustomProvider
 
       try {
         resJson = JSON5.parse(resText as any);
-      } catch (err: any) {
+      } catch {
         resJson = resText;
       }
 

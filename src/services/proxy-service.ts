@@ -106,7 +106,7 @@ export class ProxyService {
       try {
         console.log("the request", { request });
         return await fetch(request);
-      } catch (e: any) {
+      } catch {
         console.log("FALLBACK: ", this.isSupported ? "proxied" : "requestUrl");
         if (this.isSupported) {
           const newURL = new URL(await this.getProxiedUrl(request.url));

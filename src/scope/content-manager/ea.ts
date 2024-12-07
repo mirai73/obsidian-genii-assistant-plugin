@@ -247,6 +247,7 @@ export default class ExcalidrawManager implements ContentManager {
     return item;
   }
 
+  // TODO: check how this work does not seem right
   async insertStream(
     pos: Item,
     mode?: "insert" | "replace"
