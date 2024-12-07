@@ -40,7 +40,7 @@ export default class WebPageExtractor extends Extractor {
         win.webContents.on("dom-ready", async () => {
           // in seconds
           const maxTotal = 10;
-          const fac = 0.2;
+          const fac = 1;
 
           let tries = maxTotal / fac;
           const timer = setInterval(async () => {
@@ -67,7 +67,7 @@ export default class WebPageExtractor extends Extractor {
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(response, "text/html");
-
+    logger("extractor", doc);
     // try to parse it
     try {
       selector = JSON5.parse(selector as any);

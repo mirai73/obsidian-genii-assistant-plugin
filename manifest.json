@@ -1,6 +1,6 @@
 {
-  "id": "obsidian-generative-ai-plugin",
-  "name": "AI Generator",
+  "id": "obsidian-genii-assistant-plugin",
+  "name": "Genii Assistant",
   "version": "0.1.0",
   "minAppVersion": "1.6.0",
   "description": "Text and image generation using AI",

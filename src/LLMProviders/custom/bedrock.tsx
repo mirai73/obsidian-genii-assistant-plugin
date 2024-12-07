@@ -45,6 +45,7 @@ export const default_values = {
   streamable: true,
   useConverseApi: false,
   waitForVideo: true,
+  system: "",
 };
 
 export type CustomConfig = Record<keyof typeof default_values, string>;
@@ -118,7 +119,7 @@ export default class BedrockProvider
           "obsidian-bedrock"
         );
       const client = new BedrockRuntimeClient({
-        region: config.region,
+        region: customConfig?.region ?? config.region,
         credentials,
       });
 
@@ -133,7 +134,6 @@ export default class BedrockProvider
       }
 
       const fm = fromModelId(model, {
-        // @ts-ignore
         client,
         maxTokenCount: reqParams.max_tokens,
         stopSequences: reqParams.stop ?? [],
@@ -144,6 +144,12 @@ export default class BedrockProvider
       let converse_messages: ChatMessage[] = [
         { role: "human", message: reqParams.prompt ?? "" },
       ];
+      if (customConfig?.system !== undefined) {
+        converse_messages.unshift({
+          role: "system",
+          message: customConfig?.system,
+        });
+      }
       if (messages?.length > 0) {
         converse_messages = messages.map((m) => this.convertMessage(m));
       }
@@ -187,36 +193,41 @@ export default class BedrockProvider
     if (typeof reqParams.prompt !== "string") {
       prompt = reqParams.prompt
         ?.filter((x) => x.type === "text")
-        ?.at(0)
         // @ts-ignore
-        ?.text.replace("\n", " ")
+        .reduce((acc, x) => acc + x.text, "")
         .trim();
       image = reqParams.prompt?.filter((x) => x.type === "image_url")?.at(0) // @ts-ignore
         ?.image_url.url;
     } else {
       prompt = reqParams.prompt;
     }
-    logger("generateImage", { prompt, image });
+
+    logger("generateImage", { prompt, image: image?.slice(0, 30) });
     if (!prompt) throw new Error("No prompt provided");
+    // @ts-ignore
     const imageModel = fromImageModelId(model, { client });
     const images = await imageModel.generateImage(prompt, {
       size: { width: 1024, height: 1024 },
       // @ts-ignore need to fix the input type
       image: image,
     });
+
     logger("generateImage", { images });
-    const imageBytes = Buffer.from(images[0].split("base64,")[1], "base64");
-    // @ts-ignore
-    const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
-      "attachmentFolderPath"
-    );
-    const ext = images[0].split(":")[1].split(";")[0].split("/")[1];
-    const fileName = `Image created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.${ext}`;
-    this.plugin.app.vault.createBinary(
-      attachmentFolderPath + `/` + fileName,
-      imageBytes
-    );
-    return `![[${fileName}]]`;
+    const imageLinks = images.map((im, idx) => {
+      const imageBytes = Buffer.from(im.split("base64,")[1], "base64");
+      // @ts-ignore
+      const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
+        "attachmentFolderPath"
+      );
+      const ext = im.split(":")[1].split(";")[0].split("/")[1];
+      const fileName = `Image created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")} [${idx}].${ext}`;
+      this.plugin.app.vault.createBinary(
+        attachmentFolderPath + `/` + fileName,
+        imageBytes
+      );
+      return fileName;
+    });
+    return imageLinks.map((link) => `![[${link}]]`).join("\n\n");
   }
 
   async generateMultiple(
