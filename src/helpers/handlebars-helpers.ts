@@ -3,7 +3,7 @@ import handlebars, { Exception, createFrame } from "handlebars";
 import { pull } from "langchain/hub";
 import { getAPI as getDataviewApi } from "obsidian-dataview";
 import moment from "moment";
-import asyncHelpers from "../lib/async-handlebars-helper";
+import asyncHelpers from "handlebars-async-helpers-ts";
 import {
   compileLangMessages,
   createFileWithInput,

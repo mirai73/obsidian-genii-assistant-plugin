@@ -1,5 +1,4 @@
-import type { LLMProviderType } from "../types";
-import { Models } from "@mirai73/bedrock-fm";
+import type { LLMProviderType } from "..";
 
 export interface ModelType {
   encoding?: string;

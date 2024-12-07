@@ -7,7 +7,6 @@
     "strict": true,
     "module": "ES2022",
     "target": "ES6",
-    "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
     "importHelpers": true,
@@ -20,6 +19,6 @@
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "d/**/*"],
+  "include": ["src/**/*", "src/d/**/*"],
   "exclude": ["node_modules"]
 }

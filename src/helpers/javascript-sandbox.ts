@@ -2,7 +2,7 @@ import { Notice } from "obsidian";
 import handlebars from "handlebars";
 import { pull } from "langchain/hub";
 
-import asyncHelpers from "../lib/async-handlebars-helper";
+import asyncHelpers from "handlebars-async-helpers-ts";
 import { createFileWithInput, createFolder } from "#/utils";
 
 // import { pluginApi } from "@vanakat/plugin-api";
