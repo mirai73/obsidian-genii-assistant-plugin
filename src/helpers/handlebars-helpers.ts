@@ -33,7 +33,6 @@ import lodashSet from "lodash.set";
 import lodashGet from "lodash.get";
 import JSON5 from "json5";
 
-import runJsInSandbox from "./javascript-sandbox";
 import { AvailableContext } from "#/scope/context-manager";
 
 export default function HelpersFn(self: ContextManager) {
@@ -610,100 +609,6 @@ export default function HelpersFn(self: ContextManager) {
 
     async wait(time: string) {
       await new Promise((s) => setTimeout(s, +(time || "1") * 1000));
-    },
-
-    async script(...vars: any[]) {
-      if (!self.plugin.settings.allowJavascriptRun)
-        throw new Error(
-          "Scripts are not allowed to run, for security reasons. Go to plugin settings and enable it"
-        );
-      const options = vars.pop();
-
-      options.data.root.vars ??= {};
-
-      let content = ((await options?.fn?.(this)) as string) || "";
-
-      const p = options.data.root.templatePath?.split("/");
-      const parentPackageId = p?.[p?.length - 2] || "default";
-
-      const gen = async (templateContent: string, metadata: any) => {
-        return await self.plugin.textGenerator?.gen(templateContent, {
-          ...options.data.root,
-          disableProvider: false,
-          ...metadata,
-        });
-      };
-
-      const genJSON = async (templateContent: string, metadata: any) => {
-        return JSON5.parse(
-          (await gen(templateContent, {
-            ...metadata,
-            modelKwargs: { response_format: { type: "json_object" } },
-          })) ?? ""
-        );
-      };
-
-      const run = (id: string, metadata?: any) => {
-        let meta: any = {};
-
-        if (!id?.contains("/") && !options.data.root.templatePath) {
-          throw new Error("templatePath was not found in run command");
-        }
-
-        const _p = options.data.root.templatePath?.split("/");
-
-        if (content.contains("run(")) {
-          const [packageId, templateId] = id.contains("/")
-            ? id.split("/")
-            : [_p[_p.length - 2], id];
-
-          console.log({
-            paths: self.plugin.textGenerator?.templatePaths,
-            packageId,
-            templateId,
-          });
-          const TemplateMetadata = self.getFrontmatter(
-            self.getMetaData(
-              self.plugin.textGenerator?.templatePaths[packageId][templateId]
-            )
-          );
-          meta = {
-            ...options.data.root,
-            disableProvider: false,
-            ...TemplateMetadata,
-          };
-        }
-
-        const Id = id?.contains("/") ? id : `${parentPackageId}/${id}`;
-
-        return _runTemplate(Id, {
-          ...meta,
-          ...(typeof metadata === "object"
-            ? metadata
-            : {
-                tg_selection: metadata,
-              }),
-        });
-      };
-
-      if (content.startsWith("```")) {
-        const k = content.split("\n");
-        k.pop();
-        k.pop();
-        k.shift();
-        content = k.join("\n");
-      }
-
-      // do not use (0, eval), it will break "this", and the eval wont be able to access context
-      return await runJsInSandbox(content, {
-        ...this,
-        plugin: self.plugin,
-        app: self.app,
-        //pluginApi,
-        run,
-        gen,
-        genJSON,
-      });
     },
 
     read,
