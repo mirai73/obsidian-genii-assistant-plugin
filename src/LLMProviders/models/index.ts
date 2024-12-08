@@ -395,7 +395,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.titan-text-premier-v1:0": {
@@ -405,7 +405,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.titan-text-lite-v1": {
@@ -415,7 +415,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.titan-text-express-v1": {
@@ -425,7 +425,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "ai21.jamba-instruct-v1:0": {
@@ -435,7 +435,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "anthropic.claude-3-sonnet-20240229-v1:0": {
@@ -445,7 +445,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "anthropic.claude-3-haiku-20240307-v1:0": {
@@ -455,7 +455,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
     inputOptions: { images: true, text: true },
   },
@@ -466,7 +466,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
     inputOptions: { images: true, text: true },
   },
@@ -477,7 +477,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "cohere.command-r-v1:0": {
@@ -487,7 +487,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "cohere.command-r-plus-v1:0": {
@@ -497,7 +497,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "cohere.command-light-text-v14": {
@@ -507,7 +507,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "meta.llama3-8b-instruct-v1:0": {
@@ -517,7 +517,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "meta.llama3-70b-instruct-v1:0": {
@@ -527,7 +527,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "mistral.mistral-7b-instruct-v0:2": {
@@ -537,7 +537,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "mistral.mixtral-8x7b-instruct-v0:1": {
@@ -547,7 +547,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "mistral.mistral-large-2402-v1:0": {
@@ -557,7 +557,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "mistral.mistral-small-2402-v1:0": {
@@ -567,7 +567,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "stability.stable-diffusion-xl-v1": {
@@ -577,7 +577,7 @@ const AI_MODELS: Record<string, ModelType> = {
       completion: 0.0004,
     },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "stability.stable-image-core-v1:0": {
@@ -588,7 +588,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     outputOptions: { images: true },
     maxTokens: 2049,
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "stability.sd3-large-v1:0": {
@@ -599,7 +599,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     maxTokens: 2049,
     outputOptions: { images: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "stability.stable-image-ultra-v1:0": {
@@ -609,7 +609,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     maxTokens: 2049,
     outputOptions: { images: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.nova-lite-v1:0": {
@@ -619,7 +619,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     maxTokens: 2049,
     inputOptions: { text: true, images: true, videos: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.nova-micro-v1:0": {
@@ -629,7 +629,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     maxTokens: 2049,
     inputOptions: { text: true, images: true, videos: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.nova-pro-v1:0": {
@@ -639,7 +639,7 @@ const AI_MODELS: Record<string, ModelType> = {
     },
     maxTokens: 2049,
     inputOptions: { text: true, images: true, videos: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.nova-canvas-v1:0": {
@@ -650,7 +650,7 @@ const AI_MODELS: Record<string, ModelType> = {
     maxTokens: 2049,
     inputOptions: { images: true, text: true },
     outputOptions: { images: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
   "amazon.nova-reel-v1:0": {
@@ -661,7 +661,7 @@ const AI_MODELS: Record<string, ModelType> = {
     maxTokens: 2049,
     inputOptions: { text: true, images: true },
     outputOptions: { videos: true },
-    llm: ["Bedrock (Custom)"],
+    llm: ["bedrock"],
     order: -1,
   },
 };

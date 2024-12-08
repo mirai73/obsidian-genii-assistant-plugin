@@ -9,7 +9,7 @@ import {
 } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
 import { AutoSuggest } from ".";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 import {
   Scope,
   App,
@@ -24,7 +24,7 @@ import { debounce } from "#/utils";
 const logger = debug("genii:AutoSuggest");
 
 export class InlineSuggest {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   autoSuggest: AutoSuggest;
   app: App;
   delay = 0;
@@ -43,7 +43,11 @@ export class InlineSuggest {
   static delay = 200;
   static getSuggestionsDebounced: any;
 
-  constructor(app: App, plugin: TextGeneratorPlugin, autoSuggest: AutoSuggest) {
+  constructor(
+    app: App,
+    plugin: GeniiAssistantPlugin,
+    autoSuggest: AutoSuggest
+  ) {
     logger("AutoSuggest", app, plugin);
     this.plugin = plugin;
     this.autoSuggest = autoSuggest;
@@ -102,7 +106,7 @@ export class InlineSuggest {
   async predict(k: EditorSuggestTriggerInfo, editor: Editor, file: TFile) {
     this.clear();
 
-    const completions = await this.autoSuggest.getGPTSuggestions({
+    const completions = await this.autoSuggest.getSuggestions({
       editor,
       file,
       ...k,
@@ -130,7 +134,7 @@ export class InlineSuggest {
 
   static setup(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     autoSuggest: AutoSuggest
   ) {
     const self = new InlineSuggest(app, plugin, autoSuggest);

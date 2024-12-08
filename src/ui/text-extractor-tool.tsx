@@ -10,7 +10,7 @@ import {
   getExtractorMethods,
 } from "../extractors/content-extractor";
 import { App, Modal, TFile } from "obsidian";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import { createRoot } from "react-dom/client";
 import CopyButton from "./components/copyButton";
 import { ContentManager } from "#/scope/content-manager/types";
@@ -24,7 +24,7 @@ const ContentExtractorComponent = ({
 }: {
   p: any;
   app: any;
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
 }) => {
   const [urlResults, setUrlResults] = useState<
     {
@@ -176,11 +176,11 @@ const ContentExtractorComponent = ({
 export default ContentExtractorComponent;
 
 export class TextExtractorTool extends Modal {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   root: any;
   editor: ContentManager;
 
-  constructor(app: App, plugin: TextGeneratorPlugin, editor: ContentManager) {
+  constructor(app: App, plugin: GeniiAssistantPlugin, editor: ContentManager) {
     super(app);
     this.plugin = plugin;
     this.editor = editor;

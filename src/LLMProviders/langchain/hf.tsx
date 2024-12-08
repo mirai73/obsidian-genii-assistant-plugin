@@ -18,7 +18,7 @@ export default class LangchainHFProvider
   static displayName = "Huggingface";
 
   llmPredict = true;
-  streamable = false;
+  canStream = false;
   provider = LangchainHFProvider.provider;
   id = LangchainHFProvider.id;
   originalId = LangchainHFProvider.id;
@@ -63,16 +63,12 @@ export default class LangchainHFProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global) throw new Error("Global settings not found");
     const id = props.self.id;
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {});
     return (
       <>
-        <SettingItem
-          name="API Key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="API Key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
@@ -86,11 +82,7 @@ export default class LangchainHFProvider
           />
         </SettingItem>
 
-        <SettingItem
-          name="Model"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Model" sectionId={props.sectionId}>
           <Input
             type="text"
             value={config.model}
@@ -108,7 +100,6 @@ export default class LangchainHFProvider
             <SettingItem
               name="Setup API token"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -118,7 +109,6 @@ export default class LangchainHFProvider
             <SettingItem
               name="API documentation"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -128,7 +118,6 @@ export default class LangchainHFProvider
             <SettingItem
               name="More information"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

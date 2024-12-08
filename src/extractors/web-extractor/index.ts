@@ -1,6 +1,6 @@
 import { App, request, Platform } from "obsidian";
 import { Extractor } from "../extractor";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import debug from "debug";
 import JSON5 from "json5";
 
@@ -14,7 +14,7 @@ if (!Platform.isMobile) {
 const logger = debug("genii:Extractor:WebPageExtractor");
 
 export default class WebPageExtractor extends Extractor {
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
   }
 

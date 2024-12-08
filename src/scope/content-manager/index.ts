@@ -3,12 +3,12 @@ import MarkdownManager from "./md";
 import ExcalidrawManager from "./ea";
 import CanvasManager from "./canvas";
 import { ContentManager, Options } from "./types";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 
 export default class ContentManagerFactory {
   static createContentManager(
     view: View,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     otherOptions?: {
       templatePath?: string;
       templateContent?: string;

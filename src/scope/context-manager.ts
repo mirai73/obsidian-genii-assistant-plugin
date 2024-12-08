@@ -1,6 +1,6 @@
 import { App, Notice, Component, TFile, HeadingCache } from "obsidian";
 import { AsyncReturnType, Context } from "../types";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import { IGNORE_IN_YAML } from "../constants";
 
 import {
@@ -90,7 +90,7 @@ export interface AvailableContext {
     InstanceType<typeof ContextManager>["getExtractions"]
   >;
 
-  keys: ReturnType<InstanceType<typeof TextGeneratorPlugin>["getApiKeys"]>;
+  keys: ReturnType<InstanceType<typeof GeniiAssistantPlugin>["getApiKeys"]>;
   _variables: Record<string, true>;
 
   noteFile?: TFile;
@@ -98,10 +98,10 @@ export interface AvailableContext {
 }
 
 export default class ContextManager {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   app: App;
 
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     logger("ContextManager constructor");
     this.app = app;
     this.plugin = plugin;
@@ -988,7 +988,7 @@ export default class ContextManager {
 
   getMetaData(path?: string, withoutCompatibility?: boolean) {
     const activeFile = !path
-      ? this.plugin.textGenerator?.embeddingsScope.getActiveNote()
+      ? this.plugin.geniiAssistant?.embeddingsScope.getActiveNote()
       : { path };
 
     if (!activeFile?.path || !activeFile.path.endsWith(".md")) return null;
@@ -1377,9 +1377,7 @@ export const ContextVariables: Record<
 Or
 {{#each extractions.pdf}} {{this}} {{/each}}
     `,
-    hint: `Extracted content from various sources like PDFs, images, audio files, web pages, and YouTube URLs. possible extractons: ${Object.keys(
-      ExtractorSlug
-    ).join(", ")}`,
+    hint: `Extracted content from various sources like PDFs, images, audio files, web pages, and YouTube URLs. possible extractions: `,
   },
   headings: {
     example: `{{#each headings}}

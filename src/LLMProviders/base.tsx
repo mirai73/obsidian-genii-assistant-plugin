@@ -1,7 +1,7 @@
 import { ReactElement } from "react";
 import safeAwait from "safe-await";
 import { Message } from "src/types";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import LLMProviderInterface, { LLMConfig } from "./interface";
 import { processPromisesSettledBatch, promiseForceFullfil } from "#/utils";
 import { AI_MODELS } from "#/constants";
@@ -13,17 +13,17 @@ export default abstract class ProviderBase implements LLMProviderInterface {
   static displayName = "default";
   cloned?: boolean | undefined;
   originalId = "";
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   config: any;
 
   corsBypass = false;
 
-  constructor(props: { plugin: TextGeneratorPlugin; config?: any }) {
+  constructor(props: { plugin: GeniiAssistantPlugin; config?: any }) {
     this.plugin = props.plugin;
     this.config = props.config;
   }
 
-  streamable?: boolean | undefined;
+  canStream?: boolean | undefined;
   mobileSupport?: boolean | undefined;
 
   async load() {}
@@ -130,7 +130,7 @@ export default abstract class ProviderBase implements LLMProviderInterface {
     const models: any[] = Array.from(Object.entries(AI_MODELS))
       .filter((k) =>
         k[1].llm.includes(
-          this.plugin.textGenerator?.LLMProvider?.originalId as any
+          this.plugin.geniiAssistant?.LLMProvider?.originalId as any
         )
       )
       .map((k) => {

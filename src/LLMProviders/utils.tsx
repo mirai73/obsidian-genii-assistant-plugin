@@ -11,7 +11,6 @@ import { default_values } from "./custom/custom";
 import { LLMProviderType } from "#/lib/types";
 
 export function ModelsHandler(props: {
-  register: Parameters<LLMProviderInterface["RenderSettings"]>[0]["register"];
   sectionId: Parameters<LLMProviderInterface["RenderSettings"]>[0]["sectionId"];
   default_values: any;
   llmProviderId: string;
@@ -22,7 +21,7 @@ export function ModelsHandler(props: {
 
   const global = useGlobal();
   const [models, setModels] = useState<string[]>([]);
-
+  if (!global) throw new Error("Global settings not found");
   const config =
     props.config ||
     (global.plugin.settings.LLMProviderOptions[id] ??= {
@@ -54,18 +53,14 @@ export function ModelsHandler(props: {
   );
   return (
     <>
-      <SettingItem
-        name="Model"
-        register={props.register}
-        sectionId={props.sectionId}
-      >
+      <SettingItem name="Model" sectionId={props.sectionId}>
         <div className="plug-tg-flex plug-tg-flex-col">
           <Dropdown
             value={config.model}
             setValue={async (selectedModel) => {
               config.model = selectedModel;
               await global.plugin.saveSettings();
-              if (global.triggerReload) global.triggerReload();
+              global.triggerReload();
             }}
             values={models}
           />
@@ -178,11 +173,7 @@ export function HeaderEditor({
 
   return (
     <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-      <SettingItem
-        name="Enable Custom Headers"
-        register={undefined}
-        sectionId={undefined}
-      >
+      <SettingItem name="Enable Custom Headers" sectionId={undefined}>
         <Input
           type="checkbox"
           value={enabled ? "true" : "false"}

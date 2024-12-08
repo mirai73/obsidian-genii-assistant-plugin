@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-generative-ai-plugin",
+  "name": "obsidian-genii-assistant-plugin",
   "version": "0.1.0",
   "description": "Generative AI Plugin for Obsidian. The AI generator is a handy plugin that helps you generate text content using different AI models.",
   "obsidian": {

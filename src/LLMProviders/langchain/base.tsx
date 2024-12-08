@@ -38,7 +38,7 @@ export default abstract class LangchainProvider
   llmClass: any;
 
   llmPredict = false;
-  streamable = true;
+  canStream = true;
 
   provider = LangchainProvider.provider;
   id = LangchainProvider.id;
@@ -89,7 +89,7 @@ export default abstract class LangchainProvider
       ...nh,
     };
 
-    const Fetch = this.plugin.textGenerator?.proxyService.getFetch(
+    const Fetch = this.plugin.geniiAssistant?.proxyService.getFetch(
       this.corsBypass ||
         this.default_values.corsBypass ||
         options.otherOptions.corsBypass
@@ -167,8 +167,8 @@ export default abstract class LangchainProvider
 
       const params = this.configMerger(reqParams);
 
-      // if the model is streamable
-      params.stream = params.stream && this.streamable;
+      // if the model can stream
+      params.stream = params.stream && this.canStream;
 
       const llm = await this.getLLM(params);
 
@@ -220,7 +220,7 @@ export default abstract class LangchainProvider
           {
             callbacks: llmFuncs,
             configurable: {
-              fetch: this.plugin.textGenerator?.proxyService.getFetch(
+              fetch: this.plugin.geniiAssistant?.proxyService.getFetch(
                 this.corsBypass ||
                   this.default_values.corsBypass ||
                   customConfig.corsBypass

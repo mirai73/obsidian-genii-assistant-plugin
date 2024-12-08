@@ -1,10 +1,10 @@
 import { App } from "obsidian";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 
 export abstract class Extractor {
   protected app: App;
-  protected plugin: TextGeneratorPlugin;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  protected plugin: GeniiAssistantPlugin;
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     this.app = app;
     this.plugin = plugin;
   }

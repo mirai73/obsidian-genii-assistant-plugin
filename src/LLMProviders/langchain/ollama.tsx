@@ -18,7 +18,7 @@ export default class LangchainOllamaProvider
   static id = "Ollama (Langchain)" as const;
   static displayName = "Ollama";
 
-  streamable = true;
+  canStream = true;
   llmPredict = true;
 
   corsBypass = true;
@@ -64,7 +64,7 @@ export default class LangchainOllamaProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global) throw new Error("Global settings not found");
     const id = props.self.id;
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {});
     return (
@@ -72,7 +72,6 @@ export default class LangchainOllamaProvider
         <SettingItem
           name="Base Path"
           description={`Make sure it supports CORS`}
-          register={props.register}
           sectionId={props.sectionId}
         >
           <Input
@@ -87,11 +86,7 @@ export default class LangchainOllamaProvider
             }}
           />
         </SettingItem>
-        <SettingItem
-          name="Model"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Model" sectionId={props.sectionId}>
           <Input
             type="text"
             value={config.model}
@@ -109,7 +104,6 @@ export default class LangchainOllamaProvider
             <SettingItem
               name="How to use locally hosted ollama (Discord Link)"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

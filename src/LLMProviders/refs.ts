@@ -1,10 +1,9 @@
 import InputComp from "#/ui/settings/components/input";
-import useGlob from "#/ui/context/global";
+import useGlob from "#/ui/context/global/context";
 import DropdownComp from "#/ui/settings/components/dropdown";
 import DropdownSearchComp from "#/ui/settings/components/dropdownSearch";
 import SettingItemComp from "#/ui/settings/components/item";
 import type { ContextTemplate as CTT } from "#/scope/context-manager";
-import type { Register as RGX } from "#/ui/settings/sections";
 import { Message as MSG } from "#/types";
 import { AI_MODELS as MODELS } from "#/constants";
 import { RequestUrlParam, requestUrl, request } from "obsidian";
@@ -25,5 +24,4 @@ export const AI_MODELS = MODELS;
 
 export type requestWithoutCORSParam = RequestUrlParam;
 export type ContextTemplate = CTT;
-export type Register = RGX;
 export type Message = MSG;

@@ -1,8 +1,8 @@
 import React, { useId } from "react";
-import useGlobal from "../../../context/global";
+import useGlobal from "#/ui/context/global/context";
 import SettingItem from "../../components/item";
 import SettingsSection from "../../components/section";
-import type { Register } from "..";
+
 import Input from "../../components/input";
 import DropdownSearch from "../../components/dropdownSearch";
 
@@ -14,9 +14,10 @@ export const default_values = {
   api_key: "",
 };
 
-export default function WhisperProviderSetting(props: { register: Register }) {
+export default function WhisperProviderSetting() {
   const global = useGlobal();
   const sectionId = useId();
+  if (!global) throw new Error("Global not found");
 
   const config = (global.plugin.settings.LLMProviderOptions[
     WhisperProviderName
@@ -29,13 +30,11 @@ export default function WhisperProviderSetting(props: { register: Register }) {
       <SettingsSection
         title="Whisper Settings"
         className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-        register={props.register}
         id={sectionId}
       >
         <SettingItem
           name="BasePath"
           description="default to openai"
-          register={props.register}
           sectionId={sectionId}
         >
           <Input
@@ -52,7 +51,6 @@ export default function WhisperProviderSetting(props: { register: Register }) {
         <SettingItem
           name="API Key"
           description="default to openai provider's apikey"
-          register={props.register}
           sectionId={sectionId}
         >
           <Input
@@ -69,7 +67,6 @@ export default function WhisperProviderSetting(props: { register: Register }) {
         <SettingItem
           name="Model"
           description="default to whisper-1"
-          register={props.register}
           sectionId={sectionId}
         >
           <Input
@@ -86,7 +83,6 @@ export default function WhisperProviderSetting(props: { register: Register }) {
         <SettingItem
           name="Language"
           description="default to (none)"
-          register={props.register}
           sectionId={sectionId}
         >
           <DropdownSearch

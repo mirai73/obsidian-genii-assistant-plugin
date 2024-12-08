@@ -1,5 +1,5 @@
 import { App } from "obsidian";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import Tesseract from "tesseract.js";
 import debug from "debug";
 import { Extractor } from "./extractor";
@@ -7,7 +7,7 @@ import { Extractor } from "./extractor";
 const logger = debug("genii:Extractor:ImageExtractor");
 
 export default class ImageExtractor extends Extractor {
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
   }
 

@@ -1,10 +1,9 @@
 import type { Message } from "src/types";
-import type { Register } from "./refs";
 import { ModelType } from "../LLMProviders/models";
 import { ReactElement } from "react";
 
 export default interface LLMProviderInterface {
-  streamable?: boolean;
+  canStream?: boolean;
   mobileSupport?: boolean;
   id: string;
   slug?: string;
@@ -37,11 +36,7 @@ export default interface LLMProviderInterface {
     onOneFinishs?: (content: string, index: number) => void
   ): Promise<string[]>;
 
-  RenderSettings(props: {
-    sectionId: string;
-    register: Register;
-    self: any;
-  }): ReactElement;
+  RenderSettings(props: { sectionId: string; self: any }): ReactElement;
 
   calcTokens(
     messages: Message[],

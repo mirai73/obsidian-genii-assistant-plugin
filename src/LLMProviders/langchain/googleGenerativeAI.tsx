@@ -23,7 +23,7 @@ export default class LangchainChatGoogleGenerativeAIProvider
   static displayName = "Google GenerativeAI";
 
   mobileSupport = true;
-  streamable = true;
+  canStream = true;
   legacyN = true;
 
   provider = LangchainChatGoogleGenerativeAIProvider.provider;
@@ -62,7 +62,10 @@ export default class LangchainChatGoogleGenerativeAIProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global)
+      throw new Error(
+        "Global settings not found. Please contact the developer."
+      );
     const id = props.self.id;
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {
       ...default_values,
@@ -70,11 +73,7 @@ export default class LangchainChatGoogleGenerativeAIProvider
 
     return (
       <>
-        <SettingItem
-          name="Api Key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Api Key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
@@ -89,7 +88,7 @@ export default class LangchainChatGoogleGenerativeAIProvider
         </SettingItem>
         {/* <SettingItem
           name="Base Path"
-          register={props.register}
+          
           sectionId={props.sectionId}
         >
           <Input
@@ -104,7 +103,6 @@ export default class LangchainChatGoogleGenerativeAIProvider
           />
         </SettingItem> */}
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
@@ -131,7 +129,6 @@ export default class LangchainChatGoogleGenerativeAIProvider
             <SettingItem
               name="Get API KEY"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

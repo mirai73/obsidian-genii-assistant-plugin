@@ -6,7 +6,7 @@ import {
   EditorSuggest,
   MarkdownView,
 } from "obsidian";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import { TemplatesModal } from "../models/model";
 import ContentManagerFactory from "../scope/content-manager";
 import { debug } from "debug";
@@ -15,8 +15,8 @@ const logger = debug("genii:slash-suggest");
 
 export class SlashSuggest extends EditorSuggest<PromptTemplate> {
   app: App;
-  private plugin: TextGeneratorPlugin;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  private plugin: GeniiAssistantPlugin;
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app);
     this.app = app;
     this.plugin = plugin;
@@ -89,7 +89,7 @@ export class SlashSuggest extends EditorSuggest<PromptTemplate> {
 
     activeView.editor.replaceRange("", value.context.start, value.context.end);
 
-    await this.plugin.textGenerator?.templateToModal({
+    await this.plugin.geniiAssistant?.templateToModal({
       params: {},
       templatePath: value.path,
       editor: CM,

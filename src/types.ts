@@ -40,7 +40,7 @@ type Context = {
 
 export type Version = `${number}.${number}.${number}`;
 
-type TextGeneratorSettings = {
+type GeniiAssistantSettings = {
   allowJavascriptRun?: boolean;
   version: Version;
   endpoint: string;
@@ -128,7 +128,7 @@ type Subscription = {
   type: string;
 };
 
-type TextGeneratorConfiguration = {
+type GeniiAssistantConfiguration = {
   packagesHash: Record<string, PackageTemplate>;
   installedPackagesHash: Record<string, InstalledPackage>;
   resources: Record<string, Resource>;
@@ -151,7 +151,7 @@ type PackageTemplate = {
   packageId: string;
   name?: string;
   version?: string;
-  minTextGeneratorVersion?: string;
+  minGeniiAssistantVersion?: string;
   description?: string;
   tags?: string;
   author?: string;
@@ -191,13 +191,13 @@ type Model = {
 export type {
   FileViewMode,
   NewTabDirection,
-  TextGeneratorSettings,
+  GeniiAssistantSettings,
   PromptTemplate,
   PackageTemplate,
   Model,
   Context,
   InstalledPackage,
-  TextGeneratorConfiguration,
+  GeniiAssistantConfiguration,
 };
 
 export type AsyncReturnType<T extends (...args: any) => Promise<any>> =

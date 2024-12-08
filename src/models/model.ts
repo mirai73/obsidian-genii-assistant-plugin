@@ -1,16 +1,16 @@
 import { App, Notice, FuzzySuggestModal, FuzzyMatch } from "obsidian";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import { PromptTemplate } from "src/types";
 import debug from "debug";
 
 const logger = debug("genii:model");
 
 export class TemplatesModal extends FuzzySuggestModal<PromptTemplate> {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   onChoose: (result: PromptTemplate) => void;
   constructor(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     onChoose: (result: PromptTemplate) => void,
     placeholder = "Select a template"
   ) {
@@ -23,7 +23,7 @@ export class TemplatesModal extends FuzzySuggestModal<PromptTemplate> {
   getItems() {
     const viewType = this.plugin.app.workspace.activeLeaf?.view.getViewType();
     return (
-      this.plugin.textGenerator
+      this.plugin.geniiAssistant
         ?.getTemplates()
         // show only templates that works with this view type
         .filter(

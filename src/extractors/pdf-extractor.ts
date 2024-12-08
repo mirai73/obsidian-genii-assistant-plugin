@@ -1,11 +1,11 @@
 import { loadPdfJs, App } from "obsidian";
 import { Extractor } from "./extractor";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import debug from "debug";
 const logger = debug("genii:Extractor:PdfExtractor");
 
 export default class PDFExtractor extends Extractor {
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
   }
 

@@ -1,10 +1,10 @@
 import React, { useId } from "react";
-import useGlobal from "../../context/global";
+import useGlobal from "#/ui/context/global/context";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
 import { useMemo } from "react";
-import type { Register } from ".";
+import { ConfigItem } from "../components/configItem";
 
 const contextNotForTemplate = ["includeTitle", "starredBlocks"];
 
@@ -47,11 +47,10 @@ const extendedInfo: Record<
   },
 };
 
-export default function ExtractorsOptionsSetting(props: {
-  register: Register;
-}) {
+export default function ExtractorsOptionsSetting() {
   const global = useGlobal();
   const sectionId = useId();
+  if (!global) throw new Error("Global settings not found");
 
   const listOfOptions = useMemo(
     () => Object.keys(global.plugin.defaultSettings.extractorsOptions),
@@ -62,7 +61,6 @@ export default function ExtractorsOptionsSetting(props: {
     <SettingsSection
       title="Extractors Options"
       className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-      register={props.register}
       id={sectionId}
     >
       {listOfOptions
@@ -70,33 +68,25 @@ export default function ExtractorsOptionsSetting(props: {
         .map((key) => {
           const moreData = extendedInfo[key];
           return (
-            <SettingItem
+            <ConfigItem
               key={moreData?.name || key}
               name={moreData?.name || key}
               description={
                 moreData?.description ||
                 `Enable or disable ${key.toLowerCase()} Extractor.`
               }
-              register={props.register}
               sectionId={sectionId}
-            >
-              <Input
-                type="checkbox"
-                value={
-                  "" +
-                  global.plugin.settings.extractorsOptions[
-                    key as keyof typeof global.plugin.settings.extractorsOptions
-                  ]
-                }
-                setValue={async (val) => {
-                  global.plugin.settings.extractorsOptions[
-                    key as keyof typeof global.plugin.settings.extractorsOptions
-                  ] = val === "true";
-                  await global.plugin.saveSettings();
-                  if (global.triggerReload) global.triggerReload();
-                }}
-              />
-            </SettingItem>
+              value={
+                global.plugin.settings.extractorsOptions[
+                  key as keyof typeof global.plugin.settings.extractorsOptions
+                ] ?? false
+              }
+              onChange={(v) => {
+                global.plugin.settings.extractorsOptions[
+                  key as keyof typeof global.plugin.settings.extractorsOptions
+                ] = v as boolean;
+              }}
+            />
           );
         })}
     </SettingsSection>

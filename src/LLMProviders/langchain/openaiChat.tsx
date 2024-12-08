@@ -33,14 +33,9 @@ export default class LangchainOpenAIChatProvider
     this.llmClass = ChatOpenAI;
   }
 
-  //   getLLM(options: LLMConfig) {
-  //     return new ChatOpenAI({
-  //       ...this.getConfig(options),
-  //     });
-  //   }
-
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
+    if (!global) throw new Error("Global settings not found");
 
     const id = props.self.id;
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {
@@ -49,11 +44,7 @@ export default class LangchainOpenAIChatProvider
 
     return (
       <React.Fragment key={id}>
-        <SettingItem
-          name="API Key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="API Key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
@@ -72,7 +63,6 @@ export default class LangchainOpenAIChatProvider
         <SettingItem
           name="Base Path"
           description={`Make sure it supports CORS`}
-          register={props.register}
           sectionId={props.sectionId}
         >
           <Input
@@ -91,7 +81,6 @@ export default class LangchainOpenAIChatProvider
         </SettingItem>
 
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
@@ -120,7 +109,6 @@ export default class LangchainOpenAIChatProvider
             <SettingItem
               name="Create account OpenAI"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -130,7 +118,6 @@ export default class LangchainOpenAIChatProvider
             <SettingItem
               name="API documentation"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -140,7 +127,6 @@ export default class LangchainOpenAIChatProvider
             <SettingItem
               name="You can use LM Studio"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -150,7 +136,6 @@ export default class LangchainOpenAIChatProvider
             <SettingItem
               name="more information"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -169,6 +154,13 @@ export default class LangchainOpenAIChatProvider
     const modelInfo =
       AI_MODELS[model as keyof typeof AI_MODELS] || AI_MODELS["gpt-3.5-turbo"];
 
+    if (
+      !modelInfo ||
+      !modelInfo.prices ||
+      !modelInfo.prices.prompt ||
+      !modelInfo.prices.completion
+    )
+      throw new Error("Price info not found");
     console.log(reqParams.max_tokens, modelInfo.prices.completion);
     return (
       (tokens * modelInfo.prices.prompt +
@@ -185,11 +177,12 @@ export default class LangchainOpenAIChatProvider
     const modelInfo =
       AI_MODELS[model as keyof typeof AI_MODELS] || AI_MODELS["gpt-3.5-turbo"];
 
-    if (!modelInfo)
+    if (!modelInfo || !modelInfo.encoding)
       return {
         tokens: 0,
         maxTokens: 0,
       };
+
     const encoder = this.plugin.tokensScope?.getEncoderFromEncoding(
       modelInfo.encoding
     );
@@ -214,15 +207,15 @@ export default class LangchainOpenAIChatProvider
     }
 
     let numTokens = 0;
-    for (const message of messages) {
-      numTokens += tokensPerMessage;
-      for (const [key, value] of Object.entries(message)) {
-        numTokens += encoder.encode(value).length;
-        if (key === "name") {
-          numTokens += tokensPerName;
-        }
-      }
-    }
+    // for (const message of messages) {
+    //   numTokens += tokensPerMessage;
+    //   for (const [key, value] of Object.entries(message)) {
+    //     numTokens += encoder.encode(value).length;
+    //     if (key === "name") {
+    //       numTokens += tokensPerName;
+    //     }
+    //   }
+    // }
 
     numTokens += 3; // every reply is primed with assistant
 

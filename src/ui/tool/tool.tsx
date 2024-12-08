@@ -1,5 +1,5 @@
 import { Command, Editor } from "obsidian";
-import TextGeneratorPlugin from "../../main";
+import GeniiAssistantPlugin from "../../main";
 import React, { useEffect, useMemo, useState } from "react";
 import { InputContext } from "../../scope/context-manager";
 import safeAwait from "safe-await";
@@ -10,7 +10,7 @@ import MarkDownViewer from "../components/Markdown";
 import TemplateInputModalView from "../template-input-modal/view";
 
 export default function Tool(props: {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   setCommands: (commands: Command[]) => void;
   view: ToolView;
   onEvent: (cb: (name: string) => void) => void;
@@ -106,7 +106,7 @@ export default function Tool(props: {
         type: VIEW_TOOL_ID,
       });
 
-      const metadata = props.plugin.textGenerator?.getMetadata(
+      const metadata = props.plugin.geniiAssistant?.getMetadata(
         selectedTemplatePath || ""
       );
       if (metadata) setMeta(metadata);
@@ -172,7 +172,7 @@ export default function Tool(props: {
       if (!context) {
         return;
       }
-      const stream = await props.plugin.textGenerator?.streamGenerate(
+      const stream = await props.plugin.geniiAssistant?.streamGenerate(
         context,
         false,
         {},

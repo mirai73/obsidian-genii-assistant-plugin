@@ -1,9 +1,8 @@
 import React, { useEffect, useId, useState } from "react";
-import type { Register } from "../sections";
 import Dropdown from "./dropdown";
 import SettingItem from "./item";
 import LLMProviderInterface from "../../../LLMProviders/interface";
-import useGlobal from "../../context/global";
+import useGlobal from "#/ui/context/global/context";
 import Input from "./input";
 
 import { z } from "zod";
@@ -18,7 +17,6 @@ export const profileFileSchema = z.object({
 });
 
 export default function LLMProviderController(props: {
-  register: Register;
   setSelectedProvider(p: string): void;
   getSelectedProvider(): string;
   triggerResize(): void;
@@ -26,7 +24,8 @@ export default function LLMProviderController(props: {
   mini?: boolean;
 }) {
   const global = useGlobal();
-  const llmList = global.plugin.textGenerator?.LLMRegistry?.getList();
+  if (!global) throw new Error("Global settings not found");
+  const llmList = global.plugin.geniiAssistant?.LLMRegistry?.getList();
   const sectionId = useId();
   const [selectedLLM, setSelectedLLM] = useState<
     LLMProviderInterface | undefined
@@ -39,9 +38,9 @@ export default function LLMProviderController(props: {
   const updateLLm = (selectedLLMId: string | undefined) => {
     if (!selectedLLMId) return;
 
-    global.plugin.textGenerator?.load();
+    global.plugin.geniiAssistant?.load();
 
-    const llm = global.plugin.textGenerator?.LLMRegistry?.get(selectedLLMId);
+    const llm = global.plugin.geniiAssistant?.LLMRegistry?.get(selectedLLMId);
 
     if (llm) {
       props.setSelectedProvider(selectedLLMId as any);
@@ -53,7 +52,7 @@ export default function LLMProviderController(props: {
       );
     }
 
-    global.plugin.textGenerator?.load();
+    global.plugin.geniiAssistant?.load();
   };
 
   const isDefaultProvider = selectedLLM ? !selectedLLM.cloned : false;
@@ -64,7 +63,7 @@ export default function LLMProviderController(props: {
     setSelectedLLMId(selectedLLMId);
     updateLLm(selectedLLMId);
     global.plugin.saveSettings();
-    if (global.triggerReload) global.triggerReload();
+    global.triggerReload();
     props.triggerResize();
   };
 
@@ -77,13 +76,12 @@ export default function LLMProviderController(props: {
             ? `Based on ${selectedLLM.originalId}`
             : selectedLLMId?.split("(")?.[1]?.split(")")?.[0] || ""
         }
-        register={props.register}
         sectionId={sectionId}
       >
         <Dropdown
           value={selectedLLMId}
           setValue={selectLLM}
-          aliases={global.plugin.textGenerator?.LLMRegistry?.UnProviderNames}
+          aliases={global.plugin.geniiAssistant?.LLMRegistry?.UnProviderNames}
           values={llmList ?? []}
         />
       </SettingItem>
@@ -93,7 +91,6 @@ export default function LLMProviderController(props: {
           <div className="plug-tg-flex plug-tg-h-full plug-tg-w-full plug-tg-flex-col plug-tg-gap-2">
             <selectedLLM.RenderSettings
               key={selectedLLMId}
-              register={props.register}
               self={selectedLLM}
               sectionId={sectionId}
             />
@@ -104,7 +101,6 @@ export default function LLMProviderController(props: {
             <SettingItem
               name="Name"
               description="Change name of the profile"
-              register={props.register}
               className=""
               sectionId={sectionId}
             >
@@ -112,18 +108,18 @@ export default function LLMProviderController(props: {
                 type="text"
                 className="plug-tg-input-sm"
                 placeholder={
-                  global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                  global.plugin.geniiAssistant?.LLMRegistry?.UnProviderNames[
                     selectedLLMId
                   ]
                 }
                 value={
-                  global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                  global.plugin.geniiAssistant?.LLMRegistry?.UnProviderNames[
                     selectedLLMId
                   ]
                 }
                 setValue={async (val) => {
                   if (
-                    global.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
+                    global.plugin.geniiAssistant?.LLMRegistry?.UnProviderNames[
                       selectedLLMId
                     ]
                   ) {
@@ -132,7 +128,7 @@ export default function LLMProviderController(props: {
                     ].name = val;
 
                     await global.plugin.saveSettings();
-                    if (global.triggerReload) global.triggerReload();
+                    global.triggerReload();
                   }
                 }}
               />

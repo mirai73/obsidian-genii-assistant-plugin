@@ -1,12 +1,13 @@
 import React, { useId } from "react";
-import useGlobal from "../../context/global";
+import useGlobal from "#/ui/context/global/context";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
-import type { Register } from ".";
+
 import { Context } from "#/types";
 import AvailableVars from "#/ui/components/availableVars";
 import { ContextVariables } from "#/scope/context-manager";
+import { ConfigItem } from "../components/configItem";
 
 const extendedInfo: Record<
   string,
@@ -52,24 +53,20 @@ const extendedInfo: Record<
   },
 };
 
-export default function ConsideredContextSetting(props: {
-  register: Register;
-}) {
+export default function ConsideredContextSetting() {
   const global = useGlobal();
   const sectionId = useId();
-
+  if (!global) throw new Error("Global settings not found");
   return (
     <>
       <SettingsSection
         title="Custom Instructions"
         className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-        register={props.register}
         id={sectionId}
       >
         <SettingItem
           name="Custom default generation prompt"
           description={"You can customize {{context}} variable"}
-          register={props.register}
           sectionId={sectionId}
         >
           <Input
@@ -85,13 +82,7 @@ export default function ConsideredContextSetting(props: {
         </SettingItem>
         {global.plugin.settings.context.customInstructEnabled && (
           <>
-            <SettingItem
-              name=""
-              description=""
-              register={props.register}
-              sectionId={sectionId}
-              textArea
-            >
+            <SettingItem name="" description="" sectionId={sectionId} textArea>
               <textarea
                 placeholder="Textarea will autosize to fit the content"
                 className="plug-tg-input plug-tg-h-fit plug-tg-w-full plug-tg-resize-y plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-outline-none"
@@ -112,43 +103,28 @@ export default function ConsideredContextSetting(props: {
             <AvailableVars vars={ContextVariables} />
           </>
         )}
-
-        <SettingItem
+        <ConfigItem
           name="Enable generate title instruct"
           description={"You can customize generate title prompt"}
-          register={props.register}
           sectionId={sectionId}
-        >
-          <Input
-            type="checkbox"
-            value={
-              "" +
-              global.plugin.settings.advancedOptions
-                ?.generateTitleInstructEnabled
-            }
-            setValue={async (val) => {
-              if (!global.plugin.settings.advancedOptions)
-                global.plugin.settings.advancedOptions = {
-                  generateTitleInstructEnabled: val === "true",
-                };
+          value={
+            global.plugin.settings.advancedOptions
+              ?.generateTitleInstructEnabled ?? false
+          }
+          onChange={(v) => {
+            if (!global.plugin.settings.advancedOptions)
+              global.plugin.settings.advancedOptions = {
+                generateTitleInstructEnabled: v as boolean,
+              };
 
-              global.plugin.settings.advancedOptions.generateTitleInstructEnabled =
-                val === "true";
-              await global.plugin.saveSettings();
-              global.triggerReload();
-            }}
-          />
-        </SettingItem>
+            global.plugin.settings.advancedOptions.generateTitleInstructEnabled =
+              v as boolean;
+          }}
+        />
         {global.plugin.settings.advancedOptions
           ?.generateTitleInstructEnabled && (
           <>
-            <SettingItem
-              name=""
-              description=""
-              register={props.register}
-              sectionId={sectionId}
-              textArea
-            >
+            <SettingItem name="" description="" sectionId={sectionId} textArea>
               <textarea
                 placeholder="Textarea will autosize to fit the content"
                 className="plug-tg-input plug-tg-h-fit plug-tg-w-full plug-tg-resize-y plug-tg-bg-[var(--background-modifier-form-field)] plug-tg-outline-none"
@@ -186,35 +162,25 @@ export default function ConsideredContextSetting(props: {
             />
           </>
         )}
-
-        <SettingItem
+        <ConfigItem
           name="Selection Limiter(regex)"
           description="tg_selection stopping character. Empty means disabled. Default: ^\*\*\*"
-          register={props.register}
           sectionId={sectionId}
-        >
-          <Input
-            type="text"
-            value={global.plugin.settings.tgSelectionLimiter}
-            setValue={async (val) => {
-              global.plugin.settings.tgSelectionLimiter = val;
-              await global.plugin.saveSettings();
-              global.triggerReload();
-            }}
-          />
-        </SettingItem>
+          value={global.plugin.settings.tgSelectionLimiter || ""}
+          onChange={async (val) => {
+            global.plugin.settings.tgSelectionLimiter = val as string;
+          }}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Template Settings"
         className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-        register={props.register}
         id={sectionId}
       >
         <SettingItem
           name="{{context}} Variable Template"
           description="Template for {{context}} variable"
-          register={props.register}
           sectionId={sectionId}
           textArea
         >
@@ -241,52 +207,37 @@ export default function ConsideredContextSetting(props: {
           .map((key: any) => {
             const moreData = extendedInfo[key];
             return (
-              <SettingItem
+              <ConfigItem
                 key={moreData?.name || key}
                 name={moreData?.name || key}
                 description={
                   moreData?.description ||
                   `Include ${key} in the considered context.`
                 }
-                register={props.register}
                 sectionId={sectionId}
-              >
-                <Input
-                  type="checkbox"
-                  value={
-                    "" +
-                    global.plugin.settings.context[
-                      key as keyof typeof global.plugin.settings.context
-                    ]
-                  }
-                  setValue={async (val) => {
-                    (global.plugin.settings.context[
-                      key as keyof typeof global.plugin.settings.context
-                    ] as any) = val === "true";
-                    await global.plugin.saveSettings();
-                    global.triggerReload();
-                  }}
-                />
-              </SettingItem>
+                value={
+                  global.plugin.settings.context[
+                    key as keyof typeof global.plugin.settings.context
+                  ] ?? false
+                }
+                onChange={(v) => {
+                  global.plugin.settings.context[
+                    key as keyof typeof global.plugin.settings.context
+                  ] = v as boolean;
+                }}
+              />
             );
           })}
 
-        <SettingItem
+        <ConfigItem
           name="Allow scripts"
           description="Only enable this if you trust the authors of the templates, or know what you're doing."
-          register={props.register}
           sectionId={sectionId}
-        >
-          <Input
-            type="checkbox"
-            value={"" + global.plugin.settings.allowJavascriptRun}
-            setValue={async (val) => {
-              global.plugin.settings.allowJavascriptRun = val === "true";
-              await global.plugin.saveSettings();
-              global.triggerReload();
-            }}
-          />
-        </SettingItem>
+          value={global.plugin.settings.allowJavascriptRun ?? false}
+          onChange={(v) => {
+            global.plugin.settings.allowJavascriptRun = v as boolean;
+          }}
+        />
       </SettingsSection>
     </>
   );

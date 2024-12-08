@@ -1,4 +1,4 @@
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import {
   App,
   Editor,
@@ -23,7 +23,7 @@ export interface Completion {
 }
 
 export class AutoSuggest {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   process = true;
   delay = 0;
   currentSuggestions: string[] = [];
@@ -40,7 +40,7 @@ export class AutoSuggest {
     | undefined;
   isOpen = false;
   app: App;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     logger("AutoSuggest", app, plugin);
     this.plugin = plugin;
     this.app = app;
@@ -54,10 +54,10 @@ export class AutoSuggest {
     return lastSubstring === substring;
   }
 
-  async getGPTSuggestions(
+  async getSuggestions(
     context: EditorSuggestContext
   ): Promise<Completion[] | []> {
-    logger("getGPTSuggestions", context);
+    logger("getSuggestions", context);
     try {
       let prompt =
         this.plugin.defaultSettings.autoSuggestOptions.customInstruct;
@@ -66,7 +66,7 @@ export class AutoSuggest {
       if (this.plugin.settings.autoSuggestOptions.customInstructEnabled) {
         try {
           const templateContent =
-            this.plugin.settings.autoSuggestOptions.customInstruct ||
+            this.plugin.settings.autoSuggestOptions.customInstruct ??
             this.plugin.defaultSettings.autoSuggestOptions.customInstruct;
 
           if (this.plugin.settings.autoSuggestOptions.systemPrompt)
@@ -78,7 +78,7 @@ export class AutoSuggest {
           );
 
           const templateContext =
-            await this.plugin.contextManager.getTemplateContext({
+            await this.plugin.contextManager?.getTemplateContext({
               editor,
               templateContent,
               filePath: context.file?.path,
@@ -87,9 +87,11 @@ export class AutoSuggest {
           templateContext.query = context.query;
 
           const splittedTemplate =
-            this.plugin.contextManager.splitTemplate(templateContent);
+            this.plugin.contextManager?.splitTemplate(templateContent);
 
-          prompt = await splittedTemplate.inputTemplate?.(templateContext);
+          const promptFromTemplate =
+            await splittedTemplate?.inputTemplate?.(templateContext);
+          if (promptFromTemplate) prompt = promptFromTemplate;
         } catch (err: any) {
           logger(err);
           console.error("error in custom instruct", err);
@@ -104,23 +106,27 @@ export class AutoSuggest {
         autoSuggestOptions.customProvider &&
         autoSuggestOptions.selectedProvider
       )
-        await this.plugin.textGenerator.loadLLM(
+        await this.plugin.geniiAssistant?.loadLLM(
           autoSuggestOptions.selectedProvider
         );
-      const re = await this.plugin.textGenerator.LLMProvider?.generateMultiple(
-        [
-          this.plugin.textGenerator.LLMProvider?.makeMessage(system, "system"),
-          this.plugin.textGenerator.LLMProvider?.makeMessage(prompt, "user"),
-        ],
-        {
-          stream: false,
-          n: parseInt(
-            "" + this.plugin.settings.autoSuggestOptions.numberOfSuggestions,
-            10
-          ),
-          stop: [this.plugin.settings.autoSuggestOptions.stop],
-        }
-      );
+      const re =
+        await this.plugin.geniiAssistant?.LLMProvider?.generateMultiple(
+          [
+            this.plugin.geniiAssistant.LLMProvider?.makeMessage(
+              system,
+              "system"
+            ),
+            this.plugin.geniiAssistant.LLMProvider?.makeMessage(prompt, "user"),
+          ],
+          {
+            stream: false,
+            n: parseInt(
+              "" + this.plugin.settings.autoSuggestOptions.numberOfSuggestions,
+              10
+            ),
+            stop: [this.plugin.settings.autoSuggestOptions.stop],
+          }
+        );
 
       this.plugin.endProcessing(false);
       const suggestions = [...new Set(re)];
@@ -142,11 +148,11 @@ export class AutoSuggest {
             ? label.substring(context.query.length).trim()
             : label.trim(),
         };
-        logger("getGPTSuggestions", suggestionsObj);
+        logger("getSuggestions", suggestionsObj);
         return suggestionsObj;
       });
     } catch (error) {
-      logger("getGPTSuggestions error", error);
+      logger("getSuggestions error", error);
       this.plugin.handelError(error);
     }
     return [];
@@ -164,8 +170,7 @@ export class AutoSuggest {
 
     if (languageIcon) this.autoSuggestItem.append(languageIcon);
 
-    this.autoSuggestItem.title =
-      "Text Generator Enable or disable Auto-suggest";
+    this.autoSuggestItem.title = "Enable or disable Auto-suggest";
 
     this.autoSuggestItem.addClass("mod-clickable");
   }

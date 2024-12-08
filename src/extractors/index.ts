@@ -1,10 +1,10 @@
 import { ContentExtractor } from "./content-extractor";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 import { supportedAudioExtensions } from "./audio-extractor";
 
 export default async function read(
   path: string,
-  plugin: TextGeneratorPlugin,
+  plugin: GeniiAssistantPlugin,
   otherOptions?: any
 ) {
   if (!plugin.app.vault.adapter.exists(path)) throw "file doesn't exist";

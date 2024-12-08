@@ -1,8 +1,7 @@
 import { Command, Notice } from "obsidian";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import { TemplatesModal } from "../models/model";
 
-import { PackageManagerUI } from "#/scope/package-manager/package-manager-ui";
 import ContentManagerFactory from "#/scope/content-manager";
 
 import { SetMaxTokens } from "#/ui/settings/components/set-max-tokens";
@@ -17,7 +16,7 @@ import { InputContext } from "./context-manager";
 const logger = debug("genii:Commands");
 
 export default class Commands {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
 
   async showTokens(context?: InputContext) {
     if (!context) {
@@ -37,13 +36,13 @@ export default class Commands {
       callback: async () => {
         try {
           if (this.plugin.processing)
-            return this.plugin.textGenerator?.signalController?.abort();
+            return this.plugin.geniiAssistant?.signalController?.abort();
           const activeView = await this.plugin.getActiveView();
           const CM = ContentManagerFactory.createContentManager(
             activeView,
             this.plugin
           );
-          await this.plugin.textGenerator?.generateInEditor({}, false, CM);
+          await this.plugin.geniiAssistant?.generateInEditor({}, false, CM);
         } catch (error) {
           this.plugin.handelError(error);
         }
@@ -62,7 +61,7 @@ export default class Commands {
             activeView,
             this.plugin
           );
-          await this.plugin.textGenerator?.generateInEditor({}, true, CM);
+          await this.plugin.geniiAssistant?.generateInEditor({}, true, CM);
         } catch (error) {
           this.plugin.handelError(error);
         }
@@ -91,7 +90,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.generateFromTemplate({
+                await this.plugin.geniiAssistant?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -132,7 +131,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.generateToClipboard(
+                await this.plugin.geniiAssistant?.generateToClipboard(
                   {},
                   result.path || "",
                   true,
@@ -173,7 +172,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.generateFromTemplate({
+                await this.plugin.geniiAssistant?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -206,14 +205,14 @@ export default class Commands {
             async (result) => {
               if (!result.path) throw new Error("Nothing was selected");
               const files =
-                await this.plugin.textGenerator?.embeddingsScope.getSearchResults();
+                await this.plugin.geniiAssistant?.embeddingsScope.getSearchResults();
 
               if (!files?.length)
                 return this.plugin.handelError(
                   "You need at least one search result"
                 );
 
-              await this.plugin.textGenerator?.generateBatchFromTemplate(
+              await this.plugin.geniiAssistant?.generateBatchFromTemplate(
                 files,
                 {},
                 result.path,
@@ -251,7 +250,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.generateFromTemplate({
+                await this.plugin.geniiAssistant?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -294,7 +293,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.generateFromTemplate({
+                await this.plugin.geniiAssistant?.generateFromTemplate({
                   params: {},
                   templatePath: result.path,
                   filePath: (await CM.getActiveFile())?.path,
@@ -336,7 +335,7 @@ export default class Commands {
                   }
                 );
 
-                await this.plugin.textGenerator?.templateToModal({
+                await this.plugin.geniiAssistant?.templateToModal({
                   params: {},
                   templatePath: result.path,
                   editor: CM,
@@ -436,12 +435,12 @@ export default class Commands {
               if (!selectedLLMName) return;
 
               const llm =
-                this.plugin.textGenerator?.LLMRegistry?.get(selectedLLMName);
+                this.plugin.geniiAssistant?.LLMRegistry?.get(selectedLLMName);
               if (llm) {
                 this.plugin.settings.selectedProvider = selectedLLMName as any;
               }
 
-              this.plugin.textGenerator?.load();
+              this.plugin.geniiAssistant?.load();
               await this.plugin.saveSettings();
             }
           ).open();
@@ -473,21 +472,6 @@ export default class Commands {
         }
       },
     },
-
-    {
-      id: "package-manager",
-      name: "Template Packages Manager",
-      icon: "boxes",
-
-      callback: async () => {
-        new PackageManagerUI(
-          this.plugin.app,
-          this.plugin,
-          async () => {}
-        ).open();
-      },
-    },
-
     {
       id: "create-template",
       name: "Create a Template",
@@ -501,7 +485,7 @@ export default class Commands {
             this.plugin
           );
 
-          await this.plugin.textGenerator?.createTemplateFromEditor(CM);
+          await this.plugin.geniiAssistant?.createTemplateFromEditor(CM);
         } catch (error) {
           this.plugin.handelError(error);
         }
@@ -562,7 +546,7 @@ export default class Commands {
     //         logger(err);
     //       }
 
-    //       const generatedTitle = await this.plugin.textGenerator?.gen(
+    //       const generatedTitle = await this.plugin.geniiAssistant?.gen(
     //         prompt,
     //         {}
     //       );
@@ -721,8 +705,8 @@ export default class Commands {
       name: "Stop stream",
       icon: "layout",
       callback: async () => {
-        if (!this.plugin.textGenerator?.signalController?.signal.aborted) {
-          this.plugin.textGenerator?.endLoading();
+        if (!this.plugin.geniiAssistant?.signalController?.signal.aborted) {
+          this.plugin.geniiAssistant?.endLoading();
         }
       },
     },
@@ -736,7 +720,7 @@ export default class Commands {
     },
   ];
 
-  constructor(plugin: TextGeneratorPlugin) {
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
   }
 
@@ -749,7 +733,7 @@ export default class Commands {
         ] !== false
     );
 
-    const templates = await this.plugin.textGenerator?.updateTemplatesCache();
+    const templates = await this.plugin.geniiAssistant?.updateTemplatesCache();
 
     const templatesWithCommands = templates?.filter((t) => t?.commands);
     logger("Templates with commands ", { templatesWithCommands });
@@ -777,7 +761,7 @@ export default class Commands {
             try {
               switch (command) {
                 case "generate":
-                  await this.plugin.textGenerator?.generateFromTemplate({
+                  await this.plugin.geniiAssistant?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -786,7 +770,7 @@ export default class Commands {
                   });
                   break;
                 case "insert":
-                  await this.plugin.textGenerator?.generateFromTemplate({
+                  await this.plugin.geniiAssistant?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -796,7 +780,7 @@ export default class Commands {
                   });
                   break;
                 case "generate&create":
-                  await this.plugin.textGenerator?.generateFromTemplate({
+                  await this.plugin.geniiAssistant?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -805,7 +789,7 @@ export default class Commands {
                   });
                   break;
                 case "insert&create":
-                  await this.plugin.textGenerator?.generateFromTemplate({
+                  await this.plugin.geniiAssistant?.generateFromTemplate({
                     params: {},
                     templatePath: template.path,
                     insertMetadata: true,
@@ -815,7 +799,7 @@ export default class Commands {
                   });
                   break;
                 case "modal":
-                  await this.plugin.textGenerator?.templateToModal({
+                  await this.plugin.geniiAssistant?.templateToModal({
                     params: {},
                     templatePath: template.path,
                     editor: CM,
@@ -823,7 +807,7 @@ export default class Commands {
                   });
                   break;
                 case "clipboard":
-                  await this.plugin.textGenerator?.generateToClipboard(
+                  await this.plugin.geniiAssistant?.generateToClipboard(
                     {},
                     template.path,
                     true,

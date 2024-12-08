@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useContext } from "react";
 
 import TextgeneratorPlugin from "../../../main";
-import { GlobalContext, GlobalType, defaultValues } from "./context";
+import { GlobalContext, GlobalType } from "./context";
 import { useDebounceValue, useToggle } from "usehooks-ts";
 
 const event = new Event("triggerReloadGlobalReact-textgenerator");
 
-export function GlobalProvider(props: {
+export function GlobalProvider({
+  children,
+  plugin,
+}: {
   children: any;
   plugin: TextgeneratorPlugin;
 }) {
-  const [loading, setLoading] = useState(defaultValues.loading);
+  const [loading, setLoading] = useState(false);
   const [_trg, triggerReload] = useToggle();
 
   const [trg] = useDebounceValue(_trg, 80);
@@ -45,17 +47,11 @@ export function GlobalProvider(props: {
     triggerReload() {
       window.dispatchEvent(event);
     },
-    trg,
-    plugin: props.plugin,
+    enableTrigger: trg,
+    plugin: plugin,
   };
 
   return (
-    <GlobalContext.Provider value={values}>
-      {props.children}
-    </GlobalContext.Provider>
+    <GlobalContext.Provider value={values}>{children}</GlobalContext.Provider>
   );
-}
-
-export default function useGlobal() {
-  return useContext(GlobalContext);
 }

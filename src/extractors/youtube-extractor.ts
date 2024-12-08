@@ -2,12 +2,12 @@ import { App } from "obsidian";
 import { YoutubeTranscript } from "./youtube-extractor/youtube-transcript";
 import { Extractor } from "./extractor";
 import debug from "debug";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 
 const logger = debug("genii:Extractor:YoutubeTranscriptionExtractor");
 
 export default class YoutubeExtractor extends Extractor {
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
   }
 

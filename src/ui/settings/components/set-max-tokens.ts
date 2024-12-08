@@ -1,14 +1,14 @@
 import { App, Modal, Setting } from "obsidian";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 
 export class SetMaxTokens extends Modal {
   result: string;
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   onSubmit: (result: string) => void;
 
   constructor(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     result: string,
     onSubmit: (result: string) => void
   ) {

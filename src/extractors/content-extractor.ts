@@ -5,7 +5,7 @@ import WebPageExtractor from "./web-extractor/markdown";
 import YoutubeExtractor from "./youtube-extractor";
 import AudioExtractor from "./audio-extractor";
 import { Extractor } from "./extractor";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import debug from "debug";
 import ImageExtractor from "./image-extractor";
 import ImageExtractorEmbded from "./image-extractor-embded";
@@ -32,7 +32,7 @@ export const Extractors = {
   ImageExtractor,
   ImageExtractorEmbded,
   RssExtractor,
-} as const;
+};
 
 export const ExtractorSlug = {
   pdf: "PDFExtractor",
@@ -47,7 +47,7 @@ export const ExtractorSlug = {
   img: "ImageExtractor",
   ImgEmbd: "ImageExtractorEmbded",
   rss: "RssExtractor",
-} as const;
+};
 
 export const UnExtractorSlug: Record<string, string> = {};
 
@@ -62,8 +62,8 @@ export type ExtractorMethod = keyof typeof Extractors;
 export class ContentExtractor {
   private extractor?: Extractor;
   private app: App;
-  private plugin: TextGeneratorPlugin;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  private plugin: GeniiAssistantPlugin;
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     this.app = app;
     this.plugin = plugin;
   }

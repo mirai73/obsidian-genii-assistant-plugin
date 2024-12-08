@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import React, { useEffect, useId } from "react";
-import type { Register } from "../sections";
+import { useSearchContext } from "../sections";
 
 export default function SettingItem(props: {
   id?: string;
@@ -8,20 +8,20 @@ export default function SettingItem(props: {
   description?: string;
   children?: any;
   className?: string;
-  register?: Register;
   sectionId?: string;
   tip?: string;
   textArea?: boolean;
 }) {
+  const searchContext = useSearchContext();
   const id = props.id || useId();
   useEffect(() => {
-    props.register?.register?.(
+    searchContext?.register(
       id,
       `${props.name}, ${props.description}`.toLocaleLowerCase(),
       props.sectionId
     );
 
-    return () => props.register?.unRegister?.(id);
+    return () => searchContext?.unRegister(id);
   }, [id, props.name, props.description]);
 
   return (
@@ -36,7 +36,7 @@ export default function SettingItem(props: {
         props.className,
         {
           "plug-tg-hidden":
-            props.register && !props.register.listOfAllowed.contains(id),
+            searchContext && !searchContext.listOfAllowed.contains(id),
           "plug-tg-tooltip": props.tip?.length,
         }
       )}

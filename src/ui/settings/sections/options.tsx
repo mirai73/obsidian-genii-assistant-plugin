@@ -1,10 +1,8 @@
 import React, { useId, useMemo } from "react";
-import useGlobal from "../../context/global";
-import { useReloader } from "../components/reloadPlugin";
-import SettingItem from "../components/item";
+import useGlobal from "#/ui/context/global/context";
 import SettingsSection from "../components/section";
-import Input from "../components/input";
-import type { Register } from ".";
+import { ConfigItem } from "../components/configItem";
+
 // object storing custom name/description of items
 const extendedInfo: Record<
   string,
@@ -19,10 +17,10 @@ const extendedInfo: Record<
   },
 };
 
-export default function OptionsSetting(props: { register: Register }) {
-  const [setReloader] = useReloader();
-
+export default function OptionsSetting() {
   const global = useGlobal();
+  if (!global) throw new Error("Global settings not found");
+
   const sectionId = useId();
   const ops = useMemo(
     () => Object.keys(global.plugin.defaultSettings.options),
@@ -34,13 +32,12 @@ export default function OptionsSetting(props: { register: Register }) {
       <SettingsSection
         title="Command Palette options"
         className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-        register={props.register}
         id={sectionId}
       >
         {ops.map((key) => {
           const moreData = extendedInfo[key];
           return (
-            <SettingItem
+            <ConfigItem
               key={key}
               name={moreData?.name || key}
               description={
@@ -52,39 +49,20 @@ export default function OptionsSetting(props: { register: Register }) {
                 )?.name ||
                 key
               }
-              register={props.register}
               sectionId={sectionId}
-            >
-              <Input
-                type="checkbox"
-                value={
-                  "" +
-                  global.plugin.settings.options[
-                    key as keyof typeof global.plugin.settings.options
-                  ]
-                }
-                setValue={async (val) => {
-                  global.plugin.settings.options[
-                    key as keyof typeof global.plugin.settings.options
-                  ] = val === "true";
+              value={
+                global.plugin.settings.options[
+                  key as keyof typeof global.plugin.settings.options
+                ] ?? false
+              }
+              onChange={(v) => {
+                global.plugin.settings.options[
+                  key as keyof typeof global.plugin.settings.options
+                ] = v as boolean;
 
-                  // new Notice(
-                  //   `${key} is ${
-                  //     global.plugin.settings.options[
-                  //       key as keyof typeof global.plugin.settings.options
-                  //     ]
-                  //       ? "enabled"
-                  //       : "disabled"
-                  //   }.`
-                  // );
-
-                  document.querySelector(".tg-opts")?.scrollIntoView();
-                  setReloader(true);
-                  await global.plugin.saveSettings();
-                  global.triggerReload();
-                }}
-              />
-            </SettingItem>
+                document.querySelector(".tg-opts")?.scrollIntoView();
+              }}
+            />
           );
         })}
       </SettingsSection>

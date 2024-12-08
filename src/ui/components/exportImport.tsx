@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useState } from "react";
-import useGlobal from "../context/global";
+import useGlobal from "../context/global/context";
 import clsx from "clsx";
 import JSON5 from "json5";
 import { IconFileUpload, IconPackageExport } from "@tabler/icons-react";
@@ -19,18 +19,19 @@ export default function ExportImportHandler(props: {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
 
-  const backupsDirectory = global.plugin.getTextGenPath(`configs/${props.id}`);
+  const backupsDirectory = global?.plugin.getTextGenPath(`configs/${props.id}`);
 
   useEffect(() => {
     (async () => {
-      if (!(await global.plugin.app.vault.adapter.exists(backupsDirectory)))
+      if (!(await global?.plugin.app.vault.adapter.exists(backupsDirectory)))
         return setBackups([]);
-      const list = await global.plugin.app.vault.adapter.list(backupsDirectory);
+      const list =
+        await global?.plugin.app.vault.adapter.list(backupsDirectory);
       setBackups(
         list.files.map((f) => f.substring(backupsDirectory.length + 1))
       );
     })();
-  }, [global.trg, backupsDirectory]);
+  }, [global.enableTrigger, backupsDirectory]);
 
   return (
     <>
@@ -45,13 +46,12 @@ export default function ExportImportHandler(props: {
           {props.title}
         </div>
         <div className="plug-tg-flex plug-tg-gap-2">
-
           <button
             onClick={async () => {
               setError("");
               setExporting(true);
               try {
-                await global.plugin.app.vault.adapter.mkdir(backupsDirectory);
+                await global?.plugin.app.vault.adapter.mkdir(backupsDirectory);
 
                 const config = { ...(await props.getConfig()) };
                 const configAsString = `\`\`\`JSON
@@ -71,7 +71,7 @@ ${JSON5.stringify(config, null, 2)}
                 let newPath = `${backupsDirectory}/${fileName}`;
 
                 if (
-                  await global.plugin.app.vault.adapter.exists(
+                  await global?.plugin.app.vault.adapter.exists(
                     newPath + ".json.md"
                   )
                 )
@@ -80,7 +80,7 @@ ${JSON5.stringify(config, null, 2)}
                     ""
                   )}_${getCurrentTime()}`;
 
-                await global.plugin.app.vault.adapter.write(
+                await global?.plugin.app.vault.adapter.write(
                   newPath + ".json.md",
                   configAsString
                 );
@@ -88,8 +88,7 @@ ${JSON5.stringify(config, null, 2)}
                 setError(err?.message || err);
               }
               setExporting(false);
-              if (global.triggerReload)
-                global.triggerReload();
+              global?.triggerReload();
             }}
             className={clsx("plug-tg-tooltip plug-tg-tooltip-top", {
               "plug-tg-btn-disabled plug-tg-loading": exporting,

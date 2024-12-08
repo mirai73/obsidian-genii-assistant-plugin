@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 // ---------- sections ----------
 import AdvancedSetting from "./advanced";
-import AccountSettings from "./account";
 import ProviderSetting from "./provider";
 import DMPSetting from "./default-model-parameters";
 import ConsideredContextSetting from "./considered-context";
@@ -11,11 +10,10 @@ import SlashSuggestSetting from "./slash-suggest";
 import OptionsSetting from "./options";
 import Input from "../components/input";
 import OtherProvidersSetting from "./otherProviders";
-import { ProviderServer } from "#/scope/package-manager/package-manager";
-import useGlobal from "#/ui/context/global";
+import useGlobal from "#/ui/context/global/context";
 // ------------------------------
 
-export type Register = {
+type SearchContext = {
   listOfAllowed: string[];
   activeSections: Record<string, true>;
   searchTerm: string;
@@ -23,6 +21,14 @@ export type Register = {
   unRegister(id: string): void;
   checkAll(ids: string[]): boolean;
 };
+
+const SearchSettingsContext = createContext<SearchContext | undefined>(
+  undefined
+);
+
+export function useSearchContext() {
+  return useContext(SearchSettingsContext);
+}
 
 export default function SectionsMain() {
   const global = useGlobal();
@@ -64,7 +70,7 @@ export default function SectionsMain() {
     return obj;
   }, [searchedItems]);
 
-  const register: Register = {
+  const register: SearchContext = {
     listOfAllowed: searchedItems,
     activeSections,
     searchTerm,
@@ -89,28 +95,29 @@ export default function SectionsMain() {
   };
 
   return (
-    <div className="plug-tg-flex plug-tg-w-full plug-tg-flex-col plug-tg-gap-3">
-      <div className="w-full gap-2 plug-tg-flex plug-tg-flex-col plug-tg-justify-between md:plug-tg-flex-row">
-        <div>
-          <h1>Genii Assistant</h1>
+    <SearchSettingsContext.Provider value={register}>
+      <div className="plug-tg-flex plug-tg-w-full plug-tg-flex-col plug-tg-gap-3">
+        <div className="w-full gap-2 plug-tg-flex plug-tg-flex-col plug-tg-justify-between md:plug-tg-flex-row">
+          <div>
+            <h1>Genii Assistant</h1>
+          </div>
+          <Input
+            type="text"
+            setValue={(val) => setSearchTerm(val.toLocaleLowerCase())}
+            value={searchTerm}
+            className="plug-tg-input-sm plug-tg-w-full lg:plug-tg-w-auto"
+            placeholder="Search For Option"
+          />
         </div>
-        <Input
-          type="text"
-          setValue={(val) => setSearchTerm(val.toLocaleLowerCase())}
-          value={searchTerm}
-          className="plug-tg-input-sm plug-tg-w-full lg:plug-tg-w-auto"
-          placeholder="Search For Option"
-        />
-      </div>
 
-      <div className="tags plug-tg-flex plug-tg-flex-wrap plug-tg-gap-2">
-        <a
-          className="tag"
-          href={`https://github.com/mirai73/obsidian-genii-assistant-plugin/releases/tag/${global.plugin.manifest.version}`}
-        >
-          V{global.plugin.manifest.version}
-        </a>
-        {/* <a className="tag" href="https://bit.ly/tg_docs">
+        <div className="tags plug-tg-flex plug-tg-flex-wrap plug-tg-gap-2">
+          <a
+            className="tag"
+            href={`https://github.com/mirai73/obsidian-genii-assistant-plugin/releases/tag/${global?.plugin.manifest.version}`}
+          >
+            V{global?.plugin.manifest.version}
+          </a>
+          {/* <a className="tag" href="https://bit.ly/tg_docs">
           {"\u{1F4D6}"} Documentation
         </a>
         <a className="tag" href="https://bit.ly/Tg-discord">
@@ -122,19 +129,18 @@ export default function SectionsMain() {
         <a className="tag" href="https://bit.ly/tg-twitter2">
           {"\u{1F426}"} Twitter
         </a> */}
+        </div>
+
+        <ProviderSetting />
+        <AdvancedSetting />
+        <DMPSetting />
+        <AutoSuggestSetting />
+        <SlashSuggestSetting />
+        <ConsideredContextSetting />
+        <ExtractorOptionsSetting />
+        <OtherProvidersSetting />
+        <OptionsSetting />
       </div>
-
-      <ProviderSetting register={register} />
-      <AdvancedSetting register={register} />
-      {!!ProviderServer && <AccountSettings register={register} />}
-
-      <DMPSetting register={register} />
-      <AutoSuggestSetting register={register} />
-      <SlashSuggestSetting register={register} />
-      <ConsideredContextSetting register={register} />
-      <ExtractorOptionsSetting register={register} />
-      <OtherProvidersSetting register={register} />
-      <OptionsSetting register={register} />
-    </div>
+    </SearchSettingsContext.Provider>
   );
 }

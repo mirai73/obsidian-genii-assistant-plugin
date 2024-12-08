@@ -1,5 +1,5 @@
 import { App, Notice, FuzzySuggestModal } from "obsidian";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import debug from "debug";
 const logger = debug("genii:setModel");
 
@@ -9,11 +9,11 @@ interface LLM {
 }
 
 export class SetLLMProvider extends FuzzySuggestModal<LLM> {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   onChoose: (result: string) => void;
   constructor(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     onChoose: (result: string) => void
   ) {
     super(app);
@@ -23,12 +23,12 @@ export class SetLLMProvider extends FuzzySuggestModal<LLM> {
   }
 
   getItems() {
-    const llmList = this.plugin.textGenerator?.LLMRegistry?.getList().map(
+    const llmList = this.plugin.geniiAssistant?.LLMRegistry?.getList().map(
       (l) => ({
         id: l,
         name:
-          this.plugin.textGenerator?.LLMRegistry?.UnProviderNames[
-            l as keyof typeof this.plugin.textGenerator.LLMRegistry.ProviderSlugs
+          this.plugin.geniiAssistant?.LLMRegistry?.UnProviderNames[
+            l as keyof typeof this.plugin.geniiAssistant.LLMRegistry.ProviderSlugs
           ] || "",
       })
     );

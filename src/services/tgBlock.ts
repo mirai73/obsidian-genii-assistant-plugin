@@ -1,12 +1,12 @@
 import ContentManagerFactory from "#/scope/content-manager";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 import { MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian";
 import debug from "debug";
 const logger = debug("genii:tgBlock");
 
 export default class TGBlock {
-  plugin: TextGeneratorPlugin;
-  constructor(plugin: TextGeneratorPlugin) {
+  plugin: GeniiAssistantPlugin;
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
 
     this.plugin.registerMarkdownCodeBlockProcessor(
@@ -88,7 +88,7 @@ export default class TGBlock {
       );
       logger("eventListener", markdown);
       if (activeView)
-        await this.plugin.textGenerator?.generatePrompt(
+        await this.plugin.geniiAssistant?.generatePrompt(
           markdown,
           CM,
           outputTemplate
@@ -106,7 +106,7 @@ export default class TGBlock {
       createTemplateSVG
     );
     buttonMakeTemplate.addEventListener("click", async () => {
-      await this.plugin.textGenerator?.createTemplate(source, "newTemplate");
+      await this.plugin.geniiAssistant?.createTemplate(source, "newTemplate");
       logger(`addTGMenu MakeTemplate`, {
         markdown,
         source,

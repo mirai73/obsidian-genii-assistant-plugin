@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import LLMProviderInterface from "../interface";
-import useGlobal from "#/ui/context/global";
+import useGlobal from "#/ui/context/global/context";
 import { getHBValues } from "#/utils/barhandles";
 import SettingItem from "#/ui/settings/components/item";
 import Input from "#/ui/settings/components/input";
@@ -21,7 +21,7 @@ const untangableVars = [
   "custom_header",
   "custom_body",
   "sanitization_response",
-  "streamable",
+  "canStream",
   "CORSBypass",
 ];
 
@@ -56,7 +56,7 @@ export const default_values = {
     return choices;
   }`,
   CORSBypass: true,
-  streamable: false,
+  canStream: false,
   model: "claude-2.1",
 };
 
@@ -71,7 +71,7 @@ export default class AnthropicLegacyProvider
   static slug = "anthropicLegacy" as const;
   static displayName = "Anthropic Legacy";
 
-  streamable = true;
+  canStream = true;
 
   provider = AnthropicLegacyProvider.provider;
   id = AnthropicLegacyProvider.id;
@@ -80,7 +80,10 @@ export default class AnthropicLegacyProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global)
+      throw new Error(
+        "Global settings not found. Please contact the developer."
+      );
     const config = (global.plugin.settings.LLMProviderOptions[
       props.self.id || "default"
     ] ??= {
@@ -100,15 +103,11 @@ export default class AnthropicLegacyProvider
         `${config?.custom_header} 
         ${config?.custom_body}`
       ).filter((d) => !globalVars[d]);
-    }, [global.trg]);
+    }, [global.enableTrigger]);
 
     return (
       <>
-        <SettingItem
-          name="Endpoint"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Endpoint" sectionId={props.sectionId}>
           <Input
             type="text"
             value={config.endpoint || default_values.endpoint}
@@ -122,12 +121,7 @@ export default class AnthropicLegacyProvider
         </SettingItem>
 
         {vars.map((v: string) => (
-          <SettingItem
-            key={v}
-            name={v}
-            register={props.register}
-            sectionId={props.sectionId}
-          >
+          <SettingItem key={v} name={v} sectionId={props.sectionId}>
             <Input
               value={config[v]}
               placeholder={`Enter your ${v}`}
@@ -149,7 +143,6 @@ export default class AnthropicLegacyProvider
             <SettingItem
               name="Getting started"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -159,7 +152,6 @@ export default class AnthropicLegacyProvider
             <SettingItem
               name="Available models"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

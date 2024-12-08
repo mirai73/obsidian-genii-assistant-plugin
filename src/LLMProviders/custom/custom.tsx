@@ -1,7 +1,7 @@
 import { cleanConfig } from "../../utils";
 import React, { useEffect, useMemo, useState } from "react";
 import LLMProviderInterface from "../interface";
-import useGlobal from "#/ui/context/global";
+import useGlobal from "#/ui/context/global/context";
 import { getHBValues } from "#/utils/barhandles";
 import SettingItem from "#/ui/settings/components/item";
 import Input from "#/ui/settings/components/input";
@@ -56,7 +56,7 @@ export default class DefaultCustomProvider
   extends CustomProvider
   implements LLMProviderInterface
 {
-  streamable = true;
+  canStream = true;
   static provider = "Custom";
   static id = "Default (Custom)" as const;
   static slug = "custom" as const;
@@ -74,6 +74,10 @@ export default class DefaultCustomProvider
     const [headerValidityError, setHeaderValidityError] = useState("");
     const [showAdvanced, setShowAdvanced] = useState(false);
 
+    if (!global)
+      throw new Error(
+        "Global settings not found. Please contact the developer."
+      );
     const config = (global.plugin.settings.LLMProviderOptions[
       props.self.id || "default"
     ] ??= {
@@ -92,47 +96,39 @@ export default class DefaultCustomProvider
         `${config?.custom_header} 
         ${config?.custom_body}`
       ).filter((d) => !globalVars[d]);
-    }, [global.trg]);
+    }, [global.enableTrigger]);
 
     const limitedExperience = config.CORSBypass && !Platform.isDesktop;
 
-    const isStreamable = config.streamable && !limitedExperience;
+    const isStreamable = config.canStream && !limitedExperience;
 
     return (
       <>
-        <SettingItem
-          name="Endpoint"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Endpoint" sectionId={props.sectionId}>
           <Input
             type="text"
             value={config.endpoint || default_values.endpoint}
             placeholder="Enter your API endpoint"
             setValue={async (value) => {
               config.endpoint = value;
-              if (global.triggerReload) global.triggerReload();
-              await global.plugin.saveSettings();
+              global?.triggerReload();
+              await global?.plugin.saveSettings();
             }}
           />
         </SettingItem>
 
         {!!vars.includes("api_key") && (
-          <SettingItem
-            name="API Key"
-            register={props.register}
-            sectionId={props.sectionId}
-          >
+          <SettingItem name="API Key" sectionId={props.sectionId}>
             <Input
               value={config.api_key}
               type="password"
               placeholder="Enter your API endpoint"
               setValue={async (value) => {
                 config.api_key = value;
-                global.plugin.encryptAllKeys();
-                if (global.triggerReload) global.triggerReload();
+                global?.plugin.encryptAllKeys();
+                global?.triggerReload();
 
-                await global.plugin.saveSettings();
+                await global?.plugin.saveSettings();
               }}
             />
           </SettingItem>
@@ -140,34 +136,25 @@ export default class DefaultCustomProvider
 
         {vars.map((v: string) =>
           v == "api_key" ? null : (
-            <SettingItem
-              key={v}
-              name={v}
-              register={props.register}
-              sectionId={props.sectionId}
-            >
+            <SettingItem key={v} name={v} sectionId={props.sectionId}>
               <Input
                 value={config[v]}
                 placeholder={`Enter your ${v}`}
                 type={v.toLowerCase().contains("key") ? "password" : "text"}
                 setValue={async (value) => {
                   config[v] = value;
-                  if (global.triggerReload) global.triggerReload();
+                  global?.triggerReload();
                   if (v.toLowerCase().contains("key"))
-                    global.plugin.encryptAllKeys();
+                    global?.plugin.encryptAllKeys();
 
-                  await global.plugin.saveSettings();
+                  await global?.plugin.saveSettings();
                 }}
               />
             </SettingItem>
           )
         )}
 
-        <SettingItem
-          name="Advance mode"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Advanced mode" sectionId={props.sectionId}>
           <Input
             type="checkbox"
             value={showAdvanced ? "true" : "false"}
@@ -198,7 +185,7 @@ export default class DefaultCustomProvider
                   const compiled = await Handlebars.compile(
                     config.custom_header || default_values.custom_header
                   )({
-                    ...global.plugin.settings,
+                    ...global?.plugin.settings,
                     ...cleanConfig(default_values),
                     n: 1,
                     messages: testMessages,
@@ -216,8 +203,8 @@ export default class DefaultCustomProvider
                     console.warn(err);
                   }
 
-                  if (global.triggerReload) global.triggerReload();
-                  await global.plugin.saveSettings();
+                  global?.triggerReload();
+                  await global?.plugin.saveSettings();
                 }}
                 spellCheck={false}
                 rows={5}
@@ -241,7 +228,7 @@ export default class DefaultCustomProvider
                   const compiled = await Handlebars.compile(
                     config.custom_body || default_values.custom_body
                   )({
-                    ...global.plugin.settings,
+                    ...global?.plugin.settings,
                     ...cleanConfig(config),
                     n: 1,
                     messages: testMessages,
@@ -261,8 +248,8 @@ export default class DefaultCustomProvider
                       err
                     );
                   }
-                  if (global.triggerReload) global.triggerReload();
-                  await global.plugin.saveSettings();
+                  global?.triggerReload();
+                  await global?.plugin.saveSettings();
                 }}
                 spellCheck={false}
                 rows={20}
@@ -282,8 +269,8 @@ export default class DefaultCustomProvider
                 }
                 onChange={async (e) => {
                   config.sanitization_response = e.target.value;
-                  if (global.triggerReload) global.triggerReload();
-                  await global.plugin.saveSettings();
+                  global?.triggerReload();
+                  await global?.plugin.saveSettings();
                 }}
                 spellCheck={false}
                 rows={20}
@@ -294,9 +281,8 @@ export default class DefaultCustomProvider
               description={
                 limitedExperience
                   ? "Disable CORS Bypass to be able to use this feature"
-                  : "If enabled, means this API is streamable"
+                  : "If enabled, means this API can stream"
               }
-              register={props.register}
               sectionId={props.sectionId}
               className={clsx({
                 "plug-tg-pointer-events-none plug-tg-cursor-not-allowed plug-tg-opacity-60":
@@ -306,21 +292,20 @@ export default class DefaultCustomProvider
               <Input
                 type="checkbox"
                 value={
-                  !limitedExperience && config.streamable ? "true" : "false"
+                  !limitedExperience && config.canStream ? "true" : "false"
                 }
                 placeholder="Is it Streamable"
                 setValue={async (value) => {
-                  config.streamable = value === "true";
-                  if (global.triggerReload) global.triggerReload();
+                  config.canStream = value === "true";
+                  global?.triggerReload();
 
-                  await global.plugin.saveSettings();
+                  await global?.plugin.saveSettings();
                 }}
               />
             </SettingItem>
             <SettingItem
               name="CORS Bypass"
               description="enable this only if you get blocked by CORS, in mobile this will result in failure in some functions"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <Input
@@ -328,8 +313,8 @@ export default class DefaultCustomProvider
                 value={"" + config.CORSBypass}
                 setValue={async (val) => {
                   config.CORSBypass = val === "true";
-                  await global.plugin.saveSettings();
-                  if (global.triggerReload) global.triggerReload();
+                  await global?.plugin.saveSettings();
+                  global?.triggerReload();
                 }}
               />
             </SettingItem>
@@ -345,8 +330,8 @@ export default class DefaultCustomProvider
                     }
                     onChange={async (e) => {
                       config.sanitization_streaming = e.target.value;
-                      if (global.triggerReload) global.triggerReload();
-                      await global.plugin.saveSettings();
+                      global?.triggerReload();
+                      await global?.plugin.saveSettings();
                     }}
                     spellCheck={false}
                     rows={20}

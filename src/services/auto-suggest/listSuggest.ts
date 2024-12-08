@@ -1,4 +1,4 @@
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import {
   App,
   Editor,
@@ -20,7 +20,7 @@ import { AutoSuggest, Completion } from ".";
 const logger = debug("genii:AutoSuggest");
 
 export class ListSuggest extends EditorSuggest<Completion> {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   autoSuggest: AutoSuggest;
   process = true;
   delay = 0;
@@ -36,7 +36,11 @@ export class ListSuggest extends EditorSuggest<Completion> {
     }[];
   };
   isOpen = false;
-  constructor(app: App, plugin: TextGeneratorPlugin, autoSuggest: AutoSuggest) {
+  constructor(
+    app: App,
+    plugin: GeniiAssistantPlugin,
+    autoSuggest: AutoSuggest
+  ) {
     logger("AutoSuggest", app, plugin);
     super(app);
     this.plugin = plugin;
@@ -82,7 +86,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
           )
             return [];
 
-          const suggestions = await this.autoSuggest.getGPTSuggestions(context);
+          const suggestions = await this.autoSuggest.getSuggestions(context);
           return suggestions?.length
             ? suggestions
             : [
@@ -137,7 +141,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
       this.plugin
     );
 
-    const selection = this.plugin.contextManager.getTGSelection(
+    const selection = this.plugin.contextManager?.getTGSelection(
       CM
     ) as unknown as string;
     const lastOccurrenceIndex = selection.lastIndexOf(triggerPhrase);
@@ -283,7 +287,7 @@ export class ListSuggest extends EditorSuggest<Completion> {
 
   static setup(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     autoSuggest: AutoSuggest
   ) {
     const suggest = new ListSuggest(app, plugin, autoSuggest);

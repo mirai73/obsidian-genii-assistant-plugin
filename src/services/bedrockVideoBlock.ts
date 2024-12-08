@@ -1,5 +1,5 @@
 import ContentManagerFactory from "#/scope/content-manager";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 import { MarkdownPostProcessorContext } from "obsidian";
 import debug from "debug";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
@@ -10,8 +10,8 @@ import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 const logger = debug("genii:bedrockVideoBlock");
 
 export default class BedrockVideoBlock {
-  plugin: TextGeneratorPlugin;
-  constructor(plugin: TextGeneratorPlugin) {
+  plugin: GeniiAssistantPlugin;
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
 
     this.plugin.registerMarkdownCodeBlockProcessor(
@@ -53,9 +53,7 @@ export default class BedrockVideoBlock {
   }
 
   private async getVideo(invocationArn: string) {
-    const config = (this.plugin.settings.LLMProviderOptions[
-      "Bedrock (Custom)"
-    ] ??= {});
+    const config = (this.plugin.settings.LLMProviderOptions["bedrock"] ??= {});
     logger("generate", { config });
 
     const credentials =

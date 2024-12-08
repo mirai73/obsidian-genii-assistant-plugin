@@ -1,11 +1,10 @@
 import React from "react";
-import type { Register } from "..";
 import WisperProviderSetting from "./whisper";
 
-export default function OtherProvidersSetting(props: { register: Register }) {
+export default function OtherProvidersSetting() {
   return (
     <>
-      <WisperProviderSetting register={props.register} />
+      <WisperProviderSetting />
     </>
   );
 }

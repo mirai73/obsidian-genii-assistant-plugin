@@ -2,7 +2,7 @@ import { ItemView, Menu, ViewStateResult, WorkspaceLeaf } from "obsidian";
 import * as React from "react";
 import Tool from "./playground";
 import { Root, createRoot } from "react-dom/client";
-import TextGeneratorPlugin from "../../main";
+import GeniiAssistantPlugin from "../../main";
 import Contexts from "../context";
 import { trimBy } from "../../utils";
 export const VIEW_Playground_ID = "playground-view";
@@ -12,9 +12,9 @@ const logger = debug("genii:playgroundview");
 
 export class PlaygroundView extends ItemView {
   root?: Root;
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   title?: string;
-  constructor(leaf: WorkspaceLeaf, plugin: TextGeneratorPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: GeniiAssistantPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -54,7 +54,6 @@ export class PlaygroundView extends ItemView {
                 );
               }
               console.log(this.plugin.commands?.commands, commands);
-              await this.plugin.packageManager?.load();
             }}
           />
         </Contexts>

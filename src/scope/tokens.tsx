@@ -2,7 +2,7 @@ import debug from "debug";
 import cl100k_base from "@dqbd/tiktoken/encoders/cl100k_base.json";
 import r50k_base from "@dqbd/tiktoken/encoders/r50k_base.json";
 import p50k_base from "@dqbd/tiktoken/encoders/p50k_base.json";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 import wasm from "../../node_modules/@dqbd/tiktoken/tiktoken_bg.wasm";
 import { init, Tiktoken } from "@dqbd/tiktoken/lite/init";
 import { Notice } from "obsidian";
@@ -12,8 +12,8 @@ import { InputContext } from "./context-manager";
 const logger = debug("genii:tokens-service");
 
 export default class TokensScope {
-  plugin: TextGeneratorPlugin;
-  constructor(plugin: TextGeneratorPlugin) {
+  plugin: GeniiAssistantPlugin;
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
   }
 
@@ -55,9 +55,9 @@ export default class TokensScope {
         ? await template.inputTemplate(options)
         : context.context;
 
-    if (!this.plugin.textGenerator?.reqFormatter) return;
+    if (!this.plugin.geniiAssistant?.reqFormatter) return;
     const { bodyParams } =
-      await this.plugin.textGenerator.reqFormatter.getRequestParameters(
+      await this.plugin.geniiAssistant.reqFormatter.getRequestParameters(
         {
           ...this.plugin.settings,
           prompt,
@@ -66,7 +66,7 @@ export default class TokensScope {
         ""
       );
 
-    const llmSettings = this.plugin.textGenerator?.LLMProvider?.getSettings();
+    const llmSettings = this.plugin.geniiAssistant?.LLMProvider?.getSettings();
 
     const conf = {
       ...this.plugin.settings,
@@ -75,12 +75,12 @@ export default class TokensScope {
     };
 
     const { tokens, maxTokens } =
-      (await this.plugin.textGenerator?.LLMProvider?.calcTokens(
+      (await this.plugin.geniiAssistant?.LLMProvider?.calcTokens(
         bodyParams.messages,
         conf
       )) ?? { tokens: 0, maxTokens: 0 };
 
-    const cost = await this.plugin.textGenerator?.LLMProvider?.calcPrice(
+    const cost = await this.plugin.geniiAssistant?.LLMProvider?.calcPrice(
       tokens,
       conf
     );

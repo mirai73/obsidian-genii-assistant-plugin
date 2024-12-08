@@ -47,7 +47,7 @@ export default function HelpersFn(self: ContextManager) {
   };
 
   const _runTemplate = async (id: string, metadata?: any) => {
-    return await self.plugin.textGenerator?.templateGen(id, {
+    return await self.plugin.geniiAssistant?.templateGen(id, {
       additionalProps: metadata,
     });
   };
@@ -335,7 +335,7 @@ export default function HelpersFn(self: ContextManager) {
     },
 
     async package(packageId: string) {
-      if (!(await self.plugin.textGenerator?.packageExists(packageId)))
+      if (!(await self.plugin.geniiAssistant?.packageExists(packageId)))
         throw new Error(`package ${packageId} was not found.`);
       return true;
     },
@@ -357,7 +357,8 @@ export default function HelpersFn(self: ContextManager) {
 
       const otherVariables = vars;
 
-      const templatePath = await self.plugin.textGenerator?.getTemplatePath(id);
+      const templatePath =
+        await self.plugin.geniiAssistant?.getTemplatePath(id);
 
       if (!templatePath)
         throw new Error(

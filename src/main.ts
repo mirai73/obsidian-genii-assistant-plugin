@@ -8,19 +8,17 @@ import {
   Platform,
   EditorPosition,
 } from "obsidian";
-import type { TextGeneratorSettings } from "./types";
+import type { GeniiAssistantSettings } from "./types";
 import { containsInvalidCharacter, numberToKFormat } from "./utils";
 import {
   DecryptKeyPrefix,
   GENERATE_ICON,
   GENERATE_META_ICON,
 } from "./constants";
-import TextGeneratorSettingTab from "./ui/settings/settings-page";
+import GeniiAssistantSettingTab from "./ui/settings/settings-page";
 import { SetMaxTokens } from "./ui/settings/components/set-max-tokens";
-import TextGenerator from "./services/text-generator";
+import GeniiAssistant from "./services/text-generator";
 import PluginServiceAPI from "./services/pluginAPI-service";
-import PackageManager from "./scope/package-manager/package-manager";
-import { PackageManagerUI } from "./scope/package-manager/package-manager-ui";
 import { EditorView } from "@codemirror/view";
 import { spinnersPlugin, SpinnersPlugin } from "./code-mirror/plugin";
 import PrettyError from "pretty-error";
@@ -61,20 +59,19 @@ if (Platform.isDesktop) {
 debug.enable("genii:*"); // TODO: have a setting for this
 const logger = debug("genii:main");
 
-export default class TextGeneratorPlugin extends Plugin {
-  settings: TextGeneratorSettings = DEFAULT_SETTINGS;
-  textGenerator?: TextGenerator;
+export default class GeniiAssistantPlugin extends Plugin {
+  settings: GeniiAssistantSettings = DEFAULT_SETTINGS;
+  geniiAssistant?: GeniiAssistant;
   pluginAPIService?: PluginServiceAPI;
-  packageManager?: PackageManager;
   versionManager?: VersionManager;
   contextManager?: ContextManager;
   contentManager = ContentManagerFactory;
   tokensScope?: TokensScope;
   autoSuggest?: AutoSuggest;
   processing = false;
-  defaultSettings: TextGeneratorSettings = DEFAULT_SETTINGS;
+  defaultSettings: GeniiAssistantSettings = DEFAULT_SETTINGS;
 
-  textGeneratorIconItem: HTMLElement = createDiv();
+  geniiAssistantIconItem: HTMLElement = createDiv();
   statusBarTokens: HTMLElement = createDiv();
   modelBar: HTMLElement = createDiv();
 
@@ -89,7 +86,7 @@ export default class TextGeneratorPlugin extends Plugin {
   }
 
   async onload() {
-    logger("loading textGenerator plugin");
+    logger("loading geniiAssistant plugin");
     addIcon("GENERATE_ICON", GENERATE_ICON);
     addIcon("GENERATE_META_ICON", GENERATE_META_ICON);
 
@@ -98,7 +95,7 @@ export default class TextGeneratorPlugin extends Plugin {
     await this.addStatusBar();
 
     // This adds a settings tab so the user can configure various aspects of the plugin
-    this.addSettingTab(new TextGeneratorSettingTab(this.app, this));
+    this.addSettingTab(new GeniiAssistantSettingTab(this.app, this));
 
     // registering different views
     // Playground view
@@ -120,13 +117,13 @@ export default class TextGeneratorPlugin extends Plugin {
             item.onClick(async () => {
               try {
                 if (this.processing)
-                  return this.textGenerator?.signalController?.abort();
+                  return this.geniiAssistant?.signalController?.abort();
                 const activeView = await this.getActiveView();
                 const CM = ContentManagerFactory.createContentManager(
                   activeView,
                   this
                 );
-                await this.textGenerator?.generateInEditor({}, false, CM);
+                await this.geniiAssistant?.generateInEditor({}, false, CM);
               } catch (error) {
                 this.handleError(error);
               }
@@ -149,7 +146,7 @@ export default class TextGeneratorPlugin extends Plugin {
                   async (result) => {
                     if (!result.path)
                       return this.handelError("couldn't find path");
-                    await this.textGenerator?.generateBatchFromTemplate(
+                    await this.geniiAssistant?.generateBatchFromTemplate(
                       files.filter(
                         // @ts-ignore
                         (f) => !f.children && f.path.endsWith(".md")
@@ -187,20 +184,12 @@ export default class TextGeneratorPlugin extends Plugin {
             this
           );
           try {
-            await this.textGenerator?.generateInEditor({}, false, CM);
+            await this.geniiAssistant?.generateInEditor({}, false, CM);
           } catch (error) {
             this.handelError(error);
           }
         }
       });
-
-      this.addRibbonIcon(
-        "boxes",
-        "Text Generator: Templates Packages Manager",
-        async () => {
-          new PackageManagerUI(this.app, this).open();
-        }
-      );
     }
 
     this.pluginAPIService = new PluginServiceAPI(this);
@@ -212,11 +201,10 @@ export default class TextGeneratorPlugin extends Plugin {
         await this.versionManager.load();
 
         this.contextManager = new ContextManager(this.app, this);
-        this.packageManager = new PackageManager(this.app, this);
 
         // Register Services
         // text generator
-        this.textGenerator = new TextGenerator(this.app, this);
+        this.geniiAssistant = new GeniiAssistant(this.app, this);
 
         // auto suggest
         if (this.settings.autoSuggestOptions?.isEnabled)
@@ -241,9 +229,8 @@ export default class TextGeneratorPlugin extends Plugin {
         try {
           await Promise.all([
             this.tokensScope.setup(),
-            this.textGenerator.load(),
+            this.geniiAssistant.load(),
             this.commands.addCommands(),
-            this.packageManager.load(),
           ]);
         } catch (err: any) {
           console.trace("[TG:Error] in Loading a Service", err);
@@ -265,7 +252,7 @@ export default class TextGeneratorPlugin extends Plugin {
 
   async addStatusBar() {
     // add status bar items
-    this.textGeneratorIconItem = this.addStatusBarItem();
+    this.geniiAssistantIconItem = this.addStatusBarItem();
     this.statusBarTokens = this.addStatusBarItem();
     this.statusBarItemEl = this.addStatusBarItem();
 
@@ -278,7 +265,7 @@ export default class TextGeneratorPlugin extends Plugin {
   async onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TOOL_ID);
     this.app.workspace.detachLeavesOfType(VIEW_Playground_ID);
-    await this.textGenerator?.unload();
+    await this.geniiAssistant?.unload();
   }
 
   async loadSettings() {
@@ -340,7 +327,7 @@ export default class TextGeneratorPlugin extends Plugin {
 
   updateStatusBar(text: string, processing = false) {
     if (this.settings.showStatusBar) {
-      this.textGeneratorIconItem.innerHTML = "";
+      this.geniiAssistantIconItem.innerHTML = "";
       this.statusBarTokens.innerHTML = "";
       this.modelBar.innerHTML = "";
       this.modelBar.addClass("mod-clickable");
@@ -362,7 +349,7 @@ export default class TextGeneratorPlugin extends Plugin {
       });
       const span1 = document.createElement("span");
 
-      span1.textContent = `${this.textGenerator?.LLMProvider?.getSettings()?.model ?? "No model selected"}`;
+      span1.textContent = `${this.geniiAssistant?.LLMProvider?.getSettings()?.model ?? "No model selected"}`;
       this.modelBar.append(span1);
       if (processing) {
         const span = document.createElement("span");
@@ -370,16 +357,16 @@ export default class TextGeneratorPlugin extends Plugin {
         span.setAttribute("id", "tg-loading");
         span.style.width = "16px";
         span.style.alignContent = "center";
-        this.textGeneratorIconItem.append(span);
-        this.textGeneratorIconItem.title = "Generating Text...";
+        this.geniiAssistantIconItem.append(span);
+        this.geniiAssistantIconItem.title = "Generating Text...";
         if (this.notice) this.notice.hide();
         this.notice = new Notice(`Processing...\n${text}`, 100000);
       } else {
         const icon = getIcon("bot");
-        if (icon) this.textGeneratorIconItem.append(icon);
-        this.textGeneratorIconItem.title = "AI Generator";
-        this.textGeneratorIconItem.addClass("mod-clickable");
-        this.textGeneratorIconItem.addEventListener("click", async () => {
+        if (icon) this.geniiAssistantIconItem.append(icon);
+        this.geniiAssistantIconItem.title = "AI Generator";
+        this.geniiAssistantIconItem.addClass("mod-clickable");
+        this.geniiAssistantIconItem.addEventListener("click", async () => {
           // @ts-ignore
           await this.app.setting.open();
           // @ts-ignore
@@ -637,8 +624,8 @@ export default class TextGeneratorPlugin extends Plugin {
     const keys: Record<string, string | undefined> = {};
     for (const k in this.settings.LLMProviderOptions) {
       if (k && this.settings.LLMProviderOptions.hasOwnProperty(k)) {
-        if (this.textGenerator?.LLMRegistry) {
-          keys[this.textGenerator?.LLMRegistry.UnProviderSlugs[k]] =
+        if (this.geniiAssistant?.LLMRegistry) {
+          keys[this.geniiAssistant?.LLMRegistry.UnProviderSlugs[k]] =
             this.settings.LLMProviderOptions[k]?.api_key;
         }
       }

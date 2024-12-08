@@ -1,7 +1,7 @@
 import { App, TFile, Platform } from "obsidian";
 import { Extractor } from "./extractor";
 import debug from "debug";
-import TextGeneratorPlugin from "src/main";
+import GeniiAssistantPlugin from "src/main";
 
 import type { Item } from "rss-parser";
 import type PArser from "rss-parser";
@@ -18,7 +18,7 @@ const logger = debug("genii:Extractor:RssExtractor");
 export default class RssExtractor extends Extractor {
   parser: PArser;
 
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
     this.parser = new Parser();
   }

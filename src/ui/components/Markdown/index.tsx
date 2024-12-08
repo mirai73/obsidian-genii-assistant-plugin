@@ -2,14 +2,14 @@ import React from "react";
 import { useEffect, useRef } from "react";
 
 import { MarkdownRenderer } from "obsidian";
-import TextGeneratorPlugin from "#/main";
-import useGlobal from "#/ui/context/global";
+import GeniiAssistantPlugin from "#/main";
+import useGlobal from "#/ui/context/global/context";
 import clsx from "clsx";
 
 export default function MarkDownViewer(props: {
   children: string;
   className?: string;
-  plugin?: TextGeneratorPlugin;
+  plugin?: GeniiAssistantPlugin;
   editable?: boolean;
 }) {
   // Create an array of refs for each insight item
@@ -34,7 +34,7 @@ export default function MarkDownViewer(props: {
         props.plugin || Global.plugin
       );
     } catch {
-      Global.plugin.handelError(
+      global?.plugin.handelError(
         `failed to render "${"" + props.children}" it should be a string`
       );
     }

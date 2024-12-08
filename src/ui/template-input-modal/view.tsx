@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import validator from "@rjsf/validator-ajv8";
 import { Theme } from "./rjsf";
 import { FormProps, withTheme } from "@rjsf/core";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 
 const Form = withTheme(Theme);
 
 export default function TemplateInputModalView(props: {
-  p: { plugin: TextGeneratorPlugin; close?: () => void };
+  p: { plugin: GeniiAssistantPlugin; close?: () => void };
   labels: string[];
   templateContext: any;
   onSubmit: any;

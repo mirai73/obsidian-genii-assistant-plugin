@@ -1,7 +1,7 @@
 import TemplateInputModalUI from "../ui/template-input-modal";
 import { App, Notice, TFile, Vault, stringifyYaml } from "obsidian";
-import { TextGeneratorSettings } from "../types";
-import TextGeneratorPlugin from "../main";
+import { GeniiAssistantSettings } from "../types";
+import GeniiAssistantPlugin from "../main";
 import ReqFormatter from "../utils/api-request-formatter";
 import { SetPath } from "../ui/settings/components/set-path";
 import ContextManager, {
@@ -27,16 +27,16 @@ import {
   TemplateMetadata,
 } from "../scope/content-manager/types";
 
-const logger = debug("genii:TextGenerator");
+const logger = debug("genii:GeniiAssistant");
 
-export default class TextGenerator extends RequestHandler {
-  plugin: TextGeneratorPlugin;
+export default class GeniiAssistant extends RequestHandler {
+  plugin: GeniiAssistantPlugin;
   reqFormatter: ReqFormatter;
   signal?: AbortSignal;
   contextManager: ContextManager;
   embeddingsScope: EmbeddingScope;
 
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(plugin);
     if (!plugin.contextManager) {
       throw new Error("Genii: ContextManager was not initialized");
@@ -58,7 +58,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async generateFromTemplate(props: {
-    params: Partial<TextGeneratorSettings>;
+    params: Partial<GeniiAssistantSettings>;
     templatePath: string;
     /** defaults to true */
     insertMetadata?: boolean;
@@ -108,7 +108,7 @@ export default class TextGenerator extends RequestHandler {
 
   async generateBatchFromTemplate(
     files: TFile[],
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     templatePath: string,
     additionalProps: any = {},
     insertMode = false
@@ -155,7 +155,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async generateStreamInEditor(
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     insertMetadata = false,
     editor: ContentManager,
     customContext?: InputContext
@@ -250,7 +250,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async generateInEditor(
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     insertMetadata = false,
     editor: ContentManager,
     customContext?: InputContext,
@@ -262,7 +262,7 @@ export default class TextGenerator extends RequestHandler {
     const frontmatter = this.reqFormatter.getFrontmatter("", insertMetadata);
     if (
       this.plugin.settings.stream &&
-      this.plugin.textGenerator?.LLMProvider?.streamable &&
+      this.plugin.geniiAssistant?.LLMProvider?.canStream &&
       frontmatter.stream !== false
     ) {
       return this.generateStreamInEditor(
@@ -311,7 +311,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async generateToClipboard(
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     templatePath: string,
     insertMetadata = false,
     editor: ContentManager
@@ -391,7 +391,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async createToFile(
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     templatePath: string,
     context: InputContext,
     insertMode = false
@@ -436,7 +436,7 @@ export default class TextGenerator extends RequestHandler {
   }
 
   async createToFiles(
-    params: Partial<TextGeneratorSettings>,
+    params: Partial<GeniiAssistantSettings>,
     contexts: InputContext[],
     files: TFile[],
     templatePath: string,
@@ -622,7 +622,7 @@ ${removeYAML(content)}
   }
 
   async templateToModal(props: {
-    params: Partial<TextGeneratorSettings>;
+    params: Partial<GeniiAssistantSettings>;
     templatePath?: string;
     editor: ContentManager;
     filePath?: string;
@@ -897,7 +897,7 @@ ${removeYAML(content)}
     // list, in getTemplates()
     await this.plugin.getFilesOnLoad();
 
-    const templates = this.plugin.textGenerator?.getTemplates();
+    const templates = this.plugin.geniiAssistant?.getTemplates();
 
     this.templatePaths = {};
     templates?.forEach((template: Template) => {

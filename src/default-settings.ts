@@ -1,7 +1,7 @@
 import pkg from "../package.json";
-import { TextGeneratorSettings } from "./types";
+import { GeniiAssistantSettings } from "./types";
 
-const DEFAULT_SETTINGS: TextGeneratorSettings = {
+const DEFAULT_SETTINGS: GeniiAssistantSettings = {
   version: pkg.version as any,
   endpoint: "https://api.openai.com/v1",
   models: [],
@@ -15,8 +15,8 @@ const DEFAULT_SETTINGS: TextGeneratorSettings = {
   outputToBlockQuote: false,
   allowJavascriptRun: false,
   experiment: false,
-  promptsPath: "textgenerator/templates",
-  textGenPath: "textgenerator/",
+  promptsPath: "genii/templates",
+  textGenPath: "genii/",
   prefix: "\n\n",
   tgSelectionLimiter: "^\\*\\*\\*",
   stream: true,

@@ -90,7 +90,7 @@ export default abstract class CustomProvider
   static id = "Default (Custom)";
   static displayName = "Custom";
 
-  streamable = true;
+  canStream = true;
 
   provider = CustomProvider.provider;
   id = CustomProvider.id;
@@ -120,7 +120,7 @@ export default abstract class CustomProvider
     let k;
 
     try {
-      k = await this.plugin.textGenerator?.proxyService.getFetch(
+      k = await this.plugin.geniiAssistant?.proxyService.getFetch(
         params.CORSBypass
       )(params.url, requestOptions);
     } catch (e: any) {
@@ -250,11 +250,11 @@ export default abstract class CustomProvider
         ...cleanConfig(reqParams),
         ...cleanConfig(customConfig),
         keys: this.plugin.getApiKeys(),
-        // if the model is streamable
+        // if the model can stream
         stream:
           (reqParams.stream &&
-            this.streamable &&
-            config.streamable &&
+            this.canStream &&
+            config.canStream &&
             !useRequest) ||
           false,
         n: 1,
@@ -336,7 +336,7 @@ export default abstract class CustomProvider
         ...cleanConfig(reqParams.otherOptions),
         ...cleanConfig(reqParams),
         ...customConfig,
-        // if the model is streamable
+        // if the model can stream
         stream: false,
         messages,
       };

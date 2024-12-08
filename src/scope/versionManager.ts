@@ -1,11 +1,11 @@
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import { Version } from "../types";
 
 export default class VersionManager {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   currentVersion?: Version;
 
-  constructor(plugin: TextGeneratorPlugin) {
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
   }
 

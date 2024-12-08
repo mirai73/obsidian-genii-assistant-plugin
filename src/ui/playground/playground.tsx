@@ -1,5 +1,5 @@
 import { Command } from "obsidian";
-import TextGeneratorPlugin from "../../main";
+import GeniiAssistantPlugin from "../../main";
 import React, { useEffect, useState } from "react";
 import { ContextVariables } from "../../scope/context-manager";
 import { PlaygroundView } from ".";
@@ -15,7 +15,7 @@ import ContentManagerFactory from "#/scope/content-manager";
 import CodeEditor from "../components/codeEditor";
 
 export default function ChatComp(props: {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   setCommands: (commands: Command[]) => void;
   view: PlaygroundView;
   onEvent: (cb: (name: string) => void) => void;
@@ -32,7 +32,7 @@ export default function ChatComp(props: {
   const firstTextareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const createTemplate = () => {
-    props.plugin.textGenerator?.createTemplate(
+    props.plugin.geniiAssistant?.createTemplate(
       firstTextareaRef.current?.value || "",
       "new_template_" + makeId(4),
       {
@@ -86,10 +86,10 @@ export default function ChatComp(props: {
     if (!props.plugin.contextManager) {
       throw new Error("ContextManager not initialized");
     }
-    if (!props.plugin.textGenerator) {
-      throw new Error("TextGenerator not initialized");
+    if (!props.plugin.geniiAssistant) {
+      throw new Error("GeniiAssistant not initialized");
     }
-    if (!props.plugin.textGenerator.LLMProvider) {
+    if (!props.plugin.geniiAssistant.LLMProvider) {
       throw new Error("LLMProvider not initialized");
     }
 
@@ -122,7 +122,7 @@ export default function ChatComp(props: {
       });
 
       const inputContext = {
-        ...props.plugin.textGenerator.LLMProvider.getSettings(),
+        ...props.plugin.geniiAssistant.LLMProvider.getSettings(),
         requestParams: {
           signal: abortController.signal,
         },
@@ -140,7 +140,7 @@ export default function ChatComp(props: {
 
       if (wasHoldingCtrl) {
         setAnswer(
-          await props.plugin.textGenerator.LLMProvider.generate(
+          await props.plugin.geniiAssistant.LLMProvider.generate(
             [
               {
                 role: "human",

@@ -77,7 +77,7 @@ export default class LangchainChatAnthropicProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global) throw new Error("Global settings not found");
     const id = props.self.id;
 
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {
@@ -86,11 +86,7 @@ export default class LangchainChatAnthropicProvider
 
     return (
       <>
-        <SettingItem
-          name="Anthropic api key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Anthropic api key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
@@ -104,11 +100,7 @@ export default class LangchainChatAnthropicProvider
           />
         </SettingItem>
 
-        <SettingItem
-          name="Base Path"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Base Path" sectionId={props.sectionId}>
           <Input
             type="text"
             value={config.basePath}
@@ -122,7 +114,6 @@ export default class LangchainChatAnthropicProvider
           />
         </SettingItem>
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
@@ -150,7 +141,6 @@ export default class LangchainChatAnthropicProvider
             <SettingItem
               name="Getting started"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -160,7 +150,6 @@ export default class LangchainChatAnthropicProvider
             <SettingItem
               name="Available models"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

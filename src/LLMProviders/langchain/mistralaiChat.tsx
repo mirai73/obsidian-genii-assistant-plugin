@@ -23,7 +23,7 @@ export default class LangchainMistralAIChatProvider
 
   llmPredict = false;
   legacyN = true;
-  streamable = true;
+  canStream = true;
   defaultHeaders?: Record<string, string | null> | undefined = {
     "X-Stainless-OS": null,
     "X-Stainless-Arch": null,
@@ -79,33 +79,32 @@ export default class LangchainMistralAIChatProvider
 
     const id = props.self.id;
 
+    if (!global)
+      throw new Error(
+        "Global settings not found. Please contact the developer."
+      );
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {
       ...default_values,
     });
 
     return (
       <>
-        <SettingItem
-          name="API Key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="API Key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
             setValue={async (value) => {
               config.api_key = value;
 
-              global.triggerReload();
-              global.plugin.encryptAllKeys();
+              global?.triggerReload();
+              global?.plugin.encryptAllKeys();
 
-              await global.plugin.saveSettings();
+              await global?.plugin.saveSettings();
             }}
           />
         </SettingItem>
 
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
@@ -113,7 +112,6 @@ export default class LangchainMistralAIChatProvider
         <SettingItem
           name="Base Path"
           description={`Make sure it supports CORS`}
-          register={props.register}
           sectionId={props.sectionId}
         >
           <Input
@@ -122,9 +120,9 @@ export default class LangchainMistralAIChatProvider
             placeholder="Enter your API basePath"
             setValue={async (value) => {
               config.basePath = value || default_values.basePath;
-              global.triggerReload();
+              global?.triggerReload();
 
-              await global.plugin.saveSettings();
+              await global?.plugin.saveSettings();
             }}
           />
         </SettingItem>
@@ -135,7 +133,6 @@ export default class LangchainMistralAIChatProvider
             <SettingItem
               name="Create account mistralAI"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -145,7 +142,6 @@ export default class LangchainMistralAIChatProvider
             <SettingItem
               name="API documentation"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />

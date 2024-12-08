@@ -99,7 +99,7 @@ export default class LangchainOpenAIInstructProvider
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
-
+    if (!global) throw new Error("No global found");
     const id = props.self.id;
     const config = (global.plugin.settings.LLMProviderOptions[id] ??= {
       ...default_values,
@@ -107,11 +107,7 @@ export default class LangchainOpenAIInstructProvider
 
     return (
       <>
-        <SettingItem
-          name="API Key"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="API Key" sectionId={props.sectionId}>
           <Input
             type="password"
             value={config.api_key || ""}
@@ -129,7 +125,6 @@ export default class LangchainOpenAIInstructProvider
         <SettingItem
           name="Base Path"
           description={`Make sure it supports CORS`}
-          register={props.register}
           sectionId={props.sectionId}
         >
           <Input
@@ -146,7 +141,6 @@ export default class LangchainOpenAIInstructProvider
           />
         </SettingItem>
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId || id}
           default_values={default_values}
@@ -173,7 +167,6 @@ export default class LangchainOpenAIInstructProvider
             <SettingItem
               name="Create account OpenAI"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -183,7 +176,6 @@ export default class LangchainOpenAIInstructProvider
             <SettingItem
               name="API documentation"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -193,7 +185,6 @@ export default class LangchainOpenAIInstructProvider
             <SettingItem
               name="You can use LM Studio"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -203,7 +194,6 @@ export default class LangchainOpenAIInstructProvider
             <SettingItem
               name="more information"
               className="plug-tg-text-xs plug-tg-opacity-50 hover:plug-tg-opacity-100"
-              register={props.register}
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -274,15 +264,15 @@ export default class LangchainOpenAIInstructProvider
     }
 
     let numTokens = 0;
-    for (const message of messages) {
-      numTokens += tokensPerMessage;
-      for (const [key, value] of Object.entries(message)) {
-        numTokens += encoder.encode(value).length;
-        if (key === "name") {
-          numTokens += tokensPerName;
-        }
-      }
-    }
+    // for (const message of messages) {
+    //   numTokens += tokensPerMessage;
+    //   for (const [key, value] of Object.entries(message)) {
+    //     numTokens += encoder.encode(value).length;
+    //     if (key === "name") {
+    //       numTokens += tokensPerName;
+    //     }
+    //   }
+    // }
 
     numTokens += 3; // every reply is primed with assistant
 

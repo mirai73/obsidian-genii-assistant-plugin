@@ -39,6 +39,7 @@ src/
 ```
 
 Key Files:
+
 - `src/main.ts`: Entry point of the plugin
 - `src/default-settings.ts`: Default plugin settings
 - `src/types.ts`: TypeScript type definitions
@@ -63,16 +64,19 @@ Key Files:
 ### Common Use Cases
 
 1. Generating text within a note:
+
    - Place your cursor where you want to insert text
    - Use the command palette to run "Text Generator: Generate Text"
    - The AI will generate text based on the context of your note
 
 2. Using auto-suggest:
+
    - Enable auto-suggest in the plugin settings
    - As you type, the plugin will offer suggestions
    - Press Tab to accept a suggestion
 
 3. Creating and using templates:
+
    - Open the Templates Package Manager from the ribbon icon
    - Install or create custom templates
    - Use the command palette to apply a template to your current note
@@ -87,10 +91,12 @@ Key Files:
 Common issues and solutions:
 
 1. API Key Issues:
+
    - Problem: "Invalid API Key" error
    - Solution: Double-check your API key in the plugin settings and ensure it's correctly entered
 
 2. Generation Fails:
+
    - Problem: Text generation fails without error
    - Solution: Check your internet connection and verify that your chosen LLM provider is operational
 
@@ -99,6 +105,7 @@ Common issues and solutions:
    - Solution: Ensure auto-suggest is enabled in the plugin settings and check the trigger conditions (e.g., trigger phrase)
 
 Debugging:
+
 - Enable debug logging by adding `debug.enable("genii:*");` to your `main.ts` file
 - Check the developer console (Ctrl + Shift + I) for detailed error messages and logs
 
@@ -108,7 +115,8 @@ Debugging:
 
 2. Command Processing: The plugin's command system (`src/scope/commands.ts`) interprets the user's action and routes it to the appropriate service.
 
-3. Text Generation: The `TextGenerator` service (`src/services/text-generator.ts`) handles the core text generation functionality:
+3. Text Generation: The `GeniiAssistant` service (`src/services/text-generator.ts`) handles the core text generation functionality:
+
    - It prepares the context and prompt based on the user's input and note content.
    - Sends a request to the configured LLM provider through the appropriate `LLMProvider` implementation.
    - Receives the generated text from the LLM.

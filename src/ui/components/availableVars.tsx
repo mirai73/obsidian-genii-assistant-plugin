@@ -54,7 +54,7 @@ export default function AvailableVars(props: {
           </div>
         </div>
         {hovered && (
-          <div className="plug-tg-pb-3 plug-tg-text-xs">
+          <div className="plug-tg-mt-2 plug-tg-pb-3 plug-tg-text-xs">
             <span className="plug-tg-opacity-60">{hovered}</span>:{" "}
             {props.vars[hovered as string].hint ||
               props.vars[hovered as string].example}

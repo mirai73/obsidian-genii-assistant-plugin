@@ -1,3 +1,5 @@
+
+/** @type {import('tailwindcss').Config} */
 module.exports = {
 	prefix: "plug-tg-",
 	content: ["./src/**/*.{ts,jsx,tsx,vue,css}"],

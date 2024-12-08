@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import TextGeneratorPlugin from "#/main";
+import GeniiAssistantPlugin from "#/main";
 
 import { createRoot } from "react-dom/client";
 import React from "react";
@@ -9,10 +9,10 @@ import SectionsMain from "./sections";
 import ReloadPluginPopup from "./components/reloadPlugin";
 import * as manifest from "../../../manifest.json";
 
-export default class TextGeneratorSettingTab extends PluginSettingTab {
-  plugin: TextGeneratorPlugin;
+export default class GeniiAssistantSettingTab extends PluginSettingTab {
+  plugin: GeniiAssistantPlugin;
   app: App;
-  constructor(app: App, plugin: TextGeneratorPlugin) {
+  constructor(app: App, plugin: GeniiAssistantPlugin) {
     super(app, plugin);
     this.plugin = plugin;
     this.app = app;

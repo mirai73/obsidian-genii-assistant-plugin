@@ -1,6 +1,6 @@
 import { App } from "obsidian";
-import { Message, TextGeneratorSettings } from "../types";
-import TextGeneratorPlugin from "../main";
+import { Message, GeniiAssistantSettings } from "../types";
+import GeniiAssistantPlugin from "../main";
 import ContextManager from "../scope/context-manager";
 import debug from "debug";
 import { transformStringsToChatFormat } from ".";
@@ -10,12 +10,12 @@ import { AI_MODELS } from "#/constants";
 const logger = debug("genii:ReqFormatter");
 
 export default class ReqFormatter {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   app: App;
   contextManager: ContextManager;
   constructor(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     contextManager?: ContextManager
   ) {
     this.app = app;
@@ -42,7 +42,7 @@ export default class ReqFormatter {
   }
 
   async getRequestParameters(
-    _params: Partial<TextGeneratorSettings & { prompt: string }>,
+    _params: Partial<GeniiAssistantSettings & { prompt: string }>,
     insertMetadata: boolean,
     templatePath = "",
     additionalParams: {
@@ -53,7 +53,7 @@ export default class ReqFormatter {
     logger("getRequestParameters start", _params, insertMetadata, templatePath);
 
     const frontmatter: any = this.getFrontmatter(templatePath, insertMetadata);
-    const providerId = this.plugin.textGenerator?.LLMRegistry?.get(
+    const providerId = this.plugin.geniiAssistant?.LLMRegistry?.get(
       frontmatter?.config?.provider
     )?.id as string;
     logger("frontmatter", frontmatter);
@@ -72,7 +72,7 @@ export default class ReqFormatter {
     params.model = params.model?.toLowerCase();
 
     if (
-      !this.plugin.textGenerator?.LLMProvider ||
+      !this.plugin.geniiAssistant?.LLMProvider ||
       (frontmatter.config?.model &&
         frontmatter.config.model.toLowerCase() !== params.model)
     ) {
@@ -81,10 +81,10 @@ export default class ReqFormatter {
       const _provider = AI_MODELS[frontmatter.config?.model].llm[0];
       params.model = frontmatter.config?.model.toLowerCase();
 
-      await this.plugin.textGenerator?.loadLLM(_provider);
+      await this.plugin.geniiAssistant?.loadLLM(_provider);
     }
 
-    if (!this.plugin.textGenerator?.LLMProvider)
+    if (!this.plugin.geniiAssistant?.LLMProvider)
       throw new Error("LLM Provider not initialized");
 
     if (
@@ -116,7 +116,7 @@ export default class ReqFormatter {
       (typeof params.prompt === "object" ||
         params.prompt?.replaceAll?.("\n", "").trim().length)
     ) {
-      const m = this.plugin.textGenerator?.LLMProvider?.makeMessage(
+      const m = this.plugin.geniiAssistant?.LLMProvider?.makeMessage(
         params.prompt || "",
         "user"
       );
@@ -168,7 +168,7 @@ export default class ReqFormatter {
 
         if (params.system || params.config?.system) {
           const systemMessage =
-            this.plugin.textGenerator?.LLMProvider?.makeMessage(
+            this.plugin.geniiAssistant?.LLMProvider?.makeMessage(
               params.system || params.config.system,
               "system"
             );

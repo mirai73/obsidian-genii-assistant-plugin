@@ -8,7 +8,7 @@ import {
 import * as React from "react";
 import Tool from "./tool";
 import { Root, createRoot } from "react-dom/client";
-import TextGeneratorPlugin from "../../main";
+import GeniiAssistantPlugin from "../../main";
 import Contexts from "../context";
 import { trimBy } from "../../utils";
 export const VIEW_TOOL_ID = "tool-view";
@@ -28,9 +28,9 @@ if (Platform.isDesktop) {
 
 export class ToolView extends ItemView {
   root?: Root;
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   title?: string;
-  constructor(leaf: WorkspaceLeaf, plugin: TextGeneratorPlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: GeniiAssistantPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -69,7 +69,6 @@ export class ToolView extends ItemView {
                   "id"
                 );
               console.log(this.plugin.commands?.commands, commands);
-              await this.plugin.packageManager?.load();
             }}
           />
         </Contexts>

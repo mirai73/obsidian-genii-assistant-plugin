@@ -1,11 +1,11 @@
 import { App, Modal } from "obsidian";
-import TextGeneratorPlugin from "../../main";
+import GeniiAssistantPlugin from "../../main";
 import * as React from "react";
 import TemplateInputModalView from "./view";
 import { createRoot } from "react-dom/client";
 
 export default class TemplateInputModalUI extends Modal {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   onSubmit: (result: string) => void;
   root: any;
   variables: string[];
@@ -13,7 +13,7 @@ export default class TemplateInputModalUI extends Modal {
   templateContext: any;
   constructor(
     app: App,
-    plugin: TextGeneratorPlugin,
+    plugin: GeniiAssistantPlugin,
     variables: string[],
     metadata: any,
     templateContext: any,

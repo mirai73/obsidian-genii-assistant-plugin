@@ -1,31 +1,24 @@
-import CustomProvider from "./custom/custom";
 import AnthropicCustomProvider from "./custom/anthropic";
-
 import LangchainOpenAIChatProvider from "./langchain/openaiChat";
 import LangchainMistralAIChatProvider from "./langchain/mistralaiChat";
 import LangchainOpenAIInstructProvider from "./langchain/openaiInstruct";
 import LangchainHFProvider from "./langchain/hf";
-import ChatanthropicLangchainProvider from "./langchain/chatanthropic";
+import ChatAnthropicLangchainProvider from "./langchain/chatanthropic";
 import OllamaLangchainProvider from "./langchain/ollama";
-import LangchainPalmProvider from "./langchain/palm";
 import LangchainChatGoogleGenerativeAIProvider from "./langchain/googleGenerativeAI";
 import BedrockProvider from "./custom/bedrock";
-// import LangchainReplicaProvider from "./langchain/replica"
-
-// import { LOCClone1, LOCClone2 } from "./langchain/clones";
 
 export const defaultProviders = [
   LangchainOpenAIChatProvider,
   LangchainOpenAIInstructProvider,
   LangchainChatGoogleGenerativeAIProvider,
-  LangchainPalmProvider,
   OllamaLangchainProvider,
   LangchainHFProvider,
   LangchainMistralAIChatProvider,
-  ChatanthropicLangchainProvider,
+  ChatAnthropicLangchainProvider,
   AnthropicCustomProvider,
   BedrockProvider,
-  CustomProvider,
+  //CustomProvider,
 ];
 
 export type LlmType = (typeof defaultProviders)[number]["id"];

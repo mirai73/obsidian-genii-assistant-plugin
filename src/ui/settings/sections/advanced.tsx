@@ -1,12 +1,14 @@
 import React, { useId } from "react";
-import useGlobal from "../../context/global";
+import useGlobal from "#/ui/context/global/context";
 import SettingItem from "../components/item";
 import SettingsSection from "../components/section";
 import Input from "../components/input";
 import Confirm from "#/ui/components/confirm";
-import type { Register } from ".";
-export default function AdvancedSetting(props: { register: Register }) {
+import { ConfigItem } from "../components/configItem";
+
+export default function AdvancedSetting() {
   const global = useGlobal();
+  if (!global) throw new Error("Global settings not found");
 
   const sectionId = useId();
 
@@ -28,168 +30,91 @@ export default function AdvancedSetting(props: { register: Register }) {
     <SettingsSection
       title="Advanced Settings"
       className="plug-tg-flex plug-tg-w-full plug-tg-flex-col"
-      register={props.register}
       id={sectionId}
     >
-      <SettingItem
+      <ConfigItem
         name="Streaming"
         description="Enable streaming if supported by the provider"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={
-            "" +
-            (global.plugin.textGenerator?.LLMProvider?.streamable &&
-              global.plugin.settings.stream)
-          }
-          setValue={async (val) => {
-            global.plugin.settings.stream = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-      <SettingItem
+        value={global.plugin.settings.stream ?? false}
+        onChange={(v) => {
+          global.plugin.settings.stream = v as boolean;
+        }}
+      />
+      <ConfigItem
         name="Display errors in the editor"
         description="If you want to see the errors in the editor"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.displayErrorInEditor}
-          setValue={async (val) => {
-            global.plugin.settings.displayErrorInEditor = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
+        value={global.plugin.settings.displayErrorInEditor ?? false}
+        onChange={(v) => {
+          global.plugin.settings.displayErrorInEditor = v as boolean;
+        }}
+      />
 
-      <SettingItem
+      <ConfigItem
         name="Show Status in StatusBar"
         description="Show information in the Status Bar"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.showStatusBar}
-          setValue={async (val) => {
-            global.plugin.settings.showStatusBar = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
+        value={global.plugin.settings.showStatusBar ?? false}
+        onChange={async (v) => {
+          global.plugin.settings.showStatusBar = v as boolean;
+        }}
+      />
 
-      <SettingItem
+      <ConfigItem
         name="Output generated text to blockquote"
         description="Distinguish between AI generated text and typed text using a blockquote"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.outputToBlockQuote}
-          setValue={async (val) => {
-            global.plugin.settings.outputToBlockQuote = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-
-      <SettingItem
+        value={global.plugin.settings.outputToBlockQuote ?? false}
+        onChange={async (v) => {
+          global.plugin.settings.outputToBlockQuote = v as boolean;
+        }}
+      />
+      <ConfigItem
         name="Experimentation Features"
         description="This adds experiment features, which might not be stable yet"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={"" + global.plugin.settings.experiment}
-          setValue={async (val) => {
-            global.plugin.settings.experiment = val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-
-      <SettingItem
+        value={global.plugin.settings.experiment ?? false}
+        onChange={async (v) => {
+          global.plugin.settings.experiment = v as boolean;
+        }}
+      />
+      <ConfigItem
         name="Include Attachments"
         description="EXPERIMENTAL: adds the images that are referenced in the request, IT MIGHT CONSUME ALOT OF TOKENS"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="checkbox"
-          value={
-            "" +
-            global.plugin.settings.advancedOptions?.includeAttachmentsInRequest
-          }
-          setValue={async (val) => {
-            if (!global.plugin.settings.advancedOptions)
-              global.plugin.settings.advancedOptions = {};
-
-            global.plugin.settings.advancedOptions.includeAttachmentsInRequest =
-              val === "true";
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-
-      <SettingItem
+        value={
+          global.plugin.settings.advancedOptions?.includeAttachmentsInRequest ??
+          false
+        }
+        onChange={async (v) => {
+          if (!global.plugin.settings.advancedOptions)
+            global.plugin.settings.advancedOptions = {};
+          global.plugin.settings.advancedOptions.includeAttachmentsInRequest =
+            v as boolean;
+        }}
+      />
+      <ConfigItem
         name="Templates Path"
         description="Path for Templates directory"
-        register={props.register}
         sectionId={sectionId}
-      >
-        <Input
-          type="text"
-          value={global.plugin.settings.promptsPath}
-          setValue={async (val) => {
-            global.plugin.settings.promptsPath = val;
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-
-      <SettingItem
-        name="TextGenerator Path"
-        description="Path To Folder that Text Generator can put Backups,generations...etc into"
-        register={props.register}
+        value={global.plugin.settings.promptsPath}
+        onChange={async (v) => {
+          global.plugin.settings.promptsPath = v as string;
+        }}
+      />
+      <ConfigItem
+        name="Work Path"
+        description="Path work path for Backups and logs"
         sectionId={sectionId}
-      >
-        <Input
-          type="text"
-          value={global.plugin.settings.textGenPath}
-          setValue={async (val) => {
-            global.plugin.settings.textGenPath = val;
-            await global.plugin.saveSettings();
-            global.triggerReload();
-          }}
-        />
-      </SettingItem>
-
-      <SettingItem
-        name="Reload the plugin"
-        description="Some changes might require you to reload the plugins"
-        register={props.register}
-        sectionId={sectionId}
-      >
-        <button onClick={reloadPlugin}>Reload</button>
-      </SettingItem>
-
+        value={global.plugin.settings.textGenPath}
+        onChange={async (v) => {
+          global.plugin.settings.textGenPath = v as string;
+        }}
+      />
       <SettingItem
         name="Resets all settings to default"
         description="It will delete all your configurations"
-        register={props.register}
         sectionId={sectionId}
       >
         <button className="plug-tg-btn-danger" onClick={resetSettings}>
@@ -199,7 +124,6 @@ export default function AdvancedSetting(props: { register: Register }) {
       <SettingItem
         name="Keys encryption"
         description="Enable encrypting keys, this could cause incompatibility with mobile devices"
-        register={props.register}
         sectionId={sectionId}
       >
         <Input

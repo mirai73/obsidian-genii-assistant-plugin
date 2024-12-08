@@ -1,10 +1,10 @@
 // import { TemplateModalUI } from "../ui/template-modal-ui";
 // import { App, Notice, Editor, RequestUrlParam, EditorPosition } from "obsidian";
-import TextGeneratorPlugin from "../main";
+import GeniiAssistantPlugin from "../main";
 import ReqFormatter from "../utils/api-request-formatter";
 import type { InputContext } from "../scope/context-manager";
 import debug from "debug";
-import { Message, TextGeneratorSettings } from "../types";
+import { Message, GeniiAssistantSettings } from "../types";
 import { Handlebars } from "../helpers/handlebars-helpers";
 import { Platform } from "obsidian";
 import LLMProviderInterface from "../LLMProviders/interface";
@@ -12,10 +12,10 @@ import LLMProviderRegistry from "../LLMProviders/registry";
 import { defaultProvidersMap } from "../LLMProviders";
 import providerOptionsValidator from "../LLMProviders/providerOptionsValidator";
 import { ProxyService } from "./proxy-service";
-const logger = debug("genii:TextGenerator");
+const logger = debug("genii:GeniiAssistant");
 
 export default class RequestHandler {
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   reqFormatter: ReqFormatter;
   signalController?: AbortController;
 
@@ -24,7 +24,7 @@ export default class RequestHandler {
 
   proxyService: ProxyService;
 
-  constructor(plugin: TextGeneratorPlugin) {
+  constructor(plugin: GeniiAssistantPlugin) {
     this.plugin = plugin;
     this.reqFormatter = new ReqFormatter(
       plugin.app,
@@ -222,7 +222,7 @@ export default class RequestHandler {
   async streamGenerate(
     context: InputContext,
     insertMetadata = false,
-    params: Partial<TextGeneratorSettings> = {},
+    params: Partial<GeniiAssistantSettings> = {},
     templatePath = "",
     additionalParams: {
       showSpinner?: boolean;
@@ -281,9 +281,9 @@ export default class RequestHandler {
       if (!additionalParams.signal)
         this.startLoading(additionalParams.showSpinner);
 
-      if (!this.LLMProvider?.streamable) {
-        logger("streamGenerate error", "LLM not streamable");
-        throw new Error("LLM not streamable");
+      if (!this.LLMProvider?.canStream) {
+        logger("streamGenerate error", "LLM not canStream");
+        throw new Error("LLM not canStream");
       }
 
       // const stream = await this.streamRequest(reqParams);

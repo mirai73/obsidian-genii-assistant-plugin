@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import React, { useEffect, useState } from "react";
-import { Register } from "../sections";
+import { useSearchContext } from "../sections";
+
 export default function SettingsSection(props: {
   title: string;
   alwaysOpen?: boolean;
@@ -10,27 +11,27 @@ export default function SettingsSection(props: {
   className?: any;
   hidden?: boolean;
   triggerResize?: boolean;
-  register: Register;
   id: string;
 }) {
   const [_collapsed, setCollapsed] = useState(true);
   const collapsed = !props.alwaysOpen && _collapsed;
+  const searchContext = useSearchContext();
   useEffect(() => {
-    props.register.register(props.id, props.title, props.id);
+    searchContext?.register(props.id, props.title, props.id);
   }, [props.id]);
 
   useEffect(
-    () => setCollapsed(!props.register.searchTerm.length),
-    [props.register.searchTerm.length]
+    () => setCollapsed(!searchContext?.searchTerm.length),
+    [searchContext?.searchTerm.length]
   );
 
   return (
     <div
       className={clsx("plug-tg-collapse", props.className, {
-        "plug-tg-max-h-16 plug-tg-opacity-50": collapsed,
+        "plug-tg-max-h-16": collapsed,
         "plug-tg-collapse-open": !collapsed,
         "plug-tg-hidden":
-          props.hidden || !props.register.activeSections[props.id],
+          props.hidden || !searchContext?.activeSections[props.id],
       })}
     >
       {!props.hideTitle && (
@@ -43,7 +44,7 @@ export default function SettingsSection(props: {
           )}
         >
           <div
-            className="plug-tg-flex plug-tg-w-full plug-tg-flex-wrap plug-tg-items-center plug-tg-justify-between plug-tg-text-left plug-tg-font-medium"
+            className="plug-tg-flex plug-tg-w-full plug-tg-flex-wrap plug-tg-items-center plug-tg-justify-between plug-tg-text-left plug-tg-font-medium plug-tg-shadow-md"
             data-accordion-target="#accordion-flush-body-1"
             aria-expanded="true"
             aria-controls="accordion-flush-body-1"

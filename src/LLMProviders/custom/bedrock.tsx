@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import debug from "debug";
 import LLMProviderInterface, { LLMConfig } from "../interface";
-import useGlobal from "#/ui/context/global";
+import useGlobal from "#/ui/context/global/context";
 import SettingItem from "#/ui/settings/components/item";
 import Input from "#/ui/settings/components/input";
 import CustomProvider, { default_values as baseDefaultValues } from "./base";
@@ -19,6 +19,7 @@ import { ModelsHandler } from "../utils";
 import { MessageContentComplex } from "@langchain/core/messages";
 import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
 import { AI_MODELS } from "../refs";
+import { ConfigItem } from "#/ui/settings/components/configItem";
 
 const logger = debug("genii:BedrockProvider");
 
@@ -26,7 +27,7 @@ const untangableVars = [
   "custom_header",
   "custom_body",
   "sanitization_response",
-  "streamable",
+  "canStream",
   "CORSBypass",
 ];
 
@@ -39,9 +40,9 @@ export const default_values = {
   custom_body: "",
   sanitization_response: "",
   sanitization_streaming: "",
-  streamable: true,
+  canStream: true,
   useConverseApi: false,
-  waitForVideo: true,
+  s3Uri: "",
   system: "",
 };
 
@@ -59,12 +60,12 @@ export default class BedrockProvider
   implements LLMProviderInterface
 {
   static provider = "Custom";
-  static id = "Bedrock (Custom)" as const;
+  static id = "bedrock" as const;
   static slug = "bedrock" as const;
   static displayName = "Bedrock";
   models: Model[] = [];
 
-  streamable = true;
+  canStream = true;
 
   provider = BedrockProvider.provider;
   id = BedrockProvider.id;
@@ -137,7 +138,7 @@ export default class BedrockProvider
         temperature: reqParams.temperature,
       });
 
-      const stream = reqParams.stream && this.streamable && config.streamable;
+      const stream = reqParams.stream && this.canStream && config.canStream;
       let converse_messages: ChatMessage[] = [
         { role: "human", message: reqParams.prompt ?? "" },
       ];
@@ -256,7 +257,7 @@ export default class BedrockProvider
       if (!Platform.isDesktop) {
         return [""];
       }
-      //const stream = reqParams.stream && this.streamable && config.streamable;
+      //const stream = reqParams.stream && this.canStream && config.canStream;
 
       let i = 0;
       const converse_messages = messages.map((m) => this.convertMessage(m));
@@ -305,104 +306,71 @@ export default class BedrockProvider
     if (!prompt) throw new Error("No prompt provided");
     // @ts-ignore need to fix the import type - parameter is correct
     const videoModel = fromVideoModelId(model, { client });
+    if (!this.config.s3Uri) {
+      throw new Error("S3 URI not set. Please set it in the plugin settings.");
+    }
     const video = await videoModel.generateVideo(prompt, {
       image: image,
       rawResponse: true,
-      s3Uri: "s3://bedrock-video-generation-us-east-1-hta1ce", // config parameter, global and front matter?
+      s3Uri: this.config.s3Uri, // config parameter, global and front matter?
     });
     logger("generateVideo", { video });
     return `\`\`\`bedrock-video\n${video}\n\`\`\``;
-    // video.s3Uri = video.s3Uri.replace("s3://", "");
-    // const s3client = new S3Client();
-    // const resp = await s3client.send(
-    //   new GetObjectCommand({
-    //     Bucket: video.s3Uri.split("/")[0],
-    //     Key: video.s3Uri.split("/")[1],
-    //   })
-    // );
-
-    // const videoBytes = await resp.Body?.transformToByteArray();
-    // if (!videoBytes) throw new Error("No video bytes");
-    // // @ts-ignore
-    // const attachmentFolderPath: string = this.plugin.app.vault.getConfig?.(
-    //   "attachmentFolderPath"
-    // );
-    // const fileName = `Video created by ${model.split(".")[0]} ${new Date().toISOString().split(".")[0].replaceAll(":", "").replace("T", "").replaceAll("-", "")}.mp4`;
-    // this.plugin.app.vault.createBinary(
-    //   attachmentFolderPath + `/` + fileName,
-    //   videoBytes
-    // );
-    // return `![[${fileName}]]`;
   }
 
   RenderSettings(props: Parameters<LLMProviderInterface["RenderSettings"]>[0]) {
     const global = useGlobal();
 
-    const config = (global.plugin.settings.LLMProviderOptions[
-      props.self.id || "default"
-    ] ??= {
-      ...default_values,
-      useConverseApi: false,
-    });
-
-    // const vars = useMemo(() => {
-    //   return getHBValues(
-    //     `${config?.custom_header}
-    //     ${config?.custom_body}`
-    //   ).filter((d) => !globalVars[d]);
-    // }, [global.trg]);
+    const initialConfig =
+      global?.plugin.settings.LLMProviderOptions[props.self.id || "default"];
+    const config = initialConfig
+      ? initialConfig
+      : {
+          ...default_values,
+          useConverseApi: false,
+        };
 
     useEffect(() => {
       untangableVars.forEach((v) => {
         config[v] = default_values[v as keyof typeof default_values];
       });
-      if (global.triggerReload) global.triggerReload();
-      global.plugin.saveSettings();
+      global?.triggerReload();
+      global?.plugin.saveSettings();
     }, []);
 
     return (
       <>
-        <SettingItem
-          name="Region"
-          register={props.register}
-          sectionId={props.sectionId}
-        >
+        <SettingItem name="Region" sectionId={props.sectionId}>
           <Input
             value={config.region || default_values.region}
             placeholder="Enter the AWS Region"
             type="text"
             setValue={async (value) => {
               config.region = value;
-              if (global.triggerReload) global.triggerReload();
-              await global.plugin.saveSettings();
+              global?.triggerReload();
+              await global?.plugin.saveSettings();
             }}
           />
         </SettingItem>
         <ModelsHandler
-          register={props.register}
           sectionId={props.sectionId}
           llmProviderId={props.self.originalId}
           default_values={default_values}
         />
-        <SettingItem
-          name="Wait for video generation"
-          register={props.register}
+        <ConfigItem
+          name="S3 URI"
+          description="The S3 URI to use for video generation"
+          placeholder="s3://bucket/"
           sectionId={props.sectionId}
-        >
-          <Input
-            value={config.waitForVideo || default_values.waitForVideo}
-            type="checkbox"
-            setValue={async (value) => {
-              config.waitForVideo = value;
-              if (global.triggerReload) global.triggerReload();
-              await global.plugin.saveSettings();
-            }}
-          />
-        </SettingItem>
+          value={config.s3Uri ?? default_values.s3Uri}
+          onChange={(v) => {
+            config.s3Uri = v;
+          }}
+        />
         {/* <SettingItem
           key="useConverseApi"
           name="Use Converse API"
-          register={props.register}
+ 
           sectionId={props.sectionId}
         >
           <Input
@@ -411,8 +379,8 @@ export default class BedrockProvider
             setValue={async (val) => {
               logger(val);
               config.useConverseApi = val === "true";
-              await global.plugin.saveSettings();
-              global.triggerReload();
+              await global?.plugin.saveSettings();
+              global?.triggerReload();
             }}
           />
         </SettingItem> */}
@@ -421,7 +389,7 @@ export default class BedrockProvider
           <SettingItem
             key={v}
             name={v}
-            register={props.register}
+  
             sectionId={props.sectionId}
           >
             <Input
@@ -430,26 +398,27 @@ export default class BedrockProvider
               type={v.toLowerCase().contains("key") ? "password" : "text"}
               setValue={async (value) => {
                 config[v] = value;
-                global.triggerReload();
+                global?.triggerReload();
                 if (v.toLowerCase().contains("key"))
-                  global.plugin.encryptAllKeys();
-                await global.plugin.saveSettings();
+                  global?.plugin.encryptAllKeys();
+                await global?.plugin.saveSettings();
               }}
             />
           </SettingItem>
         ))} */}
 
         <div className="plug-tg-flex plug-tg-flex-col plug-tg-gap-1">
-          <div className="plug-tg-flex plug-tg-items-center plug-tg-gap-1">
+          <div className="plug-tg-gap-1">
             To use this provider you need to create an AWS profile for the CLI
-            called <pre>obsidian-bedrock</pre>.
+            called <span className="plug-tg-font-bold">obsidian-bedrock</span>.
           </div>
-          <div className="plug-tg-text-lg plug-tg-opacity-70">Useful links</div>
+          <div className="plug-tg-text-md plug-tg-font-medium">
+            Useful links
+          </div>
           <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html">
             <SettingItem
               name="AWS CLI configuration"
-              className="plug-tg-text-s plug-tg-opacity-70 hover:plug-tg-opacity-100"
-              register={props.register}
+              className="plug-tg-text-s"
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -458,8 +427,7 @@ export default class BedrockProvider
           <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html">
             <SettingItem
               name="What is Amazon Bedrock?"
-              className="plug-tg-text-s plug-tg-opacity-70 hover:plug-tg-opacity-100"
-              register={props.register}
+              className="plug-tg-text-s"
               sectionId={props.sectionId}
             >
               <IconExternalLink />
@@ -468,8 +436,7 @@ export default class BedrockProvider
           <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html">
             <SettingItem
               name="Available models"
-              className="plug-tg-text-s plug-tg-opacity-70 hover:plug-tg-opacity-100"
-              register={props.register}
+              className="plug-tg-text-s"
               sectionId={props.sectionId}
             >
               <IconExternalLink />

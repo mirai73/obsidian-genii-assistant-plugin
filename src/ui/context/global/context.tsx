@@ -1,21 +1,15 @@
-import { createContext } from "react";
-import TextGeneratorPlugin from "../../../main";
-// import Extractor from "@/lib/extractors";
+import { createContext, useContext } from "react";
+import GeniiAssistantPlugin from "../../../main";
 
 export interface GlobalType {
   loading: boolean;
   setLoading?: (nloading: boolean) => void;
-  plugin: TextGeneratorPlugin;
+  plugin: GeniiAssistantPlugin;
   triggerReload: () => void;
-  /** listen for triggerReload */
-  trg: boolean;
+  enableTrigger: boolean;
 }
 
-export const defaultValues: GlobalType = {
-  loading: true,
-  plugin: {} as any,
-  triggerReload: () => {},
-  trg: false,
-};
-
-export const GlobalContext = createContext<GlobalType>(defaultValues);
+export const GlobalContext = createContext<GlobalType | undefined>(undefined);
+export default function useGlobal() {
+  return useContext(GlobalContext);
+}
