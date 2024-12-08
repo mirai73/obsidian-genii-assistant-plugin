@@ -4,6 +4,7 @@ import { GeniiAssistantSettings } from "./types";
 const DEFAULT_SETTINGS: GeniiAssistantSettings = {
   version: pkg.version as any,
   endpoint: "https://api.openai.com/v1",
+  questionsLRU: [],
   models: [],
   api_key: "",
   encrypt_keys: false,
@@ -52,7 +53,7 @@ Starred Blocks: {{starredBlocks}}
     "set-model": true,
     "package-manager": true,
     "create-template": false,
-    "get-title": true,
+    "inline-chat": true,
     "generated-text-to-clipboard-from-template": false,
     "calculate-tokens": true,
     "calculate-tokens-for-template": true,

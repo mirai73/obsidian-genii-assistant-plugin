@@ -17,6 +17,7 @@ interface CommandPaletteEnabledOptions {
   "package-manager": boolean;
   "create-template": boolean;
   //"get-title": boolean;
+  "inline-chat": boolean;
   "generated-text-to-clipboard-from-template": boolean;
   "calculate-tokens": boolean;
   "calculate-tokens-for-template": boolean;
@@ -111,6 +112,7 @@ type GeniiAssistantSettings = {
   >;
   LLMProviderOptions: Record<string, Record<string, any>>;
   LLMProviderOptionsKeysHashed: Record<string, Buffer | string>;
+  questionsLRU: string[];
 };
 
 type Resource = {

@@ -2,6 +2,7 @@ import React, { useId, useMemo } from "react";
 import useGlobal from "#/ui/context/global/context";
 import SettingsSection from "../components/section";
 import { ConfigItem } from "../components/configItem";
+import Commands from "#/scope/commands";
 
 // object storing custom name/description of items
 const extendedInfo: Record<
@@ -20,7 +21,6 @@ const extendedInfo: Record<
 export default function OptionsSetting() {
   const global = useGlobal();
   if (!global) throw new Error("Global settings not found");
-
   const sectionId = useId();
   const ops = useMemo(
     () => Object.keys(global.plugin.defaultSettings.options),

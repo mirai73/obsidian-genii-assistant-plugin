@@ -476,7 +476,6 @@ export default class RequestHandler {
     }
   ) {
     try {
-      console.log("calling generate");
       logger("generate", {
         context,
         insertMetadata,

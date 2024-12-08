@@ -13,6 +13,8 @@ import { VIEW_TOOL_ID } from "#/ui/tool";
 import debug from "debug";
 import { SetModel } from "#/ui/settings/components/set-model";
 import { InputContext } from "./context-manager";
+import { InlineChat } from "#/ui/settings/components/inline-chat";
+import useGlobal from "#/ui/context/global/context";
 const logger = debug("genii:Commands");
 
 export default class Commands {
@@ -417,6 +419,30 @@ export default class Commands {
             this.plugin.updateStatusBar("");
           }
         ).open();
+      },
+    },
+
+    {
+      id: "inline-chat",
+      name: "Trigger inline chat",
+      icon: "separator-horizontal",
+
+      callback: async () => {
+        new InlineChat(this.plugin.app, this.plugin, async (task) => {
+          logger("inline-chat", task);
+          const activeView = await this.plugin.getActiveView();
+          const CM = ContentManagerFactory.createContentManager(
+            activeView,
+            this.plugin
+          );
+          this.plugin.settings.questionsLRU.unshift(task);
+          this.plugin.settings.questionsLRU =
+            this.plugin.settings.questionsLRU.slice(0, 10);
+          this.plugin.saveSettings();
+          await this.plugin.geniiAssistant?.generateInEditor({}, false, CM, {
+            context: task,
+          });
+        }).open();
       },
     },
 
