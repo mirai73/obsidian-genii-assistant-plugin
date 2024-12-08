@@ -60,29 +60,6 @@ export default function TemplateInputModalView(props: {
       setJSONSchema(obj);
       setUISchema(basicUi);
       setFormData(formData);
-
-      if (props.templateContext.templatePath) {
-        const cschema =
-          await props.p.plugin.contextManager?.getTemplateCustomInputConfig(
-            props.templateContext.templatePath
-          );
-        console.log({ cschema });
-        if (cschema) {
-          setJSONSchema({
-            ...obj,
-            ...(cschema.properties ? { required: [] } : {}),
-            ...cschema,
-          });
-
-          if (cschema.uiSchema) setUISchema(cschema.uiSchema);
-
-          if (cschema.formData)
-            setFormData({
-              ...formData,
-              ...cschema.formData,
-            });
-        }
-      }
     })();
   }, []);
 

@@ -323,27 +323,6 @@ export function trimBy<T>(objects: T[], propertyName: string): T[] {
   return result;
 }
 
-export function replaceScriptBlocksWithMustachBlocks(templateString: string) {
-  if (!templateString) return "";
-  // Regular expressions for matching the script tags
-  const startScriptRegex = /{{\s*#script\s*}}/g;
-  const endScriptRegex = /{{\s*\/script\s*}}/g;
-  const quadErrorRegex = /{{{{{{\s*\/script\s*}}}}}}/g;
-
-  // Replace all occurrences of {{#script}} and {{/script}} with {{{{script}}}} and {{{{/script}}}} respectively
-  let updatedTemplateString = templateString
-    .replace(startScriptRegex, "{{{{script}}}}")
-    .replace(endScriptRegex, "{{{{/script}}}}");
-
-  // Handle the case where {{{{/script}}}} is already present
-  updatedTemplateString = updatedTemplateString.replace(
-    quadErrorRegex,
-    "{{{{/script}}}}"
-  );
-
-  return updatedTemplateString;
-}
-
 export function nFormatter(n?: number, digits = 1) {
   const num = n ?? 0;
   const lookup = [
@@ -366,31 +345,6 @@ export function nFormatter(n?: number, digits = 1) {
     ? (num / item.value).toFixed(digits).replace(rx, "$1") + item.symbol
     : "0";
 }
-
-export function unpromisifyAsyncFunction<T>(asyncFunction: Promise<T>): T {
-  let isAsyncComplete = false;
-  let result: T;
-
-  // Call the provided asynchronous function
-  asyncFunction.then((asyncResult) => {
-    result = asyncResult;
-    isAsyncComplete = true;
-  });
-
-  // Use a while loop to wait for the asynchronous operation to complete
-  while (!isAsyncComplete) {
-    syncWait(10);
-  }
-
-  // Return the result synchronously
-  // @ts-ignore
-  return result;
-}
-
-const syncWait = (ms: number) => {
-  const end = Date.now() + ms;
-  while (Date.now() < end) continue;
-};
 
 export function walkUntilTrigger(
   inputStr: string,
@@ -438,6 +392,7 @@ export function debounce<T extends unknown[], R>(
   logger("debounce", func, wait);
   return function debouncedFunction(...args: T): Promise<R> {
     // eslint-disable-next-line
+    // @ts-ignore
     const context = this;
 
     return new Promise((resolve, reject) => {

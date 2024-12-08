@@ -290,4 +290,26 @@ export default class ExcalidrawManager implements ContentManager {
   getActiveFile(): TFile {
     return this.ea.targetView.file;
   }
+
+  getCursorParagraph(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getCursorSentence(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getBeforeCursor(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getAfterCursor(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getInverseSelection(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getNextWord(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getPreviousWord(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
 }

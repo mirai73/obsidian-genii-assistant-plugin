@@ -14,7 +14,6 @@ import debug from "debug";
 import { SetModel } from "#/ui/settings/components/set-model";
 import { InputContext } from "./context-manager";
 import { InlineChat } from "#/ui/settings/components/inline-chat";
-import useGlobal from "#/ui/context/global/context";
 const logger = debug("genii:Commands");
 
 export default class Commands {
@@ -632,7 +631,7 @@ export default class Commands {
 
           const context = await this.plugin.contextManager?.getContext({
             editor: CM,
-            filePath: (await CM.getActiveFile())?.path,
+
             insertMetadata: true,
             additionalOpts: {
               estimatingMode: true,
@@ -668,7 +667,7 @@ export default class Commands {
 
                 const context = await this.plugin.contextManager?.getContext({
                   editor: CM,
-                  filePath: (await CM.getActiveFile())?.path,
+
                   insertMetadata: true,
                   templatePath: result.path,
                   additionalOpts: {
@@ -845,7 +844,7 @@ export default class Commands {
                     const context =
                       await this.plugin.contextManager?.getContext({
                         editor: CM,
-                        filePath,
+
                         insertMetadata: true,
                         templatePath: template.path,
                         additionalOpts: {

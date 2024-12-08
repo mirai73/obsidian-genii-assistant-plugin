@@ -1,4 +1,4 @@
-import { ContextVariables } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/ContextVariables";
 import HelpersFn from "#/helpers/handlebars-helpers";
 import set from "lodash.set";
 

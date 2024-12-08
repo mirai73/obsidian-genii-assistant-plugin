@@ -81,7 +81,6 @@ export class AutoSuggest {
             await this.plugin.contextManager?.getTemplateContext({
               editor,
               templateContent,
-              filePath: context.file?.path,
             });
 
           templateContext.query = context.query;
@@ -233,7 +232,7 @@ export class AutoSuggest {
       this.plugin
     );
 
-    const selection = this.plugin.contextManager.getTGSelection(
+    const selection = this.plugin.contextManager?.getTGSelection(
       CM
     ) as unknown as string;
     const lastOccurrenceIndex = selection.lastIndexOf(triggerPhrase);

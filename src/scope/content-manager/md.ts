@@ -1,7 +1,7 @@
 import { Editor, EditorPosition, TFile, View } from "obsidian";
 import { ContentManager, ContentInsertMode, Options } from "./types";
 import { minPos, maxPos } from "./utils";
-import { removeYAML } from "#/utils";
+import { removeYAML, walkUntilTrigger } from "#/utils";
 
 export default class MarkdownManager implements ContentManager {
   editor: Editor;
@@ -318,5 +318,58 @@ export default class MarkdownManager implements ContentManager {
 
   getActiveFile(): TFile {
     return this.view.app.workspace.activeEditor?.file as TFile;
+  }
+
+  // This function returns all the text before the cursor's current position
+  async getBeforeCursor(): Promise<string> {
+    const cursor = await this.getCursor();
+    const beforeCursor = await this.getRange(undefined, cursor);
+    return beforeCursor;
+  }
+
+  // This function returns all the text after the cursor's current position
+  async getAfterCursor(): Promise<string> {
+    const cursor = await this.getCursor("to");
+    const afterCursor = await this.getRange(cursor, undefined);
+    return afterCursor;
+  }
+
+  // This function returns the entire paragraph where the cursor is currently located
+  async getCursorParagraph(): Promise<string> {
+    return await this.getCurrentLine();
+  }
+
+  // This function returns the sentence immediately surrounding the cursor, including sentences that the cursor is in the middle of
+  async getCursorSentence(): Promise<string> {
+    const stoppers = ["\n", ".", "?", "!"];
+    const part1 = walkUntilTrigger(
+      await this.getBeforeCursor(),
+      stoppers,
+      true
+    );
+    const part2 = walkUntilTrigger(await this.getAfterCursor(), stoppers);
+    return part1 + "\n" + part2;
+  }
+
+  // This function returns the next word relative to the cursor's position
+  async getNextWord(): Promise<string> {
+    const texts = (await this.getAfterCursor()).split(" ");
+    return texts[0]?.trim() || texts[1]?.trim() || "";
+  }
+
+  // This function returns the previous word relative to the cursor's position
+  async getPreviousWord(): Promise<string> {
+    const texts = (await this.getBeforeCursor()).trim().split(" ");
+    return (
+      texts[texts.length - 1]?.trim() || texts[texts.length - 2]?.trim() || ""
+    );
+  }
+
+  // This function selects everything except the currently selected text
+  async getInverseSelection(): Promise<string> {
+    const content = await this.getValue();
+    const selection = await this.getSelection();
+    const inverseSelection = content.replace(selection, "");
+    return inverseSelection;
   }
 }

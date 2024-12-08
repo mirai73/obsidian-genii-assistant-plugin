@@ -4,10 +4,8 @@ import { GeniiAssistantSettings } from "../types";
 import GeniiAssistantPlugin from "../main";
 import ReqFormatter from "../utils/api-request-formatter";
 import { SetPath } from "../ui/settings/components/set-path";
-import ContextManager, {
-  ContextVariables,
-  type InputContext,
-} from "../scope/context-manager";
+import ContextManager, { type InputContext } from "../scope/context-manager";
+import { ContextVariables } from "#/scope/ContextVariables";
 import {
   makeId,
   createFileWithInput,
@@ -26,6 +24,10 @@ import {
   Template,
   TemplateMetadata,
 } from "../scope/content-manager/types";
+import {
+  getFrontmatter,
+  getHBVariablesOfTemplate,
+} from "#/scope/context-manager-helpers";
 
 const logger = debug("genii:GeniiAssistant");
 
@@ -73,7 +75,6 @@ export default class GeniiAssistant extends RequestHandler {
     const activeFile = props.activeFile ?? true;
     try {
       const context = await this.contextManager.getContext({
-        filePath: props.filePath,
         editor: props.editor,
         insertMetadata,
         templatePath: props.templatePath,
@@ -492,7 +493,7 @@ export default class GeniiAssistant extends RequestHandler {
         );
 
         const failed = results?.filter((r) => {
-          if (typeof r === "string") return r?.startsWith("FAILED:");
+          if (r && typeof r === "string") return r?.startsWith("FAILED:");
           else return false;
         });
 
@@ -645,14 +646,13 @@ ${removeYAML(content)}
       throw "templateContent is undefined";
     }
 
-    const { inputContent, outputContent, preRunnerContent } =
-      this.contextManager.splitTemplate(templateContent as any);
+    if (!this.plugin.contextManager) {
+      throw "contextManager is undefined";
+    }
+    const { inputContent, outputContent } =
+      this.plugin.contextManager.splitTemplate(templateContent as any);
 
-    const variables = this.contextManager.getHBVariablesOfTemplate(
-      preRunnerContent,
-      inputContent,
-      outputContent
-    );
+    const variables = getHBVariablesOfTemplate(inputContent, outputContent);
 
     const metadata = this.getMetadata(props.templatePath || "");
     const templateContext = await this.contextManager.getTemplateContext(props);
@@ -675,7 +675,7 @@ ${removeYAML(content)}
     };
     logger("variables", variables);
     const filteredVariables = variables.filter(
-      (v) => ContextVariables[v] === undefined
+      (v: any) => ContextVariables[v] === undefined
     );
     if (filteredVariables.length > 0)
       new TemplateInputModalUI(
@@ -712,7 +712,7 @@ ${removeYAML(content)}
 
   getMetadata(path: string) {
     logger("getMetadata");
-    const metadata = this.getFrontmatter(path);
+    const metadata = getFrontmatter(path);
 
     const validatedMetadata: TemplateMetadata = {};
 
@@ -768,18 +768,6 @@ ${removeYAML(content)}
     return validatedMetadata;
   }
 
-  getFrontmatter(path = "") {
-    logger("getFrontmatter");
-
-    const frontMatter =
-      this.contextManager.getFrontmatter(
-        this.contextManager.getMetaData(path)
-      ) || null;
-
-    logger("getFrontmatter end", frontMatter);
-    return frontMatter;
-  }
-
   async templateGen(
     id: string,
     options: {
@@ -795,7 +783,6 @@ ${removeYAML(content)}
     const [errorContext, context] = await safeAwait(
       this.contextManager.getContext({
         editor: options.editor,
-        filePath: options.filePath,
         insertMetadata: options.insertMetadata,
         templatePath,
         additionalOpts: options.additionalProps,
@@ -884,9 +871,7 @@ ${removeYAML(content)}
     if (!templatePath) throw new Error(`template with id:${id} wasn't found.`);
 
     return this.contextManager.templateFromPath(templatePath, {
-      ...this.contextManager.getFrontmatter(
-        this.contextManager.getMetaData(templatePath)
-      ),
+      ...getFrontmatter(this.contextManager.getMetaData(templatePath)),
     });
   }
 

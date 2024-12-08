@@ -22,16 +22,18 @@ export default function ExportImportHandler(props: {
   const backupsDirectory = global?.plugin.getTextGenPath(`configs/${props.id}`);
 
   useEffect(() => {
+    if (!backupsDirectory) return;
     (async () => {
       if (!(await global?.plugin.app.vault.adapter.exists(backupsDirectory)))
         return setBackups([]);
-      const list =
+      const files =
         await global?.plugin.app.vault.adapter.list(backupsDirectory);
-      setBackups(
-        list.files.map((f) => f.substring(backupsDirectory.length + 1))
-      );
+      if (files)
+        setBackups(
+          files?.files.map((f) => f.substring(backupsDirectory.length + 1))
+        );
     })();
-  }, [global.enableTrigger, backupsDirectory]);
+  }, [global?.enableTrigger, backupsDirectory]);
 
   return (
     <>
@@ -51,6 +53,9 @@ export default function ExportImportHandler(props: {
               setError("");
               setExporting(true);
               try {
+                if (!backupsDirectory) {
+                  throw new Error("Backup directory not set");
+                }
                 await global?.plugin.app.vault.adapter.mkdir(backupsDirectory);
 
                 const config = { ...(await props.getConfig()) };

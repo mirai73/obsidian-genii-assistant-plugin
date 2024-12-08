@@ -45,7 +45,6 @@ export default class TGBlock {
         ...(activeView
           ? await this.plugin.contextManager.getContext({
               editor: CM,
-              filePath: activeView?.file?.path,
               templateContent: inputContent,
             })
           : {}),

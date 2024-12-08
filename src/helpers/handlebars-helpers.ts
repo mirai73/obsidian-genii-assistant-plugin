@@ -34,6 +34,7 @@ import lodashGet from "lodash.get";
 import JSON5 from "json5";
 
 import { AvailableContext } from "#/scope/context-manager";
+import { getFrontmatter } from "#/scope/context-manager-helpers";
 
 export default function HelpersFn(self: ContextManager) {
   const extract = async (id: string, content: string, other: any) => {
@@ -365,9 +366,7 @@ export default function HelpersFn(self: ContextManager) {
           `template with packageId/promptId ${id} was not found.`
         );
 
-      const TemplateMetadata = self.getFrontmatter(
-        self.getMetaData(templatePath)
-      );
+      const TemplateMetadata = getFrontmatter(self.getMetaData(templatePath));
 
       let innerResult = {};
 

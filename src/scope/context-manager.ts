@@ -1,30 +1,24 @@
 import { App, Notice, Component, TFile, HeadingCache } from "obsidian";
 import { AsyncReturnType, Context } from "../types";
 import GeniiAssistantPlugin from "../main";
-import { IGNORE_IN_YAML } from "../constants";
 
 import {
   escapeRegExp,
   getContextAsString,
   getFilePathByName,
   removeYAML,
-  replaceScriptBlocksWithMustachBlocks,
-  walkUntilTrigger,
 } from "../utils";
 import debug from "debug";
 import HelpersFn, { Handlebars } from "../helpers/handlebars-helpers";
 import {
   ContentExtractor,
-  ExtractorSlug,
   UnExtractorSlug,
   getExtractorMethods,
 } from "../extractors/content-extractor";
 import { getAPI as getDataviewApi } from "obsidian-dataview";
-import set from "lodash.set";
+
 import merge from "lodash.merge";
-import { getHBValues } from "../utils/barhandles";
 import * as fspath from "path";
-import JSON5 from "json5";
 import type { ContentManager } from "./content-manager/types";
 import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";
 
@@ -34,16 +28,17 @@ import {
   MessageContent,
   MessageContentComplex,
 } from "@langchain/core/messages";
+import {
+  clearFrontMatterFromIgnored,
+  getFrontmatter,
+  getHBVariablesObjectOfTemplate,
+  getHighlights,
+  getMetaDataAsStr,
+  getOptionsUnder,
+  processCodeBlocks,
+} from "./context-manager-helpers";
 
 const logger = debug("genii:ContextManager");
-
-interface CodeBlock {
-  type: string;
-  content: string;
-  full: string;
-}
-
-type CodeBlockProcessor = (block: CodeBlock) => Promise<string>;
 
 export interface ContextTemplate {
   inputTemplate: HandlebarsTemplateDelegate<any>;
@@ -80,9 +75,7 @@ export interface AvailableContext {
   children?: AsyncReturnType<
     InstanceType<typeof ContextManager>["getChildrenContent"]
   >;
-  highlights?: AsyncReturnType<
-    InstanceType<typeof ContextManager>["getHighlights"]
-  >;
+  highlights?: string[];
   mentions?: AsyncReturnType<
     InstanceType<typeof ContextManager>["getMentions"]
   >;
@@ -113,41 +106,40 @@ export default class ContextManager {
     });
   }
 
-  async getContext(props: {
+  async getContext({
+    editor,
+    insertMetadata,
+    templateContent,
+    templatePath,
+    additionalOpts,
+  }: {
     editor?: ContentManager;
-    filePath?: string;
     insertMetadata?: boolean;
     templatePath?: string;
     templateContent?: string;
     additionalOpts?: any;
   }): Promise<InputContext> {
-    const templatePath = props.templatePath || "";
-    const templateContent = props.templateContent || "";
-
-    logger(
-      "getContext",
-      props.insertMetadata,
-      props.templatePath,
-      props.additionalOpts
-    );
+    logger("getContext", {
+      insertMetadata,
+      templatePath,
+      additionalOpts,
+    });
 
     /* Template */
-    if (templatePath.length || templateContent?.length) {
+    if (templatePath?.length || templateContent?.length) {
       const options = merge(
         {},
         await this.getTemplateContext({
-          editor: props.editor,
+          editor: editor,
           templatePath,
           templateContent,
-          filePath: props.filePath,
         }),
-        props.additionalOpts
+        additionalOpts
       );
 
-      if (!templatePath.length)
+      if (!templatePath)
         return {
           options,
-          templatePath: "",
         };
 
       const { context, template } = await this.templateFromPath(
@@ -162,7 +154,7 @@ export default class ContextManager {
         context,
         options,
         template,
-        templatePath: props.templatePath,
+        templatePath: templatePath,
       };
     } else {
       /* Without template */
@@ -173,7 +165,7 @@ export default class ContextManager {
         : "{{tg_selection}}";
 
       const options = await this.getDefaultContext(
-        props.editor,
+        editor,
         undefined,
         contextTemplate
       );
@@ -181,7 +173,7 @@ export default class ContextManager {
       // take context
       let context = await getContextAsString(options as any, contextTemplate);
 
-      if (props.insertMetadata) {
+      if (insertMetadata) {
         const frontmatter = this.getMetaData()?.frontmatter; // frontmatter of the active document
 
         if (
@@ -190,7 +182,7 @@ export default class ContextManager {
         ) {
           /* Text Generate with metadata */
           options.frontmatter = frontmatter;
-          context = this.getMetaDataAsStr(frontmatter) + context;
+          context = getMetaDataAsStr(frontmatter) + context;
         } else {
           new Notice("No valid Metadata (YAML front matter) found!");
         }
@@ -213,8 +205,8 @@ export default class ContextManager {
 
       const options = merge(
         {},
-        this.getFrontmatter(this.getMetaData(templatePath)),
-        this.getFrontmatter(fileMeta),
+        getFrontmatter(this.getMetaData(templatePath)),
+        getFrontmatter(fileMeta),
         additionalOptions,
         {
           tg_selection: removeYAML(
@@ -239,43 +231,25 @@ export default class ContextManager {
         template,
         templatePath,
       } as InputContext);
-
-      //   app.workspace.openLinkText("", filePath, true);
-      //   contexts.push(
-      //     app.workspace.activeEditor?.editor
-      //       ? await this.getContext(
-      //           app.workspace.activeEditor?.editor,
-      //           insertMetadata,
-      //           templatePath,
-      //           {
-      //             ...additionalOptions,
-      //             selection: app.workspace.activeEditor.editor.getValue(),
-      //           }
-      //         )
-      //       : undefined
-      //   );
-
-      //   console.log({ contexts });
-      //   app.workspace.getLeaf().detach();
     }
 
     return contexts;
   }
 
-  async getTemplateContext(props: {
+  async getTemplateContext({
+    editor,
+    templateContent,
+    templatePath,
+  }: {
     editor?: ContentManager;
-    filePath?: string;
     templatePath?: string;
     templateContent?: string;
   }) {
-    const templatePath = props.templatePath || "";
-    logger("getTemplateContext", props.editor, props.templatePath);
+    logger("getTemplateContext", { editor, templatePath });
 
     const contextOptions: Context = this.plugin.settings.context;
 
-    let templateContent = props.templateContent || "";
-
-    if (templatePath.length > 0) {
+    if (templatePath) {
       const templateFile =
         await this.app.vault.getAbstractFileByPath(templatePath);
       if (templateFile) {
@@ -288,7 +262,7 @@ export default class ContextManager {
       this.plugin.defaultSettings.context.contextTemplate;
 
     const contextObj = await this.getDefaultContext(
-      props.editor,
+      editor,
       undefined,
       templateContent
     );
@@ -306,18 +280,9 @@ export default class ContextManager {
     blocks.frontmatter = {};
     blocks.headings = contextObj.headings;
 
-    // const variables = getHBValues(templateContent);
-    // const vars: Record<string, true> = {};
-
-    // variables.forEach((v) => {
-    //   vars[v] = true;
-    // });
-
-    // logger("getTemplateContext Variables ", { variables });
-
     blocks.frontmatter = merge(
       {},
-      this.getFrontmatter(this.getMetaData(templatePath)),
+      getFrontmatter(this.getMetaData(templatePath)),
       contextObj.frontmatter
     );
 
@@ -342,25 +307,19 @@ export default class ContextManager {
     return options;
   }
 
-  templateContains(variables: string[], searchVariable: string) {
-    return variables.some((variable) => variable.includes(searchVariable));
-  }
-
   async getDefaultContext(
     editor?: ContentManager,
     filePath?: string,
     contextTemplate?: string
   ) {
-    logger("getDefaultContext");
-    logger("contextTemplate", contextTemplate);
+    logger("getDefaultContext", { contextTemplate });
 
     const context: AvailableContext = {
       keys: {},
       _variables: {},
     };
 
-    const vars =
-      this.getHBVariablesObjectOfTemplate(contextTemplate || "") || {};
+    const vars = getHBVariablesObjectOfTemplate(contextTemplate || "") || {};
     context._variables = vars;
 
     const activeFile = this.getActiveFile();
@@ -390,47 +349,44 @@ export default class ContextManager {
 
       context.title = title;
 
-      context.frontmatter = this.getFrontmatter(activeDocCache) || "";
+      context.frontmatter = getFrontmatter(activeDocCache) || "";
 
       if (vars.previousWord)
-        context.previousWord = await this.getPreviousWord(editor);
+        context.previousWord = await editor.getPreviousWord();
 
-      if (vars.nextWord) context.nextWord = await this.getNextWord(editor);
+      if (vars.nextWord) context.nextWord = await editor.getNextWord();
 
       if (vars.beforeCursor)
-        context.beforeCursor = await this.getBeforeCursor(editor);
+        context.beforeCursor = await editor.getBeforeCursor();
 
-      if (vars.afterCursor)
-        context.afterCursor = await this.getAfterCursor(editor);
+      if (vars.afterCursor) context.afterCursor = await editor.getAfterCursor();
 
       if (vars.inverseSelection)
-        context.inverseSelection = await this.getInverseSelection(editor);
+        context.inverseSelection = await editor.getInverseSelection();
 
       if (vars.cursorParagraph)
-        context.cursorParagraph = await this.getCursorParagraph(editor);
+        context.cursorParagraph = await editor.getCursorParagraph();
 
       if (vars.cursorSentence)
-        context.cursorSentence = await this.getCursorSentence(editor);
+        context.cursorSentence = await editor.getCursorSentence();
 
       if (vars.content) context.content = await editor.getValue();
 
       if (vars.highlights)
-        context.highlights = editor ? await this.getHighlights(editor) : [];
+        context.highlights = await getHighlights(await editor.getValue());
     }
 
     if (vars.starredBlocks)
       context.starredBlocks =
-        (await this.getStarredBlocks(filePath || "")) || "";
+        (await this.getStarredBlocks(this.getMetaData(filePath))) ?? "";
 
     if (vars.yaml)
-      context.yaml = this.clearFrontMatterFromIgnored(
-        this.getFrontmatter(activeDocCache) || ""
+      context.yaml = clearFrontMatterFromIgnored(
+        getFrontmatter(activeDocCache) ?? ""
       );
 
     if (vars.metadata)
-      context.metadata = this.getMetaDataAsStr(context.frontmatter || {}) || "";
-
-    if (vars.keys) context.keys = this.plugin.getApiKeys();
+      context.metadata = getMetaDataAsStr(context.frontmatter || {}) ?? "";
 
     if (activeDocCache)
       context.headings = await this.getHeadingContent(activeDocCache);
@@ -585,58 +541,21 @@ export default class ContextManager {
     return processedElements;
   }
 
-  overProcessTemplate(templateContent: string) {
-    // ignore all scripts content
-    // replace all script helpers with script mustache blocks
-    templateContent = replaceScriptBlocksWithMustachBlocks(templateContent);
-
-    return templateContent;
-  }
-
-  /** Editor variable is for passing it to the next templates that are being called from the handlebars */
   splitTemplate(templateContent: string) {
+    const hbMiddleware = this.handlebarsMiddleware;
     logger("splitTemplate", templateContent);
     templateContent = removeYAML(templateContent);
 
-    let inputContent;
     let outputContent;
-    let preRunnerContent;
-    if (templateContent.includes("***")) {
-      const splitContent = templateContent
-        // @ts-ignore
-        .replaceAll("\\***", "")
-        .split("\n***");
-      inputContent = this.overProcessTemplate(
-        splitContent[splitContent.length === 3 ? 1 : 0]
-      );
-      outputContent = this.overProcessTemplate(
-        splitContent[splitContent.length === 3 ? 2 : 1]
-      ).slice(1);
 
-      preRunnerContent = this.overProcessTemplate(
-        splitContent[splitContent.length - 3]
-      );
-    } else {
-      inputContent = this.overProcessTemplate(templateContent);
-      outputContent = this.overProcessTemplate("");
-    }
-
-    const inputTemplate = this.handlebarsMiddleware(
-      Handlebars.compile(inputContent, {
+    const inputTemplate = hbMiddleware(
+      Handlebars.compile(templateContent, {
         noEscape: true,
       })
     );
 
-    const preRunnerTemplate = preRunnerContent
-      ? this.handlebarsMiddleware(
-          Handlebars.compile(preRunnerContent, {
-            noEscape: true,
-          })
-        )
-      : undefined;
-
     const outputTemplate = outputContent
-      ? this.handlebarsMiddleware(
+      ? hbMiddleware(
           Handlebars.compile(outputContent, {
             noEscape: true,
           })
@@ -644,27 +563,11 @@ export default class ContextManager {
       : undefined;
 
     return {
-      preRunnerTemplate,
-      inputContent,
+      inputContent: templateContent,
       outputContent,
-      preRunnerContent,
       inputTemplate,
       outputTemplate,
     };
-  }
-
-  clearFrontMatterFromIgnored(yml: Record<string, any>) {
-    const objNew: Record<string, any> = {};
-
-    for (const key in yml) {
-      if (
-        Object.prototype.hasOwnProperty.call(yml, key) &&
-        !IGNORE_IN_YAML[key]
-      ) {
-        objNew[key] = yml[key];
-      }
-    }
-    return objNew;
   }
 
   async templateFromPath(
@@ -682,58 +585,15 @@ export default class ContextManager {
     const templateContent =
       _templateContent || (await this.app.vault.read(templateFile as TFile));
 
-    const templates = this.splitTemplate(templateContent);
-
-    if (templates.preRunnerTemplate) {
-      // run prerunning script
-      const n = new Notice("processing Initialization...", 300000);
-      try {
-        await templates.preRunnerTemplate(options);
-      } catch (err: any) {
-        n.hide();
-        throw err;
-      }
-      n.hide();
-    }
+    if (!this.plugin.contextManager)
+      throw new Error("Context manager not found");
+    const templates = this.plugin.contextManager.splitTemplate(templateContent);
 
     // Apply the Mustache template
     const input = await templates.inputTemplate(options);
 
     logger("templateFromPath_end", input);
     return { context: input, template: templates };
-  }
-
-  async getTemplateCustomInputConfig(templatePath: string) {
-    const templateFile =
-      await this.app.vault.getAbstractFileByPath(templatePath);
-
-    const templateContent = await this.app.vault.read(templateFile as TFile);
-
-    const templates = this.splitTemplate(templateContent);
-
-    // Define a regular expression to match JSON code blocks
-    const jsonRegex = /```json:form([\s\S]+?)```/;
-
-    // Match the JSON code block in the text
-    const match = templates.preRunnerContent?.match(jsonRegex);
-
-    // Check if a match is found
-    if (match && match[1]) {
-      // Extract and return the JSON code block
-      const jsonCodeBlock = match[1].trim();
-      try {
-        return JSON5.parse(jsonCodeBlock);
-      } catch (err: any) {
-        new Notice(
-          "JSON cannot be parsed. Check console(CTRL+SHIFT+i) for more info"
-        );
-        this.plugin.handelError(err);
-        return null;
-      }
-    } else {
-      // Return null if no match is found
-      return null;
-    }
   }
 
   async getSelections(editor: ContentManager) {
@@ -764,16 +624,12 @@ export default class ContextManager {
     return selectedText;
   }
 
-  getFrontmatter(fileCache: any) {
-    return fileCache?.frontmatter;
-  }
-
-  async getHeadingContent(fileCache: any) {
+  async getHeadingContent(fileCache: ReturnType<typeof this.getMetaData>) {
     const headings = fileCache?.headings;
     const headingsContent: Record<string, string | undefined> = {};
     if (headings) {
       for (const heading of headings) {
-        let textBlock = await this.getTextBloc(heading.heading);
+        let textBlock = await this.getTextBloc(fileCache, heading.heading);
         textBlock = textBlock?.substring(
           textBlock.indexOf(heading.heading),
           textBlock.length
@@ -793,7 +649,6 @@ export default class ContextManager {
       link: string;
     }[];
   }) {
-    // const contextOptions: Context = this.plugin.settings.context;
     const children: (TFile & {
       content: string;
       frontmatter: any;
@@ -847,14 +702,6 @@ export default class ContextManager {
     return children;
   }
 
-  async getHighlights(editor: ContentManager) {
-    const content = await editor.getValue();
-    const highlights =
-      content.match(/==(.*?)==/gi)?.map((s: any) => s.replaceAll("==", "")) ||
-      [];
-    return highlights;
-  }
-
   async getClipboard() {
     return await navigator.clipboard.readText();
   }
@@ -895,8 +742,7 @@ export default class ContextManager {
     return { linked, unlinked };
   }
 
-  async getStarredBlocks(path = "") {
-    const fileCache = this.getMetaData(path);
+  async getStarredBlocks(fileCache: ReturnType<typeof this.getMetaData>) {
     let content = "";
     const staredHeadings = fileCache?.headings?.filter(
       (e: { heading: string }) =>
@@ -904,14 +750,16 @@ export default class ContextManager {
     );
     if (staredHeadings) {
       for (const heading of staredHeadings) {
-        content += await this.getTextBloc(heading.heading);
+        content += await this.getTextBloc(fileCache, heading.heading);
       }
     }
     return content;
   }
 
-  async getTextBloc(heading: string, path = "") {
-    const fileCache = this.getMetaData(path);
+  async getTextBloc(
+    fileCache: ReturnType<typeof this.getMetaData>,
+    heading: string
+  ) {
     let level = -1;
     let start = -1;
     let end = -1;
@@ -987,7 +835,7 @@ export default class ContextManager {
   }
 
   getMetaData(path?: string, withoutCompatibility?: boolean) {
-    const activeFile = !path
+    const activeFile = path
       ? this.plugin.geniiAssistant?.embeddingsScope.getActiveNote()
       : { path };
 
@@ -1056,54 +904,6 @@ export default class ContextManager {
     };
   }
 
-  getMetaDataAsStr(frontmatter: Record<string, string | any[]>) {
-    let cleanFrontMatter = "";
-    for (const [key, value] of Object.entries(frontmatter) as [
-      string,
-      string | any[], // or array
-    ][]) {
-      if (
-        !value ||
-        key.includes(".") ||
-        IGNORE_IN_YAML[key] ||
-        key.startsWith("body") ||
-        key.startsWith("header")
-      )
-        continue;
-      if (Array.isArray(value)) {
-        cleanFrontMatter += `${key} : `;
-        value.forEach((v) => {
-          cleanFrontMatter += `${v}, `;
-        });
-        cleanFrontMatter += `\n`;
-      } else if (typeof value === "object") {
-        continue;
-      } else {
-        cleanFrontMatter += `${key} : ${value} \n`;
-      }
-    }
-    return cleanFrontMatter;
-  }
-
-  async processCodeBlocks(
-    input: string,
-    processor: CodeBlockProcessor
-  ): Promise<string> {
-    const regex = /```(.+?)\n([\s\S]*?)```/g;
-    let match: RegExpExecArray | null;
-    let output = input;
-
-    while ((match = regex.exec(input)) !== null) {
-      const full = match[0];
-      const type = match[1];
-      const content = match[2];
-      const block = { type, content, full };
-      const replacement = await processor(block); // Assuming 'process' is a method in the CodeBlockProcessor class
-      output = output.replace(full, replacement);
-    }
-    return output;
-  }
-
   private _dataviewApi: any;
   async execDataview(
     md: string,
@@ -1111,7 +911,7 @@ export default class ContextManager {
   ): Promise<string> {
     if (!md || typeof md !== "string") return md;
 
-    const parsedTemplateMD: string = await this.processCodeBlocks(
+    const parsedTemplateMD: string = await processCodeBlocks(
       md,
       async ({ type, content, full }) => {
         try {
@@ -1121,7 +921,7 @@ export default class ContextManager {
                 this._dataviewApi || (await getDataviewApi(this.app)));
               const res = await api?.queryMarkdown(content);
 
-              if (!res) throw new Error("Couln't find DataViewApi");
+              if (!res) throw new Error("Couldn't find DataViewApi");
 
               if (res?.successful) {
                 return (_cache[content] = _cache[content] || res.value);
@@ -1151,83 +951,6 @@ export default class ContextManager {
     return parsedTemplateMD;
   }
 
-  getHBVariablesOfTemplate(...sections: (string | undefined)[]) {
-    const vars = new Set<string>([]);
-
-    for (const section of sections) {
-      for (const v of getHBValues(section || "")) {
-        vars.add(v);
-      }
-    }
-
-    return Array.from(vars.values());
-  }
-
-  getHBVariablesObjectOfTemplate(...sections: (string | undefined)[]) {
-    const vars: Record<string, true> = {};
-
-    for (const section of sections) {
-      for (const v of getHBValues(section || "")) {
-        vars[v] = true;
-      }
-    }
-
-    return vars;
-  }
-
-  // This function returns all the text before the cursor's current position
-  async getBeforeCursor(editor: ContentManager): Promise<string> {
-    const cursor = await editor.getCursor();
-    const beforeCursor = await editor.getRange(undefined, cursor);
-    return beforeCursor;
-  }
-
-  // This function returns all the text after the cursor's current position
-  async getAfterCursor(editor: ContentManager): Promise<string> {
-    const cursor = await editor.getCursor("to");
-    const afterCursor = await editor.getRange(cursor, undefined);
-    return afterCursor;
-  }
-
-  // This function returns the entire paragraph where the cursor is currently located
-  async getCursorParagraph(editor: ContentManager): Promise<string> {
-    return await editor.getCurrentLine();
-  }
-
-  // This function returns the sentence immediately surrounding the cursor, including sentences that the cursor is in the middle of
-  async getCursorSentence(editor: ContentManager): Promise<string> {
-    const stoppers = ["\n", ".", "?", "!"];
-    const part1 = walkUntilTrigger(
-      await this.getBeforeCursor(editor),
-      stoppers,
-      true
-    );
-    const part2 = walkUntilTrigger(await this.getAfterCursor(editor), stoppers);
-    return part1 + "\n" + part2;
-  }
-
-  // This function returns the next word relative to the cursor's position
-  async getNextWord(editor: ContentManager): Promise<string> {
-    const texts = (await this.getAfterCursor(editor)).split(" ");
-    return texts[0]?.trim() || texts[1]?.trim() || "";
-  }
-
-  // This function returns the previous word relative to the cursor's position
-  async getPreviousWord(editor: ContentManager): Promise<string> {
-    const texts = (await this.getBeforeCursor(editor)).trim().split(" ");
-    return (
-      texts[texts.length - 1]?.trim() || texts[texts.length - 2]?.trim() || ""
-    );
-  }
-
-  // This function selects everything except the currently selected text
-  async getInverseSelection(editor: ContentManager): Promise<string> {
-    const content = await editor.getValue();
-    const selection = await editor.getSelection();
-    const inverseSelection = content.replace(selection, "");
-    return inverseSelection;
-  }
-
   handlebarsMiddleware(
     hb: HandlebarsTemplateDelegate<any>
   ): HandlebarsTemplateDelegate<any> {
@@ -1240,275 +963,4 @@ export default class ContextManager {
       return hbd;
     }) as any;
   }
-
-  extractFrontmatterFromTemplateContent(templateContent: string) {
-    const regex = /---([\s\S]*?)---/;
-    const match = templateContent.match(regex);
-
-    // turn yaml it into an object
-    const yaml = match ? match[1] : "";
-    const obj = this.yamlToObj(yaml);
-    return obj;
-  }
-
-  /** Simple yaml parser, as fallback */
-  yamlToObj(yaml: string) {
-    const frontmatterRegex = /---\n([\s\S]+?)\n---/;
-    const match = yaml.match(frontmatterRegex);
-    if (!match) return {};
-
-    const frontmatterStr = match[1];
-    const lines = frontmatterStr.split("\n");
-    const frontmatter: Record<string, any> = {};
-    lines.forEach((line) => {
-      const [key, value] = line.split(": ").map((s) => s.trim());
-      frontmatter[key] = value;
-    });
-    return frontmatter;
-  }
 }
-
-export function getOptionsUnder(
-  prefix: string,
-  obj: Record<string, any> | undefined
-) {
-  let options: Record<string, any> = {};
-
-  Object.entries(obj || {}).map(([key, data]) => {
-    if (key.startsWith(prefix)) {
-      options = set(options, key, data);
-    }
-  });
-
-  return options[prefix.substring(0, prefix.length - 1)];
-}
-
-export const ContextVariables: Record<
-  string,
-  {
-    example: string;
-    hint?: string;
-  }
-> = {
-  title: {
-    example: "{{title}}",
-    hint: "Represents the note's title.",
-  },
-  content: {
-    example: "{{content}}",
-    hint: "Represents the entirety of the note's content.",
-  },
-  selection: {
-    example: "{{selection}}",
-    hint: "The portion of text that has been selected by the user.",
-  },
-  tg_selection: {
-    example: "{{tg_selection}}",
-    hint: "The text selected using the text generator method.",
-  },
-
-  inverseSelection: {
-    example: `{{inverseSelection}}`,
-    hint: "Shows an error notice when the inverse selection (excluding the currently selected text) is empty.",
-  },
-
-  previousWord: {
-    example: `{{previousWord}}`,
-    hint: "Shows an error notice when the previous word relative to the cursor's position is empty.",
-  },
-
-  nextWord: {
-    example: `{{nextWord}}`,
-    hint: "Shows an error notice when the next word relative to the cursor's position is empty.",
-  },
-
-  cursorParagraph: {
-    example: `{{cursorParagraph}}`,
-    hint: "Shows an error notice when the paragraph where the cursor is currently located is empty.",
-  },
-
-  cursorSentence: {
-    example: `{{cursorSentence}}`,
-    hint: "Shows an error notice when the sentence surrounding the cursor is empty.",
-  },
-
-  beforeCursor: {
-    example: `{{beforeCursor}}`,
-    hint: "Shows an error notice when the text before the cursor's current position is empty.",
-  },
-
-  afterCursor: {
-    example: `{{afterCursor}}`,
-    hint: "Shows an error notice when the text after the cursor's current position is empty.",
-  },
-
-  starredBlocks: {
-    example: "{{starredBlocks}}",
-    hint: "Content under headings marked with a star (*) in the note.",
-  },
-
-  clipboard: {
-    example: "{{clipboard}}",
-    hint: "The current content copied to the clipboard.",
-  },
-  selections: {
-    example: "{{#each selections}} {{this}} {{/each}}",
-    hint: "All selected text segments in the note, especially when multiple selections are made.",
-  },
-  highlights: {
-    example: "{{#each highlights}} {{this}} {{/each}}",
-    hint: "Highlighted segments marked with ==...== in the note.",
-  },
-  children: {
-    example: "{{#each children}} {{this.content}} {{/each}}",
-    hint: "An array of notes or sub-notes that are cited or related to the primary note.",
-  },
-  "mentions(linked)": {
-    example: "{{#each mentions.linked}} {{this.results}} {{/each}}",
-    hint: "Mentions across the entire vault where a note is directly linked, e.g., [[note]].",
-  },
-  "mentions(unlinked)": {
-    example: "{{#each mentions.unlinked}} {{this.results}} {{/each}}",
-    hint: "Mentions across the vault where a note is referenced without a direct link, e.g., '...note...'.",
-  },
-  extractions: {
-    example: `{{#each extractions}} {{this}} {{/each}}
-
-Or
-{{#each extractions.pdf}} {{this}} {{/each}}
-    `,
-    hint: `Extracted content from various sources like PDFs, images, audio files, web pages, and YouTube URLs. possible extractions: `,
-  },
-  headings: {
-    example: `{{#each headings}}
-# HEADER: {{@key}}
-{{this}}
-{{/each}}`,
-    hint: "Contains all the headings within the note and their respective content.",
-  },
-
-  metadata: {
-    example: `{{metadata}}`,
-    hint: "The initial metadata of the note, often provided in YAML format.",
-  },
-
-  yaml: {
-    example: `{{#each yaml}}
-{{@key}}: {{this}}
-{{/each}}`,
-    hint: "The initial metadata (Object) of the note.",
-  },
-
-  // extractors
-  extract: {
-    example: `{{#extract "web_md" "var1" "a"}}
-  http://www.google.com
-{{/extract}}
-
-Or
-
-{{extract "pdf" "test.pdf"}}
-{{extract "youtube" "ytUrl"}}
-{{extract "web" "https://example.com"}}`,
-    hint: "Extracts content from various sources like PDFs, images, audio files, web pages, and YouTube URLs. possible values: web_md, web_html, pdf, yt, img, audio",
-  },
-
-  read: {
-    example: `{{read "readme.md"}}`,
-    hint: "Reads the content of a file from the vault",
-  },
-
-  write: {
-    example: `{{#write "readme.md"}}
-  text {{selection}}
-{{/write}}
-
-Or
-{{write "readme.md" selection}}
-`,
-    hint: "Writes a text or variable into a file",
-  },
-
-  append: {
-    example: `{{#append "readme.md"}}
-  text {{selection}}
-{{/append}}
-
-Or
-{{append "readme.md" selection}}
-`,
-    hint: "Appends a text or variable into a file",
-  },
-
-  run: {
-    example: `{{#run "otherTemplateId" "var1" "selection"}}
-  this text will be the "selection" variable for the other template
-  it can be any variable even custom ones
-{{/run}}
-
-Or
-{{#run "otherTemplateId" "var1"}}
-  this text will be the "tg_selection" variable for the other template
-{{/run}}
-`,
-    hint: "Runs another template, and sending a value to it, the result will be stored in a variable(var1).",
-  },
-
-  script: {
-    example: `{{#script}}
-  return "hello world";
-{{/script}}
-
-Or
-{{#script "otherTemplateId" "var1"}}
-\`\`\`js
-  return "hello world";
-\`\`\`
-{{/script}}
-`,
-    hint: "Runs javascript code, avoid using it for security reasons.",
-  },
-
-  get: {
-    example: `{{get "var1"}}`,
-    hint: "Gets value of a variable",
-  },
-
-  set: {
-    example: `{{#set "var1"}}
-    text {{selection}}
-{{/set}}
-
-  Or
-{{set "var1" selection}}
-  `,
-    hint: "Gets value of a variable",
-  },
-
-  log: {
-    example: `{{log "test" selection}}`,
-    hint: "Logs anything to console (open console in devtools Ctrl+Shift+i)",
-  },
-
-  notice: {
-    example: `{{notice "test"}}`,
-    hint: "Shows a notice to the user",
-  },
-
-  error: {
-    example: `{{error "Selection was empty"}}`,
-    hint: "Shows a error notice to the user, and it will stop the execution.",
-  },
-
-  keys: {
-    example: `{{keys.openAIChat}}`,
-    hint: "Gives access to generic provider's api keys",
-  },
-  dataview: {
-    example: `{{#dataview}}
-    TABLE file.name, file.size
-    WHERE file.size > 2048
-{{/dataview}}`,
-    hint: "Gives access to generic provider's api keys",
-  },
-};

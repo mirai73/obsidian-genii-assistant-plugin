@@ -14,24 +14,18 @@ export default function MarkDownViewer(props: {
 }) {
   // Create an array of refs for each insight item
   const ref = useRef<HTMLDivElement>(null);
-  let Global: ReturnType<typeof useGlobal>;
-
-  try {
-    Global = useGlobal();
-  } catch {
-    // empty
-  }
-
+  const global = useGlobal();
+  if (!global) throw new Error("Global not found");
   useEffect(() => {
     if (!ref.current) return;
     ref.current.innerHTML = "";
     try {
       MarkdownRenderer.render(
-        Global?.plugin.app,
+        global.plugin.app,
         "" + props.children,
         ref.current,
         "",
-        props.plugin || Global.plugin
+        props.plugin || global.plugin
       );
     } catch {
       global?.plugin.handelError(

@@ -4,8 +4,10 @@ export default class CanvasManager implements ContentManager {
   canvas: Canvas;
   view: View;
   options: Options;
+  app: App;
 
-  constructor(canvas: Canvas, view: View, options: Options) {
+  constructor(canvas: Canvas, view: View, app: App, options: Options) {
+    this.app = app;
     this.canvas = canvas;
     this.view = view;
     this.options = options;
@@ -124,7 +126,7 @@ export default class CanvasManager implements ContentManager {
     const extractedText = Array.from(this.canvas.selection.values()).map(
       async (element: any) => {
         if (element.file)
-          element.rawText = await app.vault.cachedRead(element.file);
+          element.rawText = await this.app.vault.cachedRead(element.file);
         else element.rawText = element.text;
         return element;
       }
@@ -153,7 +155,7 @@ export default class CanvasManager implements ContentManager {
       await Promise.all(
         Array.from(this.canvas.nodes).map(async (element: any) => {
           if (element.file)
-            element.rawText = await app.vault.cachedRead(element.file);
+            element.rawText = await this.app.vault.cachedRead(element.file);
           else element.rawText = element.text;
           return element;
         })
@@ -333,6 +335,28 @@ export default class CanvasManager implements ContentManager {
   getCurrentLine(): string {
     return "";
   }
+
+  getCursorParagraph(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getCursorSentence(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getBeforeCursor(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getAfterCursor(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getInverseSelection(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getNextWord(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
+  getPreviousWord(): Promise<string> {
+    throw new Error("Method not implemented.");
+  }
 }
 
 import type {
@@ -342,7 +366,7 @@ import type {
   AllCanvasNodeData,
   CanvasEdgeIntermediate,
 } from "./canvas.d";
-import { TFile, View } from "obsidian";
+import { App, TFile, View } from "obsidian";
 
 const MIN_WIDTH = 600;
 const PX_PER_CHAR = 3;

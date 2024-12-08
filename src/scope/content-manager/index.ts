@@ -4,6 +4,7 @@ import ExcalidrawManager from "./ea";
 import CanvasManager from "./canvas";
 import { ContentManager, Options } from "./types";
 import GeniiAssistantPlugin from "#/main";
+import { extractFrontmatterFromTemplateContent } from "../context-manager-helpers";
 
 export default class ContentManagerFactory {
   static createContentManager(
@@ -25,10 +26,9 @@ export default class ContentManagerFactory {
       wrapInBlockQuote =
         templateMetadata?.frontmatter?.outputToBlockQuote ?? wrapInBlockQuote;
     } else if (otherOptions?.templateContent) {
-      const templateFrontmatter =
-        plugin.contextManager?.extractFrontmatterFromTemplateContent(
-          otherOptions.templateContent
-        );
+      const templateFrontmatter = extractFrontmatterFromTemplateContent(
+        otherOptions.templateContent
+      );
       wrapInBlockQuote =
         templateFrontmatter?.outputToBlockQuote ?? wrapInBlockQuote;
     }
@@ -57,7 +57,7 @@ export default class ContentManagerFactory {
         if (!view.canvas)
           throw new Error("couldn't find the canvas plugin fsr");
         // @ts-ignore
-        return new CanvasManager(view.canvas, view);
+        return new CanvasManager(view.canvas, view, plugin.app);
       default:
         throw new Error(`The content ${type} is not supported`);
     }

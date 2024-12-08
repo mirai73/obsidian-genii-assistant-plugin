@@ -27,8 +27,17 @@ const AI_MODELS: Record<string, ModelType> = {
   "gpt-4o": {
     encoding: "cl100k_base",
     prices: {
-      prompt: 0.005,
-      completion: 0.005,
+      prompt: 0.0025,
+      completion: 0.00125,
+    },
+    maxTokens: 128000,
+    llm: ["OpenAI Chat (Langchain)"],
+  },
+  "o1-mini": {
+    encoding: "cl100k_base",
+    prices: {
+      prompt: 0.003,
+      completion: 0.012,
     },
     maxTokens: 128000,
     llm: ["OpenAI Chat (Langchain)"],
@@ -42,11 +51,11 @@ const AI_MODELS: Record<string, ModelType> = {
     maxTokens: 8192,
     llm: ["OpenAI Chat (Langchain)"],
   },
-  "gpt-4-turbo-preview": {
+  "o1-preview": {
     encoding: "cl100k_base",
     prices: {
-      prompt: 0.01,
-      completion: 0.03,
+      prompt: 0.015,
+      completion: 0.06,
     },
     maxTokens: 128000,
     llm: ["OpenAI Chat (Langchain)"],
@@ -60,20 +69,11 @@ const AI_MODELS: Record<string, ModelType> = {
     maxTokens: 128000,
     llm: ["OpenAI Chat (Langchain)"],
   },
-  "gpt-4-1106-preview": {
+  "gpt-4o-mini": {
     encoding: "cl100k_base",
     prices: {
-      prompt: 0.01,
-      completion: 0.03,
-    },
-    maxTokens: 128000,
-    llm: ["OpenAI Chat (Langchain)"],
-  },
-  "gpt-4-1106": {
-    encoding: "cl100k_base",
-    prices: {
-      prompt: 0.01,
-      completion: 0.03,
+      prompt: 0.00015,
+      completion: 0.0006,
     },
     maxTokens: 128000,
     llm: ["OpenAI Chat (Langchain)"],
@@ -87,55 +87,16 @@ const AI_MODELS: Record<string, ModelType> = {
     maxTokens: 128000,
     llm: ["OpenAI Chat (Langchain)"],
   },
-  "gpt-4-0314": {
+  "gpt-4o-realtime-preview": {
     encoding: "cl100k_base",
     prices: {
-      prompt: 0.03,
-      completion: 0.06,
-    },
-    maxTokens: 8192,
-    llm: ["OpenAI Chat (Langchain)"],
-    order: -1,
-  },
-  "gpt-4-0613": {
-    encoding: "cl100k_base",
-    prices: {
-      prompt: 0.03,
-      completion: 0.06,
-    },
-    maxTokens: 8192,
-    llm: ["OpenAI Chat (Langchain)"],
-    order: -1,
-  },
-  "gpt-4-32k": {
-    encoding: "cl100k_base",
-    prices: {
-      prompt: 0.06,
-      completion: 0.12,
+      prompt: 0.005,
+      completion: 0.02,
     },
     maxTokens: 32768,
     llm: ["OpenAI Chat (Langchain)"],
   },
-  "gpt-4-32k-0613": {
-    encoding: "cl100k_base",
-    prices: {
-      prompt: 0.06,
-      completion: 0.12,
-    },
-    maxTokens: 32768,
-    llm: ["OpenAI Chat (Langchain)"],
-    order: -1,
-  },
-  "gpt-4-32k-0314": {
-    encoding: "cl100k_base",
-    prices: {
-      prompt: 0.06,
-      completion: 0.12,
-    },
-    maxTokens: 32768,
-    llm: ["OpenAI Chat (Langchain)"],
-    order: -1,
-  },
+
   "gpt-3.5-turbo": {
     encoding: "cl100k_base",
     prices: {
@@ -214,8 +175,8 @@ const AI_MODELS: Record<string, ModelType> = {
   "text-davinci-003": {
     encoding: "p50k_base",
     prices: {
-      prompt: 0.02,
-      completion: 0.02,
+      prompt: 0.002,
+      completion: 0.002,
     },
     maxTokens: 4097,
     llm: ["OpenAI Instruct (Langchain)"],
@@ -224,84 +185,15 @@ const AI_MODELS: Record<string, ModelType> = {
   "text-davinci-002": {
     encoding: "p50k_base",
     prices: {
-      prompt: 0.02,
-      completion: 0.02,
+      prompt: 0.002,
+      completion: 0.002,
     },
     maxTokens: 4097,
     llm: ["OpenAI Instruct (Langchain)"],
     order: -1,
   },
-  "text-davinci-001": {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.02,
-      completion: 0.02,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -1,
-  },
-  "text-curie-001": {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.002,
-      completion: 0.002,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -1,
-  },
-  "text-babbage-001": {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.0005,
-      completion: 0.0005,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -1,
-  },
-  "text-ada-001": {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.0004,
-      completion: 0.0004,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -1,
-  },
-  davinci: {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.02,
-      completion: 0.02,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -2,
-  },
-  curie: {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.002,
-      completion: 0.002,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -2,
-  },
-  babbage: {
-    encoding: "r50k_base",
-    prices: {
-      prompt: 0.0005,
-      completion: 0.0005,
-    },
-    maxTokens: 2049,
-    llm: ["OpenAI Instruct (Langchain)"],
-    order: -2,
-  },
-  ada: {
+
+  "text-babbage-002": {
     encoding: "r50k_base",
     prices: {
       prompt: 0.0004,

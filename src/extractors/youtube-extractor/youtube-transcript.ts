@@ -96,7 +96,7 @@ export class YoutubeTranscript {
           ? config.lang
           : captions.captionTracks[0].languageCode,
       }));
-    } catch (e) {
+    } catch (e: any) {
       throw new YoutubeTranscriptError(e);
     }
   }

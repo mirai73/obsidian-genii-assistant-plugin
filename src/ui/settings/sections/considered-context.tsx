@@ -6,8 +6,8 @@ import Input from "../components/input";
 
 import { Context } from "#/types";
 import AvailableVars from "#/ui/components/availableVars";
-import { ContextVariables } from "#/scope/context-manager";
 import { ConfigItem } from "../components/configItem";
+import { ContextVariables } from "#/scope/ContextVariables";
 
 const extendedInfo: Record<
   string,

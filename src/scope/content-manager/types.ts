@@ -38,22 +38,14 @@ export interface ContentManager {
 
   getSelection(): Promise<string>;
   getSelections(): Promise<string[]>;
-
   getLastLetterBeforeCursor(): string;
-
   getTgSelection(tgSelectionLimiter?: string): Promise<string> | string;
-
   selectTgSelection(tgSelectionLimiter?: string): void;
-
   getCursor(pos?: "from" | "to"): any;
-
   getRange(from?: any, to?: any): any;
   getCurrentLine(): string;
-
   getPrecedingLine(): string;
-
   setCursor(pos: EditorPosition): void;
-
   getActiveFile(): Promise<TFile> | TFile | undefined;
 
   // replaceRange(str: string, startingPos: EditorPosition, endPos?: EditorPosition): void;
@@ -74,4 +66,11 @@ export interface ContentManager {
     end(): void;
     replaceAllWith(newData: string): void;
   }>;
+  getCursorParagraph(): Promise<string>;
+  getCursorSentence(): Promise<string>;
+  getBeforeCursor(): Promise<string>;
+  getAfterCursor(): Promise<string>;
+  getInverseSelection(): Promise<string>;
+  getNextWord(): Promise<string>;
+  getPreviousWord(): Promise<string>;
 }

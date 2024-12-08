@@ -154,9 +154,7 @@ export default class RequestHandler {
       settings,
     });
 
-    const newPrompt: Message["content"] = await Handlebars.compile(
-      this.plugin.contextManager?.overProcessTemplate(prompt)
-    )({
+    const newPrompt: Message["content"] = await Handlebars.compile(prompt)({
       ...settings,
       templatePath: "default/default",
     });

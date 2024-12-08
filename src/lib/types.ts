@@ -1,2 +1,2 @@
-import type { llmType } from "#/LLMProviders";
-export type LLMProviderType = llmType;
+import type { LlmType } from "#/LLMProviders";
+export type LLMProviderType = LlmType;

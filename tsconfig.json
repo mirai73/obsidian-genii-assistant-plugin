@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "react",
+    "outDir": "./dist",
     "baseUrl": ".",
     "inlineSourceMap": true,
     "inlineSources": true,

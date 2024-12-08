@@ -7,7 +7,7 @@ import Input from "../components/input";
 import LLMProviderController from "../components/llmProviderController";
 import { useToggle } from "usehooks-ts";
 import AvailableVars from "#/ui/components/availableVars";
-import { ContextVariables } from "#/scope/context-manager";
+import { ContextVariables } from "#/scope/ContextVariables";
 import { useReloader } from "../components/reloadPlugin";
 import { ConfigItem } from "../components/configItem";
 

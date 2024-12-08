@@ -1,7 +1,7 @@
 import { Command } from "obsidian";
 import GeniiAssistantPlugin from "../../main";
 import React, { useEffect, useState } from "react";
-import { ContextVariables } from "../../scope/context-manager";
+import { ContextVariables } from "#/scope/ContextVariables";
 import { PlaygroundView } from ".";
 import CopyButton from "../components/copyButton";
 import useStateView from "../context/useStateView";
