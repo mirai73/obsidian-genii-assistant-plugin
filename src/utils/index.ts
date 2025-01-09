@@ -267,7 +267,7 @@ export function promiseForceFullfil(item: any) {
 }
 
 import { SystemMessagePromptTemplate } from "@langchain/core/prompts";
-import get from "lodash.get";
+import { get } from "lodash";
 import { Handlebars } from "#/helpers/handlebars-helpers";
 
 export function compilePrompt(prompt: string, vars: string[]) {

@@ -29,8 +29,8 @@ const isSet = (value: any): value is Set<any> => {
 };
 
 import Read from "#/extractors";
-import lodashSet from "lodash.set";
-import lodashGet from "lodash.get";
+import { set as lodashSet } from "lodash";
+import { get as lodashGet } from "lodash";
 import JSON5 from "json5";
 
 import { AvailableContext } from "#/scope/context-manager";

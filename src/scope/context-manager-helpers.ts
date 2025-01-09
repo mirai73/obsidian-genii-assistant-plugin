@@ -3,7 +3,7 @@ import { Handlebars } from "#/helpers/handlebars-helpers";
 import { removeYAML } from "#/utils";
 import { getHBValues } from "#/utils/barhandles";
 import debug from "debug";
-import set from "lodash.set";
+import { set } from "lodash";
 
 const logger = debug("genii:ContextManager:Helpers");
 

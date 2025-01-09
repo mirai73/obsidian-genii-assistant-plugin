@@ -17,7 +17,7 @@ import {
 } from "../extractors/content-extractor";
 import { getAPI as getDataviewApi } from "obsidian-dataview";
 
-import merge from "lodash.merge";
+import { merge }  from "lodash";
 import * as fspath from "path";
 import type { ContentManager } from "./content-manager/types";
 import { convertArrayBufferToBase64Link } from "#/LLMProviders/utils";

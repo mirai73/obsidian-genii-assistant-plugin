@@ -1,6 +1,6 @@
 import { ContextVariables } from "#/scope/ContextVariables";
 import HelpersFn from "#/helpers/handlebars-helpers";
-import set from "lodash.set";
+import { set }  from "lodash";
 
 const helpers: Record<string, any> = HelpersFn({} as any);
 const helpersArr: string[] = Object.keys(helpers);

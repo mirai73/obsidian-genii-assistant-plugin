@@ -18,7 +18,7 @@ import debug from "debug";
 import RequestHandler from "./api-service";
 import EmbeddingScope from "../scope/embeddings";
 import { IGNORE_IN_YAML } from "../constants";
-import merge from "lodash.merge";
+import { merge }  from "lodash";
 import {
   ContentManager,
   Template,

@@ -33,8 +33,7 @@ import Commands from "./scope/commands";
 import TokensScope from "./scope/tokens";
 
 import "./LLMProviders";
-import get from "lodash.get";
-import set from "lodash.set";
+import { get, set } from "lodash";
 import { TemplatesModal } from "./models/model";
 import { ToolView, VIEW_TOOL_ID } from "./ui/tool";
 import { randomUUID } from "crypto";
